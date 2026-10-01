@@ -1,8 +1,9 @@
 ﻿interface KpiCardProps {
   label: string
   value: string
-  change: string
+  change?: string
   detail: string
+  trend?: 'positive' | 'negative' | 'neutral'
 }
 
 function KpiCard({
@@ -10,12 +11,18 @@ function KpiCard({
   value,
   change,
   detail,
+  trend = 'positive',
 }: KpiCardProps) {
   return (
     <article className="kpi-card">
       <div className="kpi-top">
         <span>{label}</span>
-        <span className="kpi-badge">{change}</span>
+
+        {change && (
+          <span className={`kpi-badge ${trend}`}>
+            {change}
+          </span>
+        )}
       </div>
 
       <strong className="kpi-value">{value}</strong>

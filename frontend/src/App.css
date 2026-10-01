@@ -1112,3 +1112,132 @@ td strong {
     padding: 26px;
   }
 }
+
+/* =========================
+   DASHBOARD IMPROVEMENTS
+========================= */
+
+.chart-improved {
+  padding-top: 18px;
+}
+
+.chart-improved .chart-column {
+  position: relative;
+}
+
+.chart-value {
+  margin-bottom: 6px;
+  color: #8e8e8e;
+  font-size: 8px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.chart-column:hover .chart-value {
+  opacity: 1;
+}
+
+.chart-improved .chart-bar {
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.chart-improved .chart-column:hover .chart-bar {
+  transform: translateY(-3px);
+  opacity: 0.82;
+}
+
+.panel-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0 18px 18px;
+  padding-top: 13px;
+  border-top: 1px solid #eeeeee;
+}
+
+.panel-footer span {
+  color: #999999;
+  font-size: 9px;
+}
+
+.secondary-button.compact {
+  padding: 8px 11px;
+  font-size: 10px;
+}
+
+.dashboard-lower-grid {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 14px;
+}
+
+.quick-actions {
+  padding: 3px 18px 15px;
+}
+
+.quick-actions button {
+  position: relative;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 3px 10px;
+  padding: 13px 0;
+  border: 0;
+  border-bottom: 1px solid #eeeeee;
+  background: transparent;
+  text-align: left;
+}
+
+.quick-actions button:last-child {
+  border-bottom: 0;
+}
+
+.quick-actions button span,
+.quick-actions button small {
+  grid-column: 1;
+}
+
+.quick-actions button span {
+  color: #222222;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.quick-actions button small {
+  color: #999999;
+  font-size: 9px;
+}
+
+.quick-actions button strong {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+  color: #777777;
+  font-size: 14px;
+}
+
+.quick-actions button:hover span,
+.quick-actions button:hover strong {
+  color: #111111;
+}
+
+.kpi-badge.positive {
+  background: #edf7ef;
+}
+
+.kpi-badge.negative {
+  background: #faeded;
+}
+
+.kpi-badge.neutral {
+  background: #f0f1f2;
+}
+
+@media (max-width: 1050px) {
+  .dashboard-lower-grid {
+    grid-template-columns: 1fr;
+  }
+}
