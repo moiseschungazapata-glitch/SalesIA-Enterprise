@@ -8,7 +8,7 @@
 | Fase | 02 - Arquitectura tecnica |
 | Documento | Arquitectura general |
 | Alcance | Primera version del sistema |
-| Estado | Definido |
+| Estado | Completo |
 | Requisito de origen | Fase 01 - Analisis y levantamiento |
 
 ## 2. Proposito
@@ -117,7 +117,9 @@ backend/app/
 │   ├── router.py
 │   └── routes/
 │       ├── auth.py
+│       ├── users.py
 │       ├── customers.py
+│       ├── categories.py
 │       ├── products.py
 │       ├── inventory.py
 │       ├── sales.py
@@ -279,8 +281,10 @@ La arquitectura contempla tres ambientes:
 - `production`: ejecucion publicada con secretos externos al repositorio.
 
 Las direcciones, credenciales, claves y opciones variables se proporcionaran por
-variables de entorno. Los archivos `.env` locales no se guardaran en Git. El
-archivo `.env.example` documentara los nombres requeridos sin incluir secretos.
+variables de entorno. Los archivos `.env` locales no se guardaran en Git.
+`backend/.env.example` y `frontend/.env.example` documentan los nombres
+requeridos sin incluir secretos. La definicion completa se encuentra en
+[Configuracion y ambientes](fase-02-configuracion-ambientes.md).
 
 La configuracion concreta de despliegue se realizara en la fase 15.
 
@@ -296,18 +300,18 @@ La configuracion concreta de despliegue se realizara en la fase 15.
 | Limites de Analytics | Motor en fase 09 y dashboard en fase 10. |
 | Ambientes previstos | Despliegue en fase 15. |
 
-## 13. Decisiones pendientes dentro de la fase 02
+## 13. Documentos complementarios de la fase 02
 
-Los contratos iniciales, el formato comun de errores, los filtros y la
-paginacion ya estan definidos. Para cerrar completamente la fase 02 todavia
-deben documentarse:
+Las decisiones necesarias para implementar esta arquitectura se encuentran en:
 
-1. Estrategia detallada de autenticacion y permisos.
-2. Variables requeridas por cada ambiente.
-3. Versiones y dependencias que se fijaran al iniciar backend y frontend.
+1. [Contratos iniciales de la API](../api/fase-02-contratos-api.md).
+2. [Autenticacion y permisos](fase-02-autenticacion-permisos.md).
+3. [Configuracion y ambientes](fase-02-configuracion-ambientes.md).
+4. [Decisiones tecnologicas](fase-02-decisiones-tecnicas.md).
+5. [Cierre de la fase 02](fase-02-cierre.md).
 
-Estos puntos son definiciones. No requieren crear tablas, formularios ni logica
-de negocio en esta fase.
+Estos documentos definen el trabajo sin crear tablas, formularios ni logica de
+negocio de fases posteriores.
 
 ## 14. Criterios de aceptacion del documento
 
@@ -318,3 +322,9 @@ de negocio en esta fase.
 - Los modulos de la primera version estan identificados.
 - Los modulos futuros estan separados y asociados con su fase.
 - Las decisiones no adelantan la implementacion de fases posteriores.
+
+## 15. Estado de la fase
+
+La arquitectura, los contratos, la seguridad prevista, los ambientes y las
+decisiones tecnologicas estan definidos. La verificacion final y las condiciones
+para comenzar UX/UI se registran en el documento de cierre de la fase 02.

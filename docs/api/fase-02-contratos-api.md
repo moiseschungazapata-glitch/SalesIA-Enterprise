@@ -53,7 +53,8 @@ Authorization: Bearer <access_token>
 ```
 
 La estrategia detallada del token, su duracion y la proteccion de contrasenas se
-documentaran por separado dentro de la fase 02.
+encuentran en
+[Autenticacion y permisos](../architecture/fase-02-autenticacion-permisos.md).
 
 ### 3.4 Respuesta paginada
 
