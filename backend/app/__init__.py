@@ -1,0 +1,1 @@
+"""SalesIA Enterprise backend application."""
