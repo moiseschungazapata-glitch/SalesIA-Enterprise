@@ -247,7 +247,8 @@ implementaciones parciales antes de la fase correspondiente.
 - El frontend enviara credenciales mediante el encabezado `Authorization`.
 - Los endpoints protegidos verificaran usuario activo y rol permitido.
 - Las respuestas de error tendran una estructura comun.
-- La especificacion detallada de endpoints se completara dentro de la fase 02.
+- La especificacion detallada se encuentra en
+  [Contratos iniciales de la API](../api/fase-02-contratos-api.md).
 
 ### 10.2 Persistencia
 
@@ -297,14 +298,13 @@ La configuracion concreta de despliegue se realizara en la fase 15.
 
 ## 13. Decisiones pendientes dentro de la fase 02
 
-Para cerrar completamente la fase 02 todavia deben documentarse:
+Los contratos iniciales, el formato comun de errores, los filtros y la
+paginacion ya estan definidos. Para cerrar completamente la fase 02 todavia
+deben documentarse:
 
-1. Contratos iniciales de la API.
-2. Estrategia detallada de autenticacion y permisos.
-3. Formato comun de respuestas y errores.
-4. Convenciones de nombres, filtros y paginacion.
-5. Variables requeridas por cada ambiente.
-6. Versiones y dependencias que se fijaran al iniciar backend y frontend.
+1. Estrategia detallada de autenticacion y permisos.
+2. Variables requeridas por cada ambiente.
+3. Versiones y dependencias que se fijaran al iniciar backend y frontend.
 
 Estos puntos son definiciones. No requieren crear tablas, formularios ni logica
 de negocio en esta fase.

@@ -12,3 +12,4 @@ Desarrollo basado en las 16 fases del Plan Integral de Desarrollo.
 
 - [Fase 01 - Analisis y levantamiento](docs/requirements/fase-01-requisitos.md)
 - [Fase 02 - Arquitectura tecnica](docs/architecture/fase-02-arquitectura.md)
+- [Fase 02 - Contratos iniciales de la API](docs/api/fase-02-contratos-api.md)
