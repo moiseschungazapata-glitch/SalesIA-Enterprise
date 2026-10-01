@@ -1,0 +1,75 @@
+.salesia-app {
+  min-height: 100vh;
+}
+
+.main-layout {
+  min-height: 100vh;
+  display: flex;
+  background: #f5f6f8;
+}
+
+.sidebar {
+  width: 250px;
+  min-height: 100vh;
+  background: #111111;
+  color: white;
+  padding: 24px 16px;
+}
+
+.sidebar-brand {
+  padding: 8px 12px 28px;
+}
+
+.sidebar-brand h2 {
+  margin: 0;
+  font-size: 24px;
+}
+
+.sidebar-brand span {
+  color: #999;
+  font-size: 12px;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sidebar-nav a {
+  padding: 12px;
+  color: #b8b8b8;
+  text-decoration: none;
+  border-radius: 8px;
+}
+
+.sidebar-nav a:hover {
+  background: #222;
+  color: white;
+}
+
+.main-content {
+  flex: 1;
+  padding: 40px;
+}
+
+.dashboard-placeholder {
+  max-width: 1000px;
+}
+
+.dashboard-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #777;
+}
+
+.dashboard-placeholder h1 {
+  margin: 10px 0;
+  font-size: 36px;
+}
+
+.dashboard-placeholder p {
+  color: #666;
+  font-size: 16px;
+}
