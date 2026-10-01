@@ -2169,3 +2169,567 @@ td strong {
     flex-wrap: wrap;
   }
 }
+
+/* =======================================================
+   SALESIA ENTERPRISE - SISTEMA VISUAL
+   PDF: azul corporativo + cyan + blanco + grises
+======================================================= */
+
+:root {
+  --salesia-blue: #155EEF;
+  --salesia-blue-dark: #0B4ACB;
+  --salesia-cyan: #06B6D4;
+  --salesia-cyan-soft: #ECFEFF;
+
+  --salesia-black: #111827;
+  --salesia-text: #1F2937;
+  --salesia-text-soft: #667085;
+
+  --salesia-gray-50: #F8FAFC;
+  --salesia-gray-100: #F1F5F9;
+  --salesia-gray-200: #E2E8F0;
+  --salesia-gray-300: #CBD5E1;
+  --salesia-gray-400: #94A3B8;
+
+  --salesia-white: #FFFFFF;
+
+  --salesia-success: #16A34A;
+  --salesia-success-soft: #ECFDF3;
+
+  --salesia-warning: #D97706;
+  --salesia-warning-soft: #FFF7ED;
+
+  --salesia-error: #DC2626;
+  --salesia-error-soft: #FEF2F2;
+}
+
+/* =======================================================
+   GLOBAL COLOR SYSTEM
+======================================================= */
+
+body {
+  background: var(--salesia-gray-50);
+  color: var(--salesia-text);
+}
+
+.sidebar {
+  background:
+    linear-gradient(
+      180deg,
+      #0B1736 0%,
+      #0F2557 100%
+    );
+}
+
+.brand-mark {
+  background: var(--salesia-cyan);
+  color: #082F49;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.08),
+    0 8px 22px rgba(6,182,212,0.20);
+}
+
+.sidebar-brand span {
+  color: #9FB2D4;
+}
+
+.sidebar-section-label {
+  color: #7890BB;
+}
+
+.nav-item {
+  color: #B5C3DD;
+}
+
+.nav-item:hover {
+  background: rgba(255,255,255,0.07);
+  color: var(--salesia-white);
+}
+
+.nav-item.active {
+  background: var(--salesia-blue);
+  color: var(--salesia-white);
+  box-shadow:
+    0 7px 18px rgba(21,94,239,0.22);
+}
+
+.sidebar-footer {
+  border-top-color: rgba(255,255,255,0.10);
+}
+
+.sidebar-status {
+  color: #8FA4C7;
+}
+
+.status-indicator {
+  background: #22C55E;
+  box-shadow:
+    0 0 0 4px rgba(34,197,94,0.10);
+}
+
+.logout-button {
+  background: rgba(255,255,255,0.06);
+  color: #AEBBD2;
+}
+
+.logout-button:hover {
+  background: rgba(255,255,255,0.10);
+}
+
+.topbar {
+  background: rgba(255,255,255,0.96);
+  border-bottom-color: var(--salesia-gray-200);
+}
+
+.breadcrumb {
+  color: var(--salesia-text-soft);
+}
+
+.content-area {
+  background: var(--salesia-gray-50);
+}
+
+.eyebrow {
+  color: var(--salesia-blue);
+}
+
+.page-heading h1 {
+  color: var(--salesia-black);
+}
+
+.page-heading p {
+  color: var(--salesia-text-soft);
+}
+
+/* =======================================================
+   BUTTONS
+======================================================= */
+
+.primary-button {
+  border-color: var(--salesia-blue);
+  background: var(--salesia-blue);
+  color: var(--salesia-white);
+  box-shadow:
+    0 6px 16px rgba(21,94,239,0.14);
+}
+
+.primary-button:hover {
+  border-color: var(--salesia-blue-dark);
+  background: var(--salesia-blue-dark);
+}
+
+.secondary-button {
+  border-color: var(--salesia-gray-300);
+  background: var(--salesia-white);
+  color: var(--salesia-text);
+}
+
+.secondary-button:hover {
+  border-color: var(--salesia-blue);
+  color: var(--salesia-blue);
+  background: #F8FAFF;
+}
+
+.text-button {
+  color: var(--salesia-blue);
+}
+
+/* =======================================================
+   CARDS / PANELS
+======================================================= */
+
+.kpi-card,
+.mini-stat,
+.panel,
+.analysis-card,
+.insight-card,
+.report-card {
+  border-color: var(--salesia-gray-200);
+  background: var(--salesia-white);
+}
+
+.kpi-card:hover,
+.mini-stat:hover,
+.analysis-card:hover,
+.report-card:hover {
+  border-color: #BFD2FF;
+}
+
+.kpi-badge {
+  background: #EFF6FF;
+  color: var(--salesia-blue) !important;
+}
+
+.kpi-badge.positive {
+  background: var(--salesia-success-soft);
+  color: var(--salesia-success) !important;
+}
+
+.kpi-badge.negative {
+  background: var(--salesia-error-soft);
+  color: var(--salesia-error) !important;
+}
+
+.kpi-badge.neutral {
+  background: var(--salesia-gray-100);
+  color: var(--salesia-text-soft) !important;
+}
+
+/* =======================================================
+   CHARTS
+======================================================= */
+
+.chart-bar,
+.analytics-bar-fill,
+.random-bar {
+  background:
+    linear-gradient(
+      180deg,
+      var(--salesia-cyan) 0%,
+      var(--salesia-blue) 100%
+    );
+}
+
+.chart-bar:hover,
+.random-bar:hover {
+  opacity: 0.86;
+}
+
+/* =======================================================
+   INPUTS
+======================================================= */
+
+.search-input,
+.select-input,
+.entity-form input,
+.entity-form select,
+.sale-form input,
+.sale-form select,
+.sale-summary select,
+.probability-form input,
+.random-variable-form textarea,
+.login-form input {
+  border-color: var(--salesia-gray-300);
+}
+
+.search-input:focus,
+.select-input:focus,
+.entity-form input:focus,
+.entity-form select:focus,
+.sale-form input:focus,
+.sale-form select:focus,
+.sale-summary select:focus,
+.probability-form input:focus,
+.random-variable-form textarea:focus,
+.login-form input:focus {
+  border-color: var(--salesia-blue);
+  box-shadow:
+    0 0 0 3px rgba(21,94,239,0.08);
+}
+
+/* =======================================================
+   STATUS
+======================================================= */
+
+.status-pill.success {
+  background: var(--salesia-success-soft);
+  color: var(--salesia-success);
+}
+
+.status-pill.warning {
+  background: var(--salesia-warning-soft);
+  color: var(--salesia-warning);
+}
+
+.status-pill.danger {
+  background: var(--salesia-error-soft);
+  color: var(--salesia-error);
+}
+
+.status-pill.neutral {
+  background: var(--salesia-gray-100);
+  color: var(--salesia-text-soft);
+}
+
+/* =======================================================
+   INVENTORY / ALERTS
+======================================================= */
+
+.danger-text {
+  color: var(--salesia-error) !important;
+}
+
+.warning-text {
+  color: var(--salesia-warning) !important;
+}
+
+.success-text {
+  color: var(--salesia-success) !important;
+}
+
+/* =======================================================
+   ANALYTICS / PROBABILITY
+======================================================= */
+
+.analytics-navigation,
+.probability-navigation {
+  border-color: var(--salesia-gray-200);
+}
+
+.analytics-tab.active {
+  background: var(--salesia-blue);
+  color: var(--salesia-white);
+}
+
+.analytics-tab:hover {
+  color: var(--salesia-blue);
+  background: #EFF6FF;
+}
+
+.probability-result {
+  background:
+    linear-gradient(
+      145deg,
+      #0B1736 0%,
+      #123D8D 100%
+    );
+}
+
+.result-meter {
+  background: rgba(255,255,255,0.16);
+}
+
+.result-meter div {
+  background:
+    linear-gradient(
+      90deg,
+      var(--salesia-cyan),
+      #67E8F9
+    );
+}
+
+.bayes-formula,
+.probability-equation {
+  border-color: #BFE8F0;
+  background: var(--salesia-cyan-soft);
+}
+
+/* =======================================================
+   INSIGHTS
+======================================================= */
+
+.insight-card.positive {
+  border-left-color: var(--salesia-success);
+}
+
+.insight-card.warning {
+  border-left-color: var(--salesia-warning);
+}
+
+.insight-card.info {
+  border-left-color: var(--salesia-blue);
+}
+
+.insight-dot.positive {
+  background: var(--salesia-success);
+}
+
+.insight-dot.warning {
+  background: var(--salesia-warning);
+}
+
+.insight-dot.info {
+  background: var(--salesia-blue);
+}
+
+.insight-filter.active {
+  border-color: var(--salesia-blue);
+  background: var(--salesia-blue);
+}
+
+/* =======================================================
+   REPORTS
+======================================================= */
+
+.report-icon {
+  background:
+    linear-gradient(
+      135deg,
+      var(--salesia-blue),
+      var(--salesia-cyan)
+    );
+}
+
+.report-flow {
+  background: #F8FAFF;
+  border-color: #D8E4FF;
+}
+
+.report-flow span {
+  color: var(--salesia-blue);
+}
+
+/* =======================================================
+   PROFILE
+======================================================= */
+
+.profile-avatar {
+  background:
+    linear-gradient(
+      135deg,
+      var(--salesia-blue),
+      var(--salesia-cyan)
+    );
+}
+
+/* =======================================================
+   LOGIN
+======================================================= */
+
+.login-page {
+  background:
+    radial-gradient(
+      circle at top left,
+      #FFFFFF 0,
+      #EFF6FF 38%,
+      #ECFEFF 100%
+    );
+}
+
+.login-panel {
+  border-color: var(--salesia-gray-200);
+}
+
+.login-brand .brand-mark {
+  background: var(--salesia-blue);
+  color: var(--salesia-white);
+}
+
+.login-copy h1 {
+  color: var(--salesia-black);
+}
+
+.login-copy p {
+  color: var(--salesia-text-soft);
+}
+
+.login-form input {
+  background: var(--salesia-white);
+}
+
+.login-footer {
+  border-top-color: var(--salesia-gray-200);
+}
+
+/* =======================================================
+   STATES
+======================================================= */
+
+.state-message {
+  display: flex;
+  min-height: 230px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px 20px;
+  text-align: center;
+}
+
+.state-message-icon {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 12px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.state-message-label {
+  margin-bottom: 5px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.state-message h3 {
+  margin: 0;
+  font-size: 14px;
+}
+
+.state-message p {
+  max-width: 410px;
+  margin: 6px 0 14px;
+  color: var(--salesia-text-soft);
+  font-size: 10px;
+  line-height: 1.7;
+}
+
+.state-message.loading .state-message-icon {
+  background: #EFF6FF;
+  color: var(--salesia-blue);
+}
+
+.state-message.loading .state-message-label {
+  color: var(--salesia-blue);
+}
+
+.state-message.empty .state-message-icon {
+  background: var(--salesia-gray-100);
+  color: var(--salesia-text-soft);
+}
+
+.state-message.empty .state-message-label {
+  color: var(--salesia-text-soft);
+}
+
+.state-message.error .state-message-icon {
+  background: var(--salesia-error-soft);
+  color: var(--salesia-error);
+}
+
+.state-message.error .state-message-label {
+  color: var(--salesia-error);
+}
+
+.state-message.success .state-message-icon {
+  background: var(--salesia-success-soft);
+  color: var(--salesia-success);
+}
+
+.state-message.success .state-message-label {
+  color: var(--salesia-success);
+}
+
+.loading-spinner {
+  width: 17px;
+  height: 17px;
+  display: block;
+  border: 2px solid #C7D7FE;
+  border-top-color: var(--salesia-blue);
+  border-radius: 50%;
+  animation: salesia-spin 0.75s linear infinite;
+}
+
+@keyframes salesia-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* =======================================================
+   RESPONSIVE
+======================================================= */
+
+@media (max-width: 760px) {
+  .topbar {
+    background: var(--salesia-white);
+  }
+
+  .analytics-navigation,
+  .probability-navigation {
+    border-color: var(--salesia-gray-200);
+  }
+}
