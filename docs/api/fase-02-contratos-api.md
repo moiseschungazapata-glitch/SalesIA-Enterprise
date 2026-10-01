@@ -605,7 +605,7 @@ Las salidas por venta usan `sale` y solo las genera el sistema.
 ### 11.1 Listar ventas
 
 ```http
-GET /api/v1/sales?page=1&page_size=20&date_from=2026-10-01&date_to=2026-10-31&customer_id=15&seller_id=4&status=confirmed
+GET /api/v1/sales?page=1&page_size=20&number=V-000120&date_from=2026-10-01&date_to=2026-10-31&customer_id=15&seller_id=4&status=confirmed
 ```
 
 **Permisos:**
