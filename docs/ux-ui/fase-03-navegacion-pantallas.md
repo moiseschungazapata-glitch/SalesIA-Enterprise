@@ -284,8 +284,7 @@ estas funciones a los usuarios.
 - Los modulos futuros no aparecen en la navegacion activa.
 - El mapa contempla computadoras y tabletas sin agregar alcance movil.
 
-## 11. Siguiente paso de la fase 03
+## 11. Documento relacionado
 
-Con este mapa aprobado, el siguiente trabajo es definir el sistema visual:
-colores, tipografia, espaciado y componentes base. Despues se diseñaran los
-formularios y estados de cada pantalla usando estas reglas.
+Los campos, controles, validaciones y confirmaciones de estas pantallas se
+encuentran en [Diseño de formularios](fase-03-formularios.md).
