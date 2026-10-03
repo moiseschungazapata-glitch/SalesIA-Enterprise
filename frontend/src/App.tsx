@@ -1,67 +1,76 @@
-﻿import { useState } from 'react'
+import { useState } from 'react'
 import './App.css'
-import type { PageKey } from './app/navigation'
+import {
+  canAccessPage,
+  getDefaultPage,
+  type PageKey,
+  type UserRole,
+} from './app/navigation'
 import MainLayout from './layouts/MainLayout'
 import Login from './modules/auth/Login'
-import Analytics from './modules/analytics/Analytics'
 import Customers from './modules/customers/Customers'
 import Dashboard from './modules/dashboard/Dashboard'
-import Insights from './modules/insights/Insights'
 import Inventory from './modules/inventory/Inventory'
-import Probability from './modules/probability/Probability'
 import Products from './modules/products/Products'
-import Reports from './modules/reports/Reports'
 import Sales from './modules/sales/Sales'
+import Users from './modules/users/Users'
 
 function App() {
   const [authenticated, setAuthenticated] = useState(false)
+  const [role, setRole] =
+    useState<UserRole>('administrator')
   const [activePage, setActivePage] =
     useState<PageKey>('dashboard')
+
+  const changeRole = (nextRole: UserRole) => {
+    setRole(nextRole)
+    setActivePage(getDefaultPage(nextRole))
+  }
 
   if (!authenticated) {
     return (
       <Login
-        onLogin={() => setAuthenticated(true)}
+        onLogin={() => {
+          setAuthenticated(true)
+          setActivePage(getDefaultPage(role))
+        }}
       />
     )
   }
 
+  const safePage = canAccessPage(role, activePage)
+    ? activePage
+    : getDefaultPage(role)
+
   const renderPage = () => {
-    switch (activePage) {
+    switch (safePage) {
       case 'dashboard':
         return (
           <Dashboard
+            role={role}
             onNavigate={setActivePage}
           />
         )
 
+      case 'sales':
+        return <Sales role={role} />
+
       case 'customers':
-        return <Customers />
+        return <Customers role={role} />
 
       case 'products':
-        return <Products />
-
-      case 'sales':
-        return <Sales />
+        return <Products role={role} />
 
       case 'inventory':
-        return <Inventory />
+        return <Inventory role={role} />
 
-      case 'analytics':
-        return <Analytics />
-
-      case 'probability':
-        return <Probability />
-
-      case 'insights':
-        return <Insights />
-
-      case 'reports':
-        return <Reports />
+      case 'users':
+        return <Users />
 
       default:
         return (
           <Dashboard
+            role={role}
             onNavigate={setActivePage}
           />
         )
@@ -70,10 +79,13 @@ function App() {
 
   return (
     <MainLayout
-      activePage={activePage}
+      activePage={safePage}
+      role={role}
+      onRoleChange={changeRole}
       onNavigate={setActivePage}
       onLogout={() => {
         setAuthenticated(false)
+        setRole('administrator')
         setActivePage('dashboard')
       }}
     >

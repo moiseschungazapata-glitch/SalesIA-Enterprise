@@ -1,19 +1,25 @@
-﻿import {
-  navigationItems,
+import {
+  getNavigationItems,
+  roleLabels,
   type PageKey,
+  type UserRole,
 } from '../app/navigation'
 
 interface SidebarProps {
   activePage: PageKey
+  role: UserRole
   onNavigate: (page: PageKey) => void
   onLogout: () => void
 }
 
 function Sidebar({
   activePage,
+  role,
   onNavigate,
   onLogout,
 }: SidebarProps) {
+  const items = getNavigationItems(role)
+
   return (
     <aside className="sidebar">
       <div className="sidebar-brand">
@@ -26,20 +32,24 @@ function Sidebar({
       </div>
 
       <div className="sidebar-section-label">
-        PRINCIPAL
+        {roleLabels[role]}
       </div>
 
-      <nav className="sidebar-nav">
-        {navigationItems.map((item) => (
+      <nav className="sidebar-nav" aria-label="Navegación principal">
+        {items.map((item) => (
           <button
             key={item.key}
             type="button"
+            aria-label={item.label}
+            title={item.label}
             className={`nav-item ${
               activePage === item.key ? 'active' : ''
             }`}
             onClick={() => onNavigate(item.key)}
           >
-            <span className="nav-dot" />
+            <span className="nav-dot">
+              {item.label.charAt(0)}
+            </span>
             <span>{item.label}</span>
           </button>
         ))}
@@ -48,7 +58,7 @@ function Sidebar({
       <div className="sidebar-footer">
         <div className="sidebar-status">
           <span className="status-indicator" />
-          Sistema operativo
+          Prototipo UX activo
         </div>
 
         <button

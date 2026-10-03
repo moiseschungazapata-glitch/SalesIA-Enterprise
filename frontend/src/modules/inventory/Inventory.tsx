@@ -1,4 +1,5 @@
 ﻿import { useMemo, useState } from 'react'
+import type { UserRole } from '../../app/navigation'
 import PageHeader from '../../components/PageHeader'
 import {
   inventory as initialInventory,
@@ -7,7 +8,12 @@ import type { InventoryItem } from '../../types'
 
 type MovementType = 'Entrada' | 'Salida'
 
-function Inventory() {
+interface InventoryProps {
+  role: UserRole
+}
+
+function Inventory({ role }: InventoryProps) {
+  const canManage = role === 'administrator'
   const [inventoryList, setInventoryList] =
     useState<InventoryItem[]>(initialInventory)
 
@@ -109,21 +115,27 @@ function Inventory() {
       <PageHeader
         eyebrow="CONTROL OPERATIVO"
         title="Inventario"
-        description="Seguimiento del stock y movimientos de productos."
+        description={
+          canManage
+            ? 'Consulta existencias y registra movimientos autorizados.'
+            : 'Consulta las existencias disponibles según tu perfil.'
+        }
         action={
-          <button
-            type="button"
-            className="primary-button compact"
-            onClick={() =>
-              setShowMovementForm(
-                (value) => !value,
-              )
-            }
-          >
-            {showMovementForm
-              ? 'Cerrar'
-              : '+ Movimiento'}
-          </button>
+          canManage ? (
+            <button
+              type="button"
+              className="primary-button compact"
+              onClick={() =>
+                setShowMovementForm(
+                  (value) => !value,
+                )
+              }
+            >
+              {showMovementForm
+                ? 'Cerrar'
+                : '+ Movimiento'}
+            </button>
+          ) : undefined
         }
       />
 
@@ -152,14 +164,18 @@ function Inventory() {
         </article>
 
         <article className="mini-stat">
-          <span>Movimientos visibles</span>
+          <span>
+            {role === 'seller'
+              ? 'Productos consultables'
+              : 'Movimientos visibles'}
+          </span>
           <strong>
             {inventoryList.length}
           </strong>
         </article>
       </section>
 
-      {showMovementForm && (
+      {canManage && showMovementForm && (
         <section className="panel form-panel">
           <div className="panel-header">
             <div>
@@ -294,8 +310,8 @@ function Inventory() {
                 <th>Categoría</th>
                 <th>Stock actual</th>
                 <th>Mínimo</th>
-                <th>Movimiento</th>
-                <th>Actualizado</th>
+                {role !== 'seller' && <th>Movimiento</th>}
+                {role !== 'seller' && <th>Actualizado</th>}
                 <th>Estado</th>
               </tr>
             </thead>
@@ -331,17 +347,21 @@ function Inventory() {
 
                     <td>{item.minimum}</td>
 
-                    <td
-                      className={
-                        item.movement.startsWith('+')
-                          ? 'success-text'
-                          : 'danger-text'
-                      }
-                    >
-                      {item.movement}
-                    </td>
+                    {role !== 'seller' && (
+                      <td
+                        className={
+                          item.movement.startsWith('+')
+                            ? 'success-text'
+                            : 'danger-text'
+                        }
+                      >
+                        {item.movement}
+                      </td>
+                    )}
 
-                    <td>{item.updated}</td>
+                    {role !== 'seller' && (
+                      <td>{item.updated}</td>
+                    )}
 
                     <td>
                       <span
@@ -379,10 +399,10 @@ function Inventory() {
           <div className="panel-header">
             <div>
               <span className="eyebrow">
-                ALERTAS
+                REFERENCIA OPERATIVA
               </span>
 
-              <h2>Stock crítico</h2>
+              <h2>Productos por revisar</h2>
 
               <p>
                 Productos que requieren atención.

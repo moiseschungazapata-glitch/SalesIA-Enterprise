@@ -1,9 +1,43 @@
 ﻿import { useMemo, useState } from 'react'
+import type { UserRole } from '../../app/navigation'
 import PageHeader from '../../components/PageHeader'
 import { products as initialProducts } from '../../services/mockData'
 import type { Product } from '../../types'
 
-function Products() {
+interface ProductsProps {
+  role: UserRole
+}
+
+interface Category {
+  id: number
+  name: string
+  description: string
+  status: 'Activa' | 'Inactiva'
+}
+
+const initialCategories: Category[] = [
+  {
+    id: 1,
+    name: 'Tecnología',
+    description: 'Equipos y dispositivos tecnológicos.',
+    status: 'Activa',
+  },
+  {
+    id: 2,
+    name: 'Accesorios',
+    description: 'Complementos para equipos y estaciones de trabajo.',
+    status: 'Activa',
+  },
+  {
+    id: 3,
+    name: 'Oficina',
+    description: 'Productos para operación administrativa.',
+    status: 'Activa',
+  },
+]
+
+function Products({ role }: ProductsProps) {
+  const canManage = role === 'administrator'
   const [productList, setProductList] =
     useState<Product[]>(initialProducts)
 
@@ -11,6 +45,10 @@ function Products() {
   const [categoryFilter, setCategoryFilter] =
     useState('Todas')
   const [showForm, setShowForm] = useState(false)
+  const [showCategories, setShowCategories] = useState(false)
+  const [categoryList, setCategoryList] =
+    useState<Category[]>(initialCategories)
+  const [categoryName, setCategoryName] = useState('')
 
   const [form, setForm] = useState({
     name: '',
@@ -19,7 +57,7 @@ function Products() {
     stock: '',
   })
 
-  const categories = [
+  const productCategories = [
     ...new Set(productList.map((product) => product.category)),
   ]
 
@@ -99,20 +137,83 @@ function Products() {
     setShowForm(false)
   }
 
+  const handleAddCategory = (
+    event: React.FormEvent<HTMLFormElement>,
+  ) => {
+    event.preventDefault()
+    const name = categoryName.trim()
+
+    if (
+      !name ||
+      categoryList.some(
+        (category) =>
+          category.name.toLowerCase() === name.toLowerCase(),
+      )
+    ) {
+      return
+    }
+
+    setCategoryList((current) => [
+      ...current,
+      {
+        id: Date.now(),
+        name,
+        description: 'Categoría creada en el prototipo UX.',
+        status: 'Activa',
+      },
+    ])
+    setCategoryName('')
+  }
+
+  const toggleCategory = (id: number) => {
+    setCategoryList((current) =>
+      current.map((category) =>
+        category.id === id
+          ? {
+              ...category,
+              status:
+                category.status === 'Activa'
+                  ? 'Inactiva'
+                  : 'Activa',
+            }
+          : category,
+      ),
+    )
+  }
+
   return (
     <div className="page">
       <PageHeader
         eyebrow="CATÁLOGO"
         title="Productos"
-        description="Administra productos, categorías, precios y stock."
+        description={
+          canManage
+            ? 'Administra productos y categorías; el stock se controla desde inventario.'
+            : 'Consulta el catálogo, las categorías y la disponibilidad.'
+        }
         action={
-          <button
-            type="button"
-            className="primary-button compact"
-            onClick={() => setShowForm((value) => !value)}
-          >
-            {showForm ? 'Cerrar' : '+ Nuevo producto'}
-          </button>
+          canManage ? (
+            <div className="page-actions">
+              <button
+                type="button"
+                className="secondary-button compact"
+                onClick={() =>
+                  setShowCategories((value) => !value)
+                }
+              >
+                {showCategories
+                  ? 'Cerrar categorías'
+                  : 'Gestionar categorías'}
+              </button>
+              <button
+                type="button"
+                className="primary-button compact"
+                onClick={() => setShowForm((value) => !value)}
+              >
+                {showForm ? 'Cerrar' : '+ Nuevo producto'}
+              </button>
+            </div>
+          ) : undefined
         }
       />
 
@@ -145,7 +246,69 @@ function Products() {
         </article>
       </section>
 
-      {showForm && (
+      {canManage && showCategories && (
+        <section className="panel category-panel">
+          <div className="panel-header">
+            <div>
+              <span className="eyebrow">CATEGORÍAS</span>
+              <h2>Gestión de categorías</h2>
+              <p>
+                Crea o desactiva categorías sin eliminar su historial.
+              </p>
+            </div>
+          </div>
+
+          <form
+            className="inline-entity-form"
+            onSubmit={handleAddCategory}
+          >
+            <label>
+              Nombre de la categoría
+              <input
+                value={categoryName}
+                onChange={(event) =>
+                  setCategoryName(event.target.value)
+                }
+                placeholder="Ej. Mobiliario"
+              />
+            </label>
+            <button type="submit" className="primary-button">
+              Crear categoría
+            </button>
+          </form>
+
+          <div className="category-list">
+            {categoryList.map((category) => (
+              <div className="category-row" key={category.id}>
+                <div>
+                  <strong>{category.name}</strong>
+                  <span>{category.description}</span>
+                </div>
+                <span
+                  className={`status-pill ${
+                    category.status === 'Activa'
+                      ? 'success'
+                      : 'neutral'
+                  }`}
+                >
+                  {category.status}
+                </span>
+                <button
+                  type="button"
+                  className="secondary-button compact"
+                  onClick={() => toggleCategory(category.id)}
+                >
+                  {category.status === 'Activa'
+                    ? 'Desactivar'
+                    : 'Activar'}
+                </button>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {canManage && showForm && (
         <section className="panel form-panel">
           <div className="panel-header">
             <div>
@@ -188,10 +351,13 @@ function Products() {
                   })
                 }
               >
-                <option>Tecnología</option>
-                <option>Accesorios</option>
-                <option>Oficina</option>
-                <option>Otros</option>
+                {categoryList
+                  .filter((category) => category.status === 'Activa')
+                  .map((category) => (
+                    <option key={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
               </select>
             </label>
 
@@ -267,7 +433,7 @@ function Products() {
             }
           >
             <option>Todas</option>
-            {categories.map((category) => (
+            {productCategories.map((category) => (
               <option key={category}>
                 {category}
               </option>

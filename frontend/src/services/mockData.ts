@@ -137,7 +137,7 @@ export const sales: Sale[] = [
     date: '30/09/2026',
     items: 1,
     total: 2899,
-    payment: 'Pendiente',
+    payment: 'Completado',
   },
   {
     id: 'V-00148',

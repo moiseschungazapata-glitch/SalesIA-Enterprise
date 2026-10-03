@@ -1,4 +1,5 @@
 ﻿import { useMemo, useState } from 'react'
+import type { UserRole } from '../../app/navigation'
 import PageHeader from '../../components/PageHeader'
 import {
   customers,
@@ -16,7 +17,12 @@ interface CartItem {
   subtotal: number
 }
 
-function Sales() {
+interface SalesProps {
+  role: UserRole
+}
+
+function Sales({ role }: SalesProps) {
+  const canRegister = role !== 'manager'
   const [saleList, setSaleList] =
     useState<Sale[]>(initialSales)
 
@@ -28,8 +34,8 @@ function Sales() {
 
   const [quantity, setQuantity] = useState('1')
 
-  const [payment, setPayment] =
-    useState<'Completado' | 'Pendiente'>('Completado')
+  const [paymentMethod, setPaymentMethod] =
+    useState<'Efectivo' | 'Tarjeta' | 'Transferencia'>('Efectivo')
 
   const [cart, setCart] = useState<CartItem[]>([])
 
@@ -118,7 +124,14 @@ function Sales() {
     [cart],
   )
 
-  const filteredSales = saleList.filter(
+  const visibleSales =
+    role === 'seller'
+      ? saleList.filter(
+          (sale) => sale.seller === 'María Torres',
+        )
+      : saleList
+
+  const filteredSales = visibleSales.filter(
     (sale) =>
       sale.id
         .toLowerCase()
@@ -132,11 +145,11 @@ function Sales() {
   )
 
   const averageTicket =
-    saleList.length > 0
-      ? saleList.reduce(
+    visibleSales.length > 0
+      ? visibleSales.reduce(
           (sum, sale) => sum + sale.total,
           0,
-        ) / saleList.length
+        ) / visibleSales.length
       : 0
 
   const registerSale = () => {
@@ -156,14 +169,15 @@ function Sales() {
     const newSale: Sale = {
       id: `V-${String(153 + saleList.length).padStart(5, '0')}`,
       customer: customer.name,
-      seller: 'Carlos Rivera',
+      seller:
+        role === 'seller' ? 'María Torres' : 'Carlos Rivera',
       date: new Date().toLocaleDateString('es-PE'),
       items: cart.reduce(
         (sum, item) => sum + item.quantity,
         0,
       ),
       total,
-      payment,
+      payment: 'Completado',
     }
 
     setSaleList((current) => [
@@ -173,7 +187,7 @@ function Sales() {
 
     setCart([])
     setSelectedCustomer('')
-    setPayment('Completado')
+    setPaymentMethod('Efectivo')
   }
 
   return (
@@ -181,7 +195,11 @@ function Sales() {
       <PageHeader
         eyebrow="OPERACIÓN COMERCIAL"
         title="Ventas"
-        description="Registra operaciones, productos, cantidades y pagos."
+        description={
+          canRegister
+            ? 'Registra operaciones y consulta el historial permitido.'
+            : 'Consulta las operaciones comerciales registradas.'
+        }
       />
 
       <section className="kpi-grid">
@@ -190,7 +208,7 @@ function Sales() {
             <span>Ventas registradas</span>
           </div>
           <strong className="kpi-value">
-            {saleList.length}
+            {visibleSales.length}
           </strong>
           <span className="kpi-detail">
             operaciones en el frontend
@@ -203,7 +221,7 @@ function Sales() {
           </div>
           <strong className="kpi-value">
             S/{' '}
-            {saleList
+            {visibleSales
               .reduce(
                 (sum, sale) => sum + sale.total,
                 0,
@@ -229,22 +247,23 @@ function Sales() {
 
         <article className="kpi-card">
           <div className="kpi-top">
-            <span>Pagos pendientes</span>
+            <span>Pagos completados</span>
           </div>
           <strong className="kpi-value">
             {
-              saleList.filter(
+              visibleSales.filter(
                 (sale) =>
-                  sale.payment === 'Pendiente',
+                  sale.payment === 'Completado',
               ).length
             }
           </strong>
           <span className="kpi-detail">
-            operaciones pendientes
+            operaciones pagadas
           </span>
         </article>
       </section>
 
+      {canRegister && (
       <section className="sales-workspace">
         <article className="panel sale-form-panel">
           <div className="panel-header">
@@ -439,23 +458,22 @@ function Sales() {
             </div>
 
             <label>
-              Estado del pago
+              Método de pago
               <select
-                value={payment}
+                value={paymentMethod}
                 onChange={(event) =>
-                  setPayment(
+                  setPaymentMethod(
                     event.target.value as
-                      | 'Completado'
-                      | 'Pendiente',
+                      | 'Efectivo'
+                      | 'Tarjeta'
+                      | 'Transferencia',
                   )
                 }
               >
-                <option value="Completado">
-                  Completado
-                </option>
-
-                <option value="Pendiente">
-                  Pendiente
+                <option value="Efectivo">Efectivo</option>
+                <option value="Tarjeta">Tarjeta</option>
+                <option value="Transferencia">
+                  Transferencia bancaria
                 </option>
               </select>
             </label>
@@ -474,6 +492,7 @@ function Sales() {
           </div>
         </article>
       </section>
+      )}
 
       <section className="panel">
         <div className="panel-header">
@@ -500,12 +519,6 @@ function Sales() {
             placeholder="Buscar por ID, cliente o vendedor..."
           />
 
-          <button
-            type="button"
-            className="secondary-button"
-          >
-            Exportar
-          </button>
         </div>
 
         <div className="table-wrapper">

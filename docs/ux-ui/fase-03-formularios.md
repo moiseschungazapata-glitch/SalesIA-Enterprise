@@ -8,7 +8,7 @@
 | Fase | 03 - UX/UI |
 | Entregable | Especificacion de formularios |
 | Alcance | Primera version del sistema |
-| Estado | Definido |
+| Estado | Completo - validado para cierre de fase 03 |
 | Origen | Requisitos de fase 01, contratos y permisos de fase 02 |
 
 ## 2. Objetivo
@@ -500,8 +500,14 @@ avanzados.
 - Los errores conservan la captura y permiten corregirla.
 - Ningun formulario adelanta funciones reservadas para otras fases.
 
-## 16. Siguiente paso de la fase 03
+## 16. Documentos relacionados y estado
 
-Con la navegacion y los formularios definidos, el siguiente trabajo es crear el
-sistema visual: colores, tipografia, espaciado y componentes base. Ese sistema
-se aplicara despues a los wireframes de estas pantallas.
+El sistema visual y los wireframes previstos por este documento se encuentran
+completos:
+
+- [Sistema visual y componentes base](fase-03-sistema-visual.md).
+- [Wireframes y especificacion de pantallas](fase-03-wireframes.md).
+- [Cierre de la fase 03](fase-03-cierre.md).
+
+La implementacion funcional de los formularios comienza despues del modelo de
+datos y la API, durante las fases 06 a 08.

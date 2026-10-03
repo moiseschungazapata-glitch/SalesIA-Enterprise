@@ -8,7 +8,7 @@
 | Fase | 03 - UX/UI |
 | Entregable | Mapa de pantallas y navegacion |
 | Alcance | Primera version del sistema |
-| Estado | Definido |
+| Estado | Completo - validado para cierre de fase 03 |
 | Origen | Requisitos de fase 01 y permisos de fase 02 |
 
 ## 2. Objetivo
@@ -284,7 +284,13 @@ estas funciones a los usuarios.
 - Los modulos futuros no aparecen en la navegacion activa.
 - El mapa contempla computadoras y tabletas sin agregar alcance movil.
 
-## 11. Documento relacionado
+## 11. Documentos relacionados
 
-Los campos, controles, validaciones y confirmaciones de estas pantallas se
-encuentran en [Diseño de formularios](fase-03-formularios.md).
+- Los campos, controles, validaciones y confirmaciones se encuentran en
+  [Diseño de formularios](fase-03-formularios.md).
+- Los tokens, componentes y estados se encuentran en
+  [Sistema visual](fase-03-sistema-visual.md).
+- La estructura de cada pantalla se encuentra en
+  [Wireframes](fase-03-wireframes.md).
+- La verificacion final se encuentra en
+  [Cierre de la fase 03](fase-03-cierre.md).

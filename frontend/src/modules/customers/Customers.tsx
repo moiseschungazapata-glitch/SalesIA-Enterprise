@@ -1,9 +1,15 @@
 ﻿import { useMemo, useState } from 'react'
+import type { UserRole } from '../../app/navigation'
 import PageHeader from '../../components/PageHeader'
 import { customers as initialCustomers } from '../../services/mockData'
 import type { Customer } from '../../types'
 
-function Customers() {
+interface CustomersProps {
+  role: UserRole
+}
+
+function Customers({ role }: CustomersProps) {
+  const canManage = role === 'administrator'
   const [customerList, setCustomerList] =
     useState<Customer[]>(initialCustomers)
 
@@ -35,9 +41,12 @@ function Customers() {
         statusFilter === 'Todos' ||
         customer.status === statusFilter
 
-      return matchesSearch && matchesStatus
+      const roleAllowsCustomer =
+        role !== 'seller' || customer.status === 'Activo'
+
+      return matchesSearch && matchesStatus && roleAllowsCustomer
     })
-  }, [customerList, search, statusFilter])
+  }, [customerList, search, statusFilter, role])
 
   const activeCustomers = customerList.filter(
     (customer) => customer.status === 'Activo',
@@ -87,15 +96,21 @@ function Customers() {
       <PageHeader
         eyebrow="GESTIÓN COMERCIAL"
         title="Clientes"
-        description="Consulta y administra la cartera de clientes."
+        description={
+          canManage
+            ? 'Consulta y administra la cartera de clientes.'
+            : 'Consulta la cartera de clientes según tu perfil.'
+        }
         action={
-          <button
-            type="button"
-            className="primary-button compact"
-            onClick={() => setShowForm((value) => !value)}
-          >
-            {showForm ? 'Cerrar' : '+ Nuevo cliente'}
-          </button>
+          canManage ? (
+            <button
+              type="button"
+              className="primary-button compact"
+              onClick={() => setShowForm((value) => !value)}
+            >
+              {showForm ? 'Cerrar' : '+ Nuevo cliente'}
+            </button>
+          ) : undefined
         }
       />
 
@@ -121,7 +136,7 @@ function Customers() {
         </article>
       </section>
 
-      {showForm && (
+      {canManage && showForm && (
         <section className="panel form-panel">
           <div className="panel-header">
             <div>

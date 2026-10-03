@@ -1,16 +1,26 @@
-﻿import {
+import {
   navigationItems,
+  roleLabels,
+  roleProfiles,
   type PageKey,
+  type UserRole,
 } from '../app/navigation'
 
 interface HeaderProps {
   activePage: PageKey
+  role: UserRole
+  onRoleChange: (role: UserRole) => void
 }
 
-function Header({ activePage }: HeaderProps) {
+function Header({
+  activePage,
+  role,
+  onRoleChange,
+}: HeaderProps) {
   const current = navigationItems.find(
     (item) => item.key === activePage,
   )
+  const profile = roleProfiles[role]
 
   return (
     <header className="topbar">
@@ -25,19 +35,27 @@ function Header({ activePage }: HeaderProps) {
       </div>
 
       <div className="topbar-actions">
-        <button type="button" className="icon-button">
-          ?
-        </button>
-
-        <button type="button" className="icon-button">
-          !
-        </button>
+        <label className="prototype-role-control">
+          <span>Vista del prototipo</span>
+          <select
+            value={role}
+            onChange={(event) =>
+              onRoleChange(event.target.value as UserRole)
+            }
+          >
+            <option value="administrator">Administrador</option>
+            <option value="seller">Vendedor</option>
+            <option value="manager">Gerente</option>
+          </select>
+        </label>
 
         <div className="profile">
-          <div className="profile-avatar">CR</div>
+          <div className="profile-avatar">
+            {profile.initials}
+          </div>
           <div>
-            <strong>Carlos Rivera</strong>
-            <span>Administrador</span>
+            <strong>{profile.name}</strong>
+            <span>{roleLabels[role]}</span>
           </div>
         </div>
       </div>

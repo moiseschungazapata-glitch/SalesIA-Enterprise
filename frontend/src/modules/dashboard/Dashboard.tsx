@@ -4,13 +4,18 @@ import {
   inventory,
   sales,
 } from '../../services/mockData'
-import type { PageKey } from '../../app/navigation'
+import type {
+  PageKey,
+  UserRole,
+} from '../../app/navigation'
 
 interface DashboardProps {
+  role: UserRole
   onNavigate: (page: PageKey) => void
 }
 
-function Dashboard({ onNavigate }: DashboardProps) {
+function Dashboard({ role, onNavigate }: DashboardProps) {
+  const canRegisterSale = role === 'administrator'
   const criticalProducts = inventory.filter(
     (item) => item.stock <= item.minimum,
   )
@@ -33,13 +38,15 @@ function Dashboard({ onNavigate }: DashboardProps) {
         title="Dashboard"
         description="Visión general de la operación comercial de SalesIA."
         action={
-          <button
-            className="primary-button compact"
-            type="button"
-            onClick={() => onNavigate('sales')}
-          >
-            + Nueva venta
-          </button>
+          canRegisterSale ? (
+            <button
+              className="primary-button compact"
+              type="button"
+              onClick={() => onNavigate('sales')}
+            >
+              + Nueva venta
+            </button>
+          ) : undefined
         }
       />
 
@@ -255,7 +262,7 @@ function Dashboard({ onNavigate }: DashboardProps) {
               <h2>Módulos</h2>
 
               <p>
-                Accede rápidamente a la operación y análisis.
+                Accede rápidamente a los módulos operativos.
               </p>
             </div>
           </div>
@@ -266,7 +273,9 @@ function Dashboard({ onNavigate }: DashboardProps) {
               onClick={() => onNavigate('customers')}
             >
               <span>Clientes</span>
-              <small>Gestionar cartera</small>
+              <small>
+                {canRegisterSale ? 'Gestionar cartera' : 'Consultar cartera'}
+              </small>
               <strong>→</strong>
             </button>
 
@@ -275,25 +284,27 @@ function Dashboard({ onNavigate }: DashboardProps) {
               onClick={() => onNavigate('products')}
             >
               <span>Productos</span>
-              <small>Catálogo y stock</small>
+              <small>
+                {canRegisterSale ? 'Gestionar catálogo' : 'Consultar catálogo'}
+              </small>
               <strong>→</strong>
             </button>
 
             <button
               type="button"
-              onClick={() => onNavigate('analytics')}
+              onClick={() => onNavigate('sales')}
             >
-              <span>Analytics</span>
-              <small>Resultados estadísticos</small>
+              <span>Ventas</span>
+              <small>Historial comercial</small>
               <strong>→</strong>
             </button>
 
             <button
               type="button"
-              onClick={() => onNavigate('insights')}
+              onClick={() => onNavigate('inventory')}
             >
-              <span>Insights</span>
-              <small>Hallazgos comerciales</small>
+              <span>Inventario</span>
+              <small>Existencias y movimientos</small>
               <strong>→</strong>
             </button>
           </div>
