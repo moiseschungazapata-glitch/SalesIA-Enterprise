@@ -58,7 +58,7 @@ function Sidebar({
       <div className="sidebar-footer">
         <div className="sidebar-status">
           <span className="status-indicator" />
-          Prototipo UX activo
+          Sesión segura activa
         </div>
 
         <button

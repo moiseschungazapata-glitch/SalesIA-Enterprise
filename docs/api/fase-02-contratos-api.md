@@ -844,3 +844,11 @@ generado por FastAPI sera la especificacion ejecutable.
 - No existen operaciones de borrado para registros con historial.
 - Los modulos reservados para fases posteriores no publican endpoints.
 - El contrato puede implementarse con FastAPI sin redefinir reglas de negocio.
+
+## 17. Estado de implementacion
+
+La fase 05 implementa la infraestructura comun, `/auth` y `/users`. Los
+contratos de clientes, categorias y productos se implementan en la fase 07; los
+de inventario y ventas en la fase 08; y el resumen comercial junto con la
+integracion visual se completa en sus fases correspondientes. No se publican
+endpoints ficticios ni respuestas simuladas desde el backend.

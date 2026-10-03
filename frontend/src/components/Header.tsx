@@ -1,26 +1,28 @@
 import {
   navigationItems,
   roleLabels,
-  roleProfiles,
   type PageKey,
-  type UserRole,
 } from '../app/navigation'
+import type { AuthUser } from '../types/api'
 
 interface HeaderProps {
   activePage: PageKey
-  role: UserRole
-  onRoleChange: (role: UserRole) => void
+  user: AuthUser
 }
 
-function Header({
-  activePage,
-  role,
-  onRoleChange,
-}: HeaderProps) {
+function getInitials(name: string) {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join('')
+}
+
+function Header({ activePage, user }: HeaderProps) {
   const current = navigationItems.find(
     (item) => item.key === activePage,
   )
-  const profile = roleProfiles[role]
 
   return (
     <header className="topbar">
@@ -35,27 +37,13 @@ function Header({
       </div>
 
       <div className="topbar-actions">
-        <label className="prototype-role-control">
-          <span>Vista del prototipo</span>
-          <select
-            value={role}
-            onChange={(event) =>
-              onRoleChange(event.target.value as UserRole)
-            }
-          >
-            <option value="administrator">Administrador</option>
-            <option value="seller">Vendedor</option>
-            <option value="manager">Gerente</option>
-          </select>
-        </label>
-
         <div className="profile">
           <div className="profile-avatar">
-            {profile.initials}
+            {getInitials(user.name)}
           </div>
           <div>
-            <strong>{profile.name}</strong>
-            <span>{roleLabels[role]}</span>
+            <strong>{user.name}</strong>
+            <span>{roleLabels[user.role]}</span>
           </div>
         </div>
       </div>

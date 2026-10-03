@@ -69,23 +69,18 @@ export const roleLabels: Record<UserRole, string> = {
   manager: 'Gerente',
 }
 
-export const roleProfiles: Record<
-  UserRole,
-  { name: string; initials: string }
-> = {
-  administrator: {
-    name: 'Carlos Rivera',
-    initials: 'CR',
-  },
-  seller: {
-    name: 'María Torres',
-    initials: 'MT',
-  },
-  manager: {
-    name: 'Lucía Vega',
-    initials: 'LV',
-  },
+export const pagePaths: Record<PageKey, string> = {
+  dashboard: '/dashboard',
+  sales: '/ventas',
+  customers: '/clientes',
+  products: '/productos',
+  inventory: '/inventario',
+  users: '/usuarios',
 }
+
+const pathPages = Object.fromEntries(
+  Object.entries(pagePaths).map(([page, path]) => [path, page]),
+) as Record<string, PageKey>
 
 export function getNavigationItems(role: UserRole) {
   return navigationItems.filter((item) =>
@@ -105,4 +100,8 @@ export function canAccessPage(
     (item) =>
       item.key === page && item.roles.includes(role),
   )
+}
+
+export function getPageByPath(pathname: string) {
+  return pathPages[pathname]
 }

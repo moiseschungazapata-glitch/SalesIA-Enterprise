@@ -26,6 +26,10 @@ Desarrollo basado en las 16 fases del Plan Integral de Desarrollo.
 - [Fase 04 - Diccionario de datos](docs/database/fase-04-diccionario-datos.md)
 - [Fase 04 - Activacion en Supabase](docs/database/fase-04-supabase.md)
 - [Fase 04 - Verificacion y cierre](docs/database/fase-04-cierre.md)
+- [Fase 05 - Backend y API](docs/backend/fase-05-api.md)
+- [Fase 05 - Administrador inicial](docs/backend/fase-05-administrador.md)
+- [Fase 05 - Verificacion y cierre](docs/backend/fase-05-cierre.md)
+- [Fase 06 - Frontend React](docs/frontend/fase-06-frontend-react.md)
 
 ## Estado actual
 
@@ -33,7 +37,10 @@ Desarrollo basado en las 16 fases del Plan Integral de Desarrollo.
 - Fase 02: completa.
 - Fase 03: completa.
 - Fase 04: completa y verificada en Supabase.
-- Siguiente fase: 05 - Backend/API.
+- Fase 05: completada y verificada con el administrador inicial activo en Supabase.
+- Fase 06: completada; autenticacion, rutas y usuarios conectados a la API real.
+- Siguiente fase: 07 - Clientes y productos.
 
-El frontend actual es un prototipo UX con datos locales. La autenticacion,
-persistencia, API y reglas transaccionales se implementan en fases posteriores.
+El frontend utiliza autenticacion JWT y datos reales para la sesion y la gestion
+de usuarios. Clientes, productos, ventas, inventario y analitica conservan datos
+demostrativos hasta sus fases funcionales correspondientes.

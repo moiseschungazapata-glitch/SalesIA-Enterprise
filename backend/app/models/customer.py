@@ -17,7 +17,7 @@ class Customer(TimestampMixin, Base):
             "(customer_type = 'company' AND document_type = 'RUC' "
             "AND document_number ~ '^[0-9]{11}$')",
             name="document_matches_customer_type",
-        ),
+        ).ddl_if(dialect="postgresql"),
         UniqueConstraint("company_id", "document_number"),
         Index("ix_customers_company_active", "company_id", "active"),
         Index("ix_customers_company_name", "company_id", "name"),

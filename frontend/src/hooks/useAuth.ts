@@ -1,19 +1,11 @@
-﻿import { useState } from 'react'
+import { useContext } from 'react'
+import { AuthContext } from './auth-context'
 
 export function useAuth() {
-  const [authenticated, setAuthenticated] = useState(false)
-
-  const login = () => {
-    setAuthenticated(true)
+  const context = useContext(AuthContext)
+  if (!context) {
+    throw new Error('useAuth debe usarse dentro de AuthProvider')
   }
 
-  const logout = () => {
-    setAuthenticated(false)
-  }
-
-  return {
-    authenticated,
-    login,
-    logout,
-  }
+  return context
 }

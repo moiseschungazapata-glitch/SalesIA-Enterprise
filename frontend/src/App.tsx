@@ -1,11 +1,20 @@
-import { useState } from 'react'
+import {
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+} from 'react-router-dom'
 import './App.css'
 import {
   canAccessPage,
   getDefaultPage,
+  getPageByPath,
+  pagePaths,
   type PageKey,
-  type UserRole,
 } from './app/navigation'
+import StateMessage from './components/StateMessage'
+import { useAuth } from './hooks/useAuth'
 import MainLayout from './layouts/MainLayout'
 import Login from './modules/auth/Login'
 import Customers from './modules/customers/Customers'
@@ -14,84 +23,130 @@ import Inventory from './modules/inventory/Inventory'
 import Products from './modules/products/Products'
 import Sales from './modules/sales/Sales'
 import Users from './modules/users/Users'
+import type { AuthUser } from './types/api'
 
-function App() {
-  const [authenticated, setAuthenticated] = useState(false)
-  const [role, setRole] =
-    useState<UserRole>('administrator')
-  const [activePage, setActivePage] =
-    useState<PageKey>('dashboard')
+interface AuthenticatedApplicationProps {
+  user: AuthUser
+  onLogout: () => void
+}
 
-  const changeRole = (nextRole: UserRole) => {
-    setRole(nextRole)
-    setActivePage(getDefaultPage(nextRole))
-  }
+function AuthenticatedApplication({
+  user,
+  onLogout,
+}: AuthenticatedApplicationProps) {
+  const location = useLocation()
+  const navigate = useNavigate()
+  const defaultPage = getDefaultPage(user.role)
+  const requestedPage = getPageByPath(location.pathname)
+  const activePage =
+    requestedPage && canAccessPage(user.role, requestedPage)
+      ? requestedPage
+      : defaultPage
 
-  if (!authenticated) {
-    return (
-      <Login
-        onLogin={() => {
-          setAuthenticated(true)
-          setActivePage(getDefaultPage(role))
-        }}
-      />
-    )
-  }
-
-  const safePage = canAccessPage(role, activePage)
-    ? activePage
-    : getDefaultPage(role)
-
-  const renderPage = () => {
-    switch (safePage) {
-      case 'dashboard':
-        return (
-          <Dashboard
-            role={role}
-            onNavigate={setActivePage}
-          />
-        )
-
-      case 'sales':
-        return <Sales role={role} />
-
-      case 'customers':
-        return <Customers role={role} />
-
-      case 'products':
-        return <Products role={role} />
-
-      case 'inventory':
-        return <Inventory role={role} />
-
-      case 'users':
-        return <Users />
-
-      default:
-        return (
-          <Dashboard
-            role={role}
-            onNavigate={setActivePage}
-          />
-        )
+  const goToPage = (page: PageKey) => {
+    if (canAccessPage(user.role, page)) {
+      navigate(pagePaths[page])
     }
   }
 
+  const guarded = (page: PageKey, content: React.ReactNode) =>
+    canAccessPage(user.role, page) ? (
+      content
+    ) : (
+      <Navigate to={pagePaths[defaultPage]} replace />
+    )
+
   return (
     <MainLayout
-      activePage={safePage}
-      role={role}
-      onRoleChange={changeRole}
-      onNavigate={setActivePage}
-      onLogout={() => {
-        setAuthenticated(false)
-        setRole('administrator')
-        setActivePage('dashboard')
-      }}
+      activePage={activePage}
+      user={user}
+      onNavigate={goToPage}
+      onLogout={onLogout}
     >
-      {renderPage()}
+      <Routes>
+        <Route
+          path="/"
+          element={<Navigate to={pagePaths[defaultPage]} replace />}
+        />
+        <Route
+          path={pagePaths.dashboard}
+          element={guarded(
+            'dashboard',
+            <Dashboard role={user.role} onNavigate={goToPage} />,
+          )}
+        />
+        <Route
+          path={pagePaths.sales}
+          element={guarded('sales', <Sales role={user.role} />)}
+        />
+        <Route
+          path={pagePaths.customers}
+          element={guarded(
+            'customers',
+            <Customers role={user.role} />,
+          )}
+        />
+        <Route
+          path={pagePaths.products}
+          element={guarded(
+            'products',
+            <Products role={user.role} />,
+          )}
+        />
+        <Route
+          path={pagePaths.inventory}
+          element={guarded(
+            'inventory',
+            <Inventory role={user.role} />,
+          )}
+        />
+        <Route
+          path={pagePaths.users}
+          element={guarded(
+            'users',
+            <Users currentUserId={user.id} />,
+          )}
+        />
+        <Route
+          path="/login"
+          element={<Navigate to={pagePaths[defaultPage]} replace />}
+        />
+        <Route
+          path="*"
+          element={<Navigate to={pagePaths[defaultPage]} replace />}
+        />
+      </Routes>
     </MainLayout>
   )
+}
+
+function App() {
+  const { status, user, logout } = useAuth()
+
+  if (status === 'loading') {
+    return (
+      <main className="login-page">
+        <section className="login-panel session-loader">
+          <StateMessage
+            type="loading"
+            title="Restaurando tu sesión"
+            description="Estamos validando de forma segura tu acceso con la API."
+          />
+        </section>
+      </main>
+    )
+  }
+
+  if (status === 'anonymous' || !user) {
+    return (
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
+    )
+  }
+
+  return <AuthenticatedApplication user={user} onLogout={logout} />
 }
 
 export default App

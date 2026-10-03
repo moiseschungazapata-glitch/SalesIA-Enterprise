@@ -2739,7 +2739,7 @@ body {
    FASE 03 - PROTOTYPE REVIEW CONTROLS
 ======================================================= */
 
-.prototype-banner {
+.integration-banner {
   padding: 8px 24px;
   border-bottom: 1px solid #BFDBFE;
   background: #EFF6FF;
@@ -2747,30 +2747,6 @@ body {
   font-size: 11px;
   font-weight: 600;
   line-height: 1.5;
-}
-
-.prototype-role-control {
-  display: grid;
-  gap: 3px;
-  color: var(--salesia-text-soft);
-  font-size: 9px;
-  font-weight: 800;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-}
-
-.prototype-role-control select {
-  min-width: 138px;
-  padding: 7px 28px 7px 10px;
-  border: 1px solid var(--salesia-gray-300);
-  border-radius: 8px;
-  background: var(--salesia-white);
-  color: var(--salesia-text);
-  font: inherit;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0;
-  text-transform: none;
 }
 
 .page-actions {
@@ -2847,10 +2823,6 @@ body {
 }
 
 @media (max-width: 900px) {
-  .prototype-role-control span {
-    display: none;
-  }
-
   .profile > div:last-child {
     display: none;
   }
@@ -2865,12 +2837,8 @@ body {
 }
 
 @media (max-width: 760px) {
-  .prototype-banner {
+  .integration-banner {
     padding: 7px 14px;
-  }
-
-  .prototype-role-control select {
-    min-width: 112px;
   }
 
   .page-actions,
@@ -2902,5 +2870,71 @@ body {
   .nav-item.active .nav-dot {
     background: var(--salesia-white);
     color: var(--salesia-blue);
+  }
+}
+
+/* =======================================================
+   FASE 06 - API, SESSION AND REAL DATA STATES
+======================================================= */
+
+.session-loader {
+  display: grid;
+  place-items: center;
+}
+
+.session-loader .state-message {
+  width: 100%;
+}
+
+.form-success {
+  padding: 11px 14px;
+  border: 1px solid #BBF7D0;
+  border-radius: 10px;
+  background: var(--salesia-success-soft);
+  color: var(--salesia-success);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.current-user-label {
+  display: inline-flex;
+  margin-left: 8px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #EFF6FF;
+  color: var(--salesia-blue);
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 16px;
+}
+
+.pagination-controls span {
+  color: var(--salesia-text-soft);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.secondary-button:disabled,
+.logout-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+@media (max-width: 760px) {
+  .integration-banner {
+    padding: 7px 14px;
+  }
+
+  .pagination-controls {
+    justify-content: space-between;
   }
 }

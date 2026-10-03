@@ -1,16 +1,13 @@
 import type { ReactNode } from 'react'
-import type {
-  PageKey,
-  UserRole,
-} from '../app/navigation'
+import type { PageKey } from '../app/navigation'
 import Header from '../components/Header'
 import Sidebar from '../components/Sidebar'
+import type { AuthUser } from '../types/api'
 
 interface MainLayoutProps {
   children: ReactNode
   activePage: PageKey
-  role: UserRole
-  onRoleChange: (role: UserRole) => void
+  user: AuthUser
   onNavigate: (page: PageKey) => void
   onLogout: () => void
 }
@@ -18,8 +15,7 @@ interface MainLayoutProps {
 function MainLayout({
   children,
   activePage,
-  role,
-  onRoleChange,
+  user,
   onNavigate,
   onLogout,
 }: MainLayoutProps) {
@@ -27,21 +23,17 @@ function MainLayout({
     <div className="main-layout">
       <Sidebar
         activePage={activePage}
-        role={role}
+        role={user.role}
         onNavigate={onNavigate}
         onLogout={onLogout}
       />
 
       <div className="main-area">
-        <Header
-          activePage={activePage}
-          role={role}
-          onRoleChange={onRoleChange}
-        />
+        <Header activePage={activePage} user={user} />
 
-        <div className="prototype-banner" role="status">
-          Prototipo de fase 03: los datos y el cambio de rol son
-          demostrativos. La autenticación real corresponde a la fase 05.
+        <div className="integration-banner" role="status">
+          Sesión y usuarios conectados a la API. Los datos comerciales
+          siguen siendo demostrativos hasta las fases 07 y 08.
         </div>
 
         <main className="content-area">
