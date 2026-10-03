@@ -849,6 +849,7 @@ generado por FastAPI sera la especificacion ejecutable.
 
 La fase 05 implemento la infraestructura comun, `/auth` y `/users`. Los
 contratos de clientes, categorias y productos quedaron implementados en la fase
-07; los de inventario y ventas se implementan en la fase 08; y el resumen comercial junto con la
-integracion visual se completa en sus fases correspondientes. No se publican
-endpoints ficticios ni respuestas simuladas desde el backend.
+07. La fase 08 completo inventario, movimientos, ventas, detalles y pagos con
+control transaccional e idempotencia. El resumen comercial y los modulos
+analiticos se completan en sus fases correspondientes. No se publican endpoints
+ficticios ni respuestas simuladas desde el backend.

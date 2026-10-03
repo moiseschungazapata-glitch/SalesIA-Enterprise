@@ -152,3 +152,129 @@ export interface ProductUpdateRequest {
   unit_price?: string
   active?: boolean
 }
+
+export interface InventoryRecord {
+  product_id: number
+  sku: string
+  product_name: string
+  category_name: string
+  stock: number
+  active: boolean
+  updated_at: string
+}
+
+export interface InventoryListResponse {
+  items: InventoryRecord[]
+  total: number
+  page: number
+  page_size: number
+}
+
+export type InventoryMovementType =
+  | 'initial'
+  | 'entry'
+  | 'adjustment_in'
+  | 'adjustment_out'
+  | 'sale'
+
+export type ManualInventoryMovementType = Exclude<
+  InventoryMovementType,
+  'sale'
+>
+
+export interface InventoryMovementRecord {
+  id: number
+  product_id: number
+  sku: string
+  product_name: string
+  movement_type: InventoryMovementType
+  quantity: number
+  stock_before: number
+  stock_after: number
+  reason: string
+  user_id: number
+  user_name: string
+  sale_id: number | null
+  sale_number: string | null
+  created_at: string
+}
+
+export interface InventoryMovementListResponse {
+  items: InventoryMovementRecord[]
+  total: number
+  page: number
+  page_size: number
+}
+
+export interface InventoryMovementCreateRequest {
+  product_id: number
+  movement_type: ManualInventoryMovementType
+  quantity: number
+  reason: string
+}
+
+export type PaymentMethod = 'cash' | 'card' | 'bank_transfer'
+
+export interface SaleParty {
+  id: number
+  name: string
+}
+
+export interface SaleItemRecord {
+  product_id: number
+  sku: string
+  product_name: string
+  category_name: string
+  quantity: number
+  unit_price: string
+  subtotal: string
+}
+
+export interface SalePaymentRecord {
+  method: PaymentMethod
+  amount: string
+  status: 'completed'
+  paid_at: string
+}
+
+export interface SaleRecord {
+  id: number
+  number: string
+  status: 'confirmed'
+  created_at: string
+  customer: SaleParty
+  seller: SaleParty
+  items: SaleItemRecord[]
+  payment: SalePaymentRecord
+  currency: 'PEN'
+  total: string
+}
+
+export interface SaleListItem {
+  id: number
+  number: string
+  status: 'confirmed'
+  created_at: string
+  customer: SaleParty
+  seller: SaleParty
+  items_count: number
+  payment_method: PaymentMethod
+  currency: 'PEN'
+  total: string
+}
+
+export interface SaleListResponse {
+  items: SaleListItem[]
+  total: number
+  page: number
+  page_size: number
+}
+
+export interface SaleCreateRequest {
+  customer_id: number
+  payment_method: PaymentMethod
+  items: Array<{
+    product_id: number
+    quantity: number
+  }>
+}

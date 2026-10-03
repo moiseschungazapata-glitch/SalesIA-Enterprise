@@ -54,6 +54,14 @@ async def app_error_handler(_request: Request, exc: AppError) -> JSONResponse:
 
 
 async def validation_error_handler(_request: Request, exc: RequestValidationError) -> JSONResponse:
+    business_validation_codes = {
+        "empty_sale": ("EMPTY_SALE", "La venta debe incluir productos"),
+        "invalid_quantity": ("INVALID_QUANTITY", "La cantidad debe ser mayor que cero"),
+        "invalid_payment_method": (
+            "INVALID_PAYMENT_METHOD",
+            "El metodo de pago no es valido",
+        ),
+    }
     fields = [
         {
             "field": ".".join(str(part) for part in error["loc"] if part != "body"),
@@ -62,6 +70,14 @@ async def validation_error_handler(_request: Request, exc: RequestValidationErro
         }
         for error in exc.errors()
     ]
+    for error in exc.errors():
+        business_error = business_validation_codes.get(error["type"])
+        if business_error is not None:
+            code, message = business_error
+            return JSONResponse(
+                status_code=422,
+                content=error_payload(code, message, {"fields": fields}),
+            )
     return JSONResponse(
         status_code=422,
         content=error_payload(

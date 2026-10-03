@@ -32,8 +32,8 @@ function MainLayout({
         <Header activePage={activePage} user={user} />
 
         <div className="integration-banner" role="status">
-          Sesión, usuarios, clientes y productos conectados a la API.
-          Ventas e inventario siguen demostrativos hasta la fase 08.
+          Sesión, usuarios, clientes, productos, inventario y ventas conectados
+          a la API y a la base de datos.
         </div>
 
         <main className="content-area">

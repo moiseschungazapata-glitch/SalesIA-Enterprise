@@ -31,6 +31,7 @@ Desarrollo basado en las 16 fases del Plan Integral de Desarrollo.
 - [Fase 05 - Verificacion y cierre](docs/backend/fase-05-cierre.md)
 - [Fase 06 - Frontend React](docs/frontend/fase-06-frontend-react.md)
 - [Fase 07 - Clientes y productos](docs/catalog/fase-07-clientes-productos.md)
+- [Fase 08 - Ventas e inventario](docs/operations/fase-08-ventas-inventario.md)
 
 ## Estado actual
 
@@ -41,8 +42,9 @@ Desarrollo basado en las 16 fases del Plan Integral de Desarrollo.
 - Fase 05: completada y verificada con el administrador inicial activo en Supabase.
 - Fase 06: completada; autenticacion, rutas y usuarios conectados a la API real.
 - Fase 07: completada; clientes, categorias y productos conectados a Supabase.
-- Siguiente fase: 08 - Ventas, pedidos e inventario.
+- Fase 08: completada; ventas, pagos e inventario operan de forma transaccional.
+- Siguiente fase: 09 - Estadistica descriptiva y probabilidad.
 
-El frontend utiliza datos reales para la sesion, usuarios, clientes, categorias
-y productos. Ventas, inventario y analitica conservan datos demostrativos hasta
-sus fases funcionales correspondientes.
+El frontend utiliza datos reales para la sesion, usuarios, clientes, categorias,
+productos, ventas e inventario. Los modulos analiticos conservan datos
+demostrativos hasta sus fases funcionales correspondientes.

@@ -111,10 +111,15 @@ export function apiGet<T>(path: string, signal?: AbortSignal) {
   return apiRequest<T>(path, { signal })
 }
 
-export function apiPost<T>(path: string, body: unknown) {
+export function apiPost<T>(
+  path: string,
+  body: unknown,
+  headers?: HeadersInit,
+) {
   return apiRequest<T>(path, {
     method: 'POST',
     body: JSON.stringify(body),
+    headers,
   })
 }
 

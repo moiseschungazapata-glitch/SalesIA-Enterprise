@@ -1,113 +1,86 @@
-﻿import { useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { UserRole } from '../../app/navigation'
 import PageHeader from '../../components/PageHeader'
-import {
-  inventory as initialInventory,
-} from '../../services/mockData'
-import type { InventoryItem } from '../../types'
-
-type MovementType = 'Entrada' | 'Salida'
+import StateMessage from '../../components/StateMessage'
+import { useInventory, useInventoryMovements } from '../../hooks/useOperations'
+import { createInventoryMovement } from '../../services/operations'
+import type { ManualInventoryMovementType } from '../../types/api'
 
 interface InventoryProps {
   role: UserRole
 }
 
+const movementLabels: Record<string, string> = {
+  initial: 'Stock inicial',
+  entry: 'Entrada',
+  adjustment_in: 'Ajuste de entrada',
+  adjustment_out: 'Ajuste de salida',
+  sale: 'Venta',
+}
+
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat('es-PE', {
+    dateStyle: 'short', timeStyle: 'short',
+  }).format(new Date(value))
+}
+
 function Inventory({ role }: InventoryProps) {
   const canManage = role === 'administrator'
-  const [inventoryList, setInventoryList] =
-    useState<InventoryItem[]>(initialInventory)
-
+  const canAudit = role !== 'seller'
   const [search, setSearch] = useState('')
-  const [showMovementForm, setShowMovementForm] =
-    useState(false)
-
-  const [selectedProduct, setSelectedProduct] =
-    useState('')
-
+  const [status, setStatus] = useState<'active' | 'inactive' | ''>('')
+  const [showForm, setShowForm] = useState(false)
+  const [productId, setProductId] = useState('')
   const [movementType, setMovementType] =
-    useState<MovementType>('Entrada')
-
+    useState<ManualInventoryMovementType>('entry')
   const [quantity, setQuantity] = useState('1')
+  const [reason, setReason] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [feedback, setFeedback] = useState('')
+  const [formError, setFormError] = useState('')
 
-  const filteredInventory = useMemo(() => {
-    return inventoryList.filter(
-      (item) =>
-        item.product
-          .toLowerCase()
-          .includes(search.toLowerCase()) ||
-        item.category
-          .toLowerCase()
-          .includes(search.toLowerCase()),
-    )
-  }, [inventoryList, search])
-
-  const criticalProducts = inventoryList.filter(
-    (item) => item.stock <= item.minimum,
+  const inventory = useInventory({
+    page: 1, pageSize: 100, search, status,
+  })
+  const movements = useInventoryMovements(canAudit)
+  const items = inventory.data.items
+  const totalUnits = useMemo(
+    () => items.reduce((sum, item) => sum + item.stock, 0), [items],
   )
+  const outOfStock = items.filter((item) => item.stock === 0).length
 
-  const totalUnits = inventoryList.reduce(
-    (sum, item) => sum + item.stock,
-    0,
-  )
-
-  const handleMovement = (
-    event: React.FormEvent<HTMLFormElement>,
-  ) => {
+  const handleMovement = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-
-    const amount = Number(quantity)
-
-    if (
-      !selectedProduct ||
-      amount <= 0
-    ) {
+    setFormError('')
+    setFeedback('')
+    const parsedQuantity = Number(quantity)
+    if (!productId || !reason.trim() || parsedQuantity < 1) {
+      setFormError('Completa producto, cantidad y motivo.')
       return
     }
-
-    const productId = Number(selectedProduct)
-
-    const currentProduct = inventoryList.find(
-      (item) => item.id === productId,
-    )
-
-    if (!currentProduct) {
-      return
+    setSaving(true)
+    try {
+      const created = await createInventoryMovement({
+        product_id: Number(productId),
+        movement_type: movementType,
+        quantity: parsedQuantity,
+        reason: reason.trim(),
+      })
+      setFeedback(`Movimiento guardado. Nuevo stock: ${created.stock_after}.`)
+      setProductId('')
+      setMovementType('entry')
+      setQuantity('1')
+      setReason('')
+      setShowForm(false)
+      inventory.reload()
+      movements.reload()
+    } catch (error) {
+      setFormError(
+        error instanceof Error ? error.message : 'No se pudo guardar el movimiento.',
+      )
+    } finally {
+      setSaving(false)
     }
-
-    if (
-      movementType === 'Salida' &&
-      amount > currentProduct.stock
-    ) {
-      return
-    }
-
-    const newStock =
-      movementType === 'Entrada'
-        ? currentProduct.stock + amount
-        : currentProduct.stock - amount
-
-    const movementLabel =
-      movementType === 'Entrada'
-        ? `+${amount}`
-        : `-${amount}`
-
-    setInventoryList((current) =>
-      current.map((item) =>
-        item.id === productId
-          ? {
-              ...item,
-              stock: newStock,
-              movement: movementLabel,
-              updated: 'Ahora',
-            }
-          : item,
-      ),
-    )
-
-    setSelectedProduct('')
-    setMovementType('Entrada')
-    setQuantity('1')
-    setShowMovementForm(false)
   }
 
   return (
@@ -115,165 +88,78 @@ function Inventory({ role }: InventoryProps) {
       <PageHeader
         eyebrow="CONTROL OPERATIVO"
         title="Inventario"
-        description={
-          canManage
-            ? 'Consulta existencias y registra movimientos autorizados.'
-            : 'Consulta las existencias disponibles según tu perfil.'
-        }
-        action={
-          canManage ? (
-            <button
-              type="button"
-              className="primary-button compact"
-              onClick={() =>
-                setShowMovementForm(
-                  (value) => !value,
-                )
-              }
-            >
-              {showMovementForm
-                ? 'Cerrar'
-                : '+ Movimiento'}
-            </button>
-          ) : undefined
-        }
+        description="Existencias reales y trazabilidad de cada cambio de stock."
+        action={canManage ? (
+          <button
+            type="button"
+            className="primary-button compact"
+            onClick={() => setShowForm((value) => !value)}
+          >
+            {showForm ? 'Cerrar' : '+ Movimiento'}
+          </button>
+        ) : undefined}
       />
 
       <section className="kpi-grid compact-grid">
-        <article className="mini-stat">
-          <span>Unidades disponibles</span>
-          <strong>{totalUnits}</strong>
-        </article>
-
-        <article className="mini-stat">
-          <span>Productos críticos</span>
-          <strong>
-            {criticalProducts.length}
-          </strong>
-        </article>
-
-        <article className="mini-stat">
-          <span>Productos agotados</span>
-          <strong>
-            {
-              inventoryList.filter(
-                (item) => item.stock === 0,
-              ).length
-            }
-          </strong>
-        </article>
-
-        <article className="mini-stat">
-          <span>
-            {role === 'seller'
-              ? 'Productos consultables'
-              : 'Movimientos visibles'}
-          </span>
-          <strong>
-            {inventoryList.length}
-          </strong>
-        </article>
+        <article className="mini-stat"><span>Unidades disponibles</span><strong>{totalUnits}</strong></article>
+        <article className="mini-stat"><span>Productos registrados</span><strong>{inventory.data.total}</strong></article>
+        <article className="mini-stat"><span>Productos agotados</span><strong>{outOfStock}</strong></article>
+        <article className="mini-stat"><span>Movimientos visibles</span><strong>{canAudit ? movements.data.total : '—'}</strong></article>
       </section>
 
-      {canManage && showMovementForm && (
+      {feedback && (
+        <StateMessage type="success" title="Inventario actualizado" description={feedback} />
+      )}
+
+      {canManage && showForm && (
         <section className="panel form-panel">
           <div className="panel-header">
             <div>
-              <span className="eyebrow">
-                MOVIMIENTO DE INVENTARIO
-              </span>
-
-              <h2>
-                Registrar movimiento
-              </h2>
-
-              <p>
-                Actualiza temporalmente el stock del
-                producto.
-              </p>
+              <span className="eyebrow">MOVIMIENTO AUTORIZADO</span>
+              <h2>Registrar movimiento</h2>
+              <p>La cantidad siempre es positiva; el tipo define si suma o resta.</p>
             </div>
           </div>
-
-          <form
-            className="entity-form"
-            onSubmit={handleMovement}
-          >
+          {formError && (
+            <StateMessage type="error" title="No se pudo guardar" description={formError} />
+          )}
+          <form className="entity-form" onSubmit={handleMovement}>
             <label>
               Producto
-              <select
-                value={selectedProduct}
-                onChange={(event) =>
-                  setSelectedProduct(
-                    event.target.value,
-                  )
-                }
-              >
-                <option value="">
-                  Seleccionar producto
-                </option>
-
-                {inventoryList.map((item) => (
-                  <option
-                    key={item.id}
-                    value={item.id}
-                  >
-                    {item.product} · Stock {item.stock}
+              <select value={productId} onChange={(event) => setProductId(event.target.value)}>
+                <option value="">Seleccionar producto</option>
+                {items.filter((item) => item.active).map((item) => (
+                  <option key={item.product_id} value={item.product_id}>
+                    {item.sku} · {item.product_name} · Stock {item.stock}
                   </option>
                 ))}
               </select>
             </label>
-
             <label>
-              Tipo de movimiento
+              Tipo
               <select
                 value={movementType}
-                onChange={(event) =>
-                  setMovementType(
-                    event.target.value as MovementType,
-                  )
-                }
+                onChange={(event) => setMovementType(
+                  event.target.value as ManualInventoryMovementType,
+                )}
               >
-                <option value="Entrada">
-                  Entrada
-                </option>
-
-                <option value="Salida">
-                  Salida
-                </option>
+                <option value="initial">Stock inicial</option>
+                <option value="entry">Entrada</option>
+                <option value="adjustment_in">Ajuste de entrada</option>
+                <option value="adjustment_out">Ajuste de salida</option>
               </select>
             </label>
-
             <label>
               Cantidad
-              <input
-                type="number"
-                min="1"
-                value={quantity}
-                onChange={(event) =>
-                  setQuantity(
-                    event.target.value,
-                  )
-                }
-              />
+              <input type="number" min="1" value={quantity} onChange={(event) => setQuantity(event.target.value)} />
             </label>
-
+            <label>
+              Motivo
+              <input value={reason} maxLength={500} onChange={(event) => setReason(event.target.value)} placeholder="Ej. Reposición de mercadería" />
+            </label>
             <div className="form-actions">
-              <button
-                type="button"
-                className="secondary-button"
-                onClick={() =>
-                  setShowMovementForm(false)
-                }
-              >
-                Cancelar
-              </button>
-
-              <button
-                type="submit"
-                className="primary-button"
-              >
-                Guardar movimiento
-              </button>
+              <button type="button" className="secondary-button" onClick={() => setShowForm(false)}>Cancelar</button>
+              <button type="submit" className="primary-button" disabled={saving}>{saving ? 'Guardando...' : 'Guardar movimiento'}</button>
             </div>
           </form>
         </section>
@@ -281,201 +167,68 @@ function Inventory({ role }: InventoryProps) {
 
       <section className="panel">
         <div className="panel-toolbar">
-          <input
-            className="search-input"
-            value={search}
-            onChange={(event) =>
-              setSearch(event.target.value)
-            }
-            placeholder="Buscar producto o categoría..."
-          />
-
-          <select className="select-input">
-            <option>Todos los estados</option>
-            <option>Normal</option>
-            <option>Revisar</option>
+          <input className="search-input" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar por SKU, producto o categoría..." />
+          <select className="select-input" value={status} onChange={(event) => setStatus(event.target.value as typeof status)}>
+            <option value="">Todos los estados</option>
+            <option value="active">Activos</option>
+            <option value="inactive">Inactivos</option>
           </select>
         </div>
-
-        <div className="results-info">
-          Mostrando {filteredInventory.length} de{' '}
-          {inventoryList.length} productos
-        </div>
-
-        <div className="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>Producto</th>
-                <th>Categoría</th>
-                <th>Stock actual</th>
-                <th>Mínimo</th>
-                {role !== 'seller' && <th>Movimiento</th>}
-                {role !== 'seller' && <th>Actualizado</th>}
-                <th>Estado</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {filteredInventory.map((item) => {
-                const critical =
-                  item.stock <= item.minimum
-
-                return (
-                  <tr key={item.id}>
-                    <td>
-                      <strong>
-                        {item.product}
-                      </strong>
-                    </td>
-
-                    <td>{item.category}</td>
-
-                    <td>
-                      <strong
-                        className={
-                          item.stock === 0
-                            ? 'danger-text'
-                            : critical
-                              ? 'warning-text'
-                              : ''
-                        }
-                      >
-                        {item.stock}
-                      </strong>
-                    </td>
-
-                    <td>{item.minimum}</td>
-
-                    {role !== 'seller' && (
-                      <td
-                        className={
-                          item.movement.startsWith('+')
-                            ? 'success-text'
-                            : 'danger-text'
-                        }
-                      >
-                        {item.movement}
-                      </td>
-                    )}
-
-                    {role !== 'seller' && (
-                      <td>{item.updated}</td>
-                    )}
-
-                    <td>
-                      <span
-                        className={`status-pill ${
-                          critical
-                            ? item.stock === 0
-                              ? 'danger'
-                              : 'warning'
-                            : 'success'
-                        }`}
-                      >
-                        {critical
-                          ? item.stock === 0
-                            ? 'Agotado'
-                            : 'Revisar'
-                          : 'Normal'}
-                      </span>
-                    </td>
+        {inventory.loading ? (
+          <StateMessage type="loading" title="Cargando inventario" />
+        ) : inventory.error ? (
+          <StateMessage type="error" title="No se pudo cargar" description={inventory.error} actionLabel="Reintentar" onAction={inventory.reload} />
+        ) : (
+          <div className="table-wrapper">
+            <table>
+              <thead><tr><th>Producto</th><th>Categoría</th><th>Stock</th><th>Actualizado</th><th>Estado</th></tr></thead>
+              <tbody>
+                {items.map((item) => (
+                  <tr key={item.product_id}>
+                    <td><strong>{item.product_name}</strong><br /><span className="muted-text">{item.sku}</span></td>
+                    <td>{item.category_name}</td>
+                    <td><strong className={item.stock === 0 ? 'danger-text' : ''}>{item.stock}</strong></td>
+                    <td>{formatDate(item.updated_at)}</td>
+                    <td><span className={`status-pill ${item.active ? 'success' : 'danger'}`}>{item.active ? 'Activo' : 'Inactivo'}</span></td>
                   </tr>
-                )
-              })}
-            </tbody>
-          </table>
+                ))}
+              </tbody>
+            </table>
+            {items.length === 0 && <div className="empty-state">No hay productos para mostrar.</div>}
+          </div>
+        )}
+      </section>
 
-          {filteredInventory.length === 0 && (
-            <div className="empty-state">
-              No se encontraron productos.
+      {canAudit && (
+        <section className="panel">
+          <div className="panel-header"><div><span className="eyebrow">TRAZABILIDAD</span><h2>Historial de movimientos</h2><p>Incluye ajustes manuales y salidas automáticas por venta.</p></div></div>
+          {movements.loading ? (
+            <StateMessage type="loading" title="Cargando movimientos" />
+          ) : movements.error ? (
+            <StateMessage type="error" title="No se pudo cargar" description={movements.error} actionLabel="Reintentar" onAction={movements.reload} />
+          ) : (
+            <div className="table-wrapper">
+              <table>
+                <thead><tr><th>Fecha</th><th>Producto</th><th>Tipo</th><th>Cantidad</th><th>Stock</th><th>Usuario</th><th>Referencia</th></tr></thead>
+                <tbody>
+                  {movements.data.items.map((movement) => (
+                    <tr key={movement.id}>
+                      <td>{formatDate(movement.created_at)}</td>
+                      <td><strong>{movement.product_name}</strong><br /><span className="muted-text">{movement.sku}</span></td>
+                      <td>{movementLabels[movement.movement_type]}</td>
+                      <td className={['adjustment_out', 'sale'].includes(movement.movement_type) ? 'danger-text' : 'success-text'}>{['adjustment_out', 'sale'].includes(movement.movement_type) ? '−' : '+'}{movement.quantity}</td>
+                      <td>{movement.stock_before} → {movement.stock_after}</td>
+                      <td>{movement.user_name}</td>
+                      <td>{movement.sale_number ?? movement.reason}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {movements.data.items.length === 0 && <div className="empty-state">Todavía no hay movimientos registrados.</div>}
             </div>
           )}
-        </div>
-      </section>
-
-      <section className="dashboard-grid">
-        <article className="panel">
-          <div className="panel-header">
-            <div>
-              <span className="eyebrow">
-                REFERENCIA OPERATIVA
-              </span>
-
-              <h2>Productos por revisar</h2>
-
-              <p>
-                Productos que requieren atención.
-              </p>
-            </div>
-          </div>
-
-          <div className="list">
-            {criticalProducts.map((item) => (
-              <div
-                className="list-row"
-                key={item.id}
-              >
-                <div>
-                  <strong>
-                    {item.product}
-                  </strong>
-
-                  <span>
-                    Mínimo: {item.minimum} unidades
-                  </span>
-                </div>
-
-                <strong className="danger-text">
-                  {item.stock} uds.
-                </strong>
-              </div>
-            ))}
-          </div>
-        </article>
-
-        <article className="panel">
-          <div className="panel-header">
-            <div>
-              <span className="eyebrow">
-                CONTROL
-              </span>
-
-              <h2>Estado del inventario</h2>
-
-              <p>
-                Resumen de disponibilidad actual.
-              </p>
-            </div>
-          </div>
-
-          <div className="inventory-health">
-            <div>
-              <span>Productos normales</span>
-              <strong>
-                {
-                  inventoryList.filter(
-                    (item) =>
-                      item.stock > item.minimum,
-                  ).length
-                }
-              </strong>
-            </div>
-
-            <div>
-              <span>Requieren revisión</span>
-              <strong>
-                {criticalProducts.length}
-              </strong>
-            </div>
-
-            <div>
-              <span>Unidades totales</span>
-              <strong>{totalUnits}</strong>
-            </div>
-          </div>
-        </article>
-      </section>
+        </section>
+      )}
     </div>
   )
 }
