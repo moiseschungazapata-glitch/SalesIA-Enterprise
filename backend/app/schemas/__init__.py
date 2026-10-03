@@ -49,3 +49,4 @@ __all__ = [
     "UserResponse",
     "UserUpdate",
 ]
+"""Pydantic request and response schemas."""

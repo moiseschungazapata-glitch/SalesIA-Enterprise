@@ -32,6 +32,7 @@ Desarrollo basado en las 16 fases del Plan Integral de Desarrollo.
 - [Fase 06 - Frontend React](docs/frontend/fase-06-frontend-react.md)
 - [Fase 07 - Clientes y productos](docs/catalog/fase-07-clientes-productos.md)
 - [Fase 08 - Ventas e inventario](docs/operations/fase-08-ventas-inventario.md)
+- [Fase 09 - Motor estadistico](docs/analytics/fase-09-motor-estadistico.md)
 
 ## Estado actual
 
@@ -43,8 +44,10 @@ Desarrollo basado en las 16 fases del Plan Integral de Desarrollo.
 - Fase 06: completada; autenticacion, rutas y usuarios conectados a la API real.
 - Fase 07: completada; clientes, categorias y productos conectados a Supabase.
 - Fase 08: completada; ventas, pagos e inventario operan de forma transaccional.
-- Siguiente fase: 09 - Estadistica descriptiva y probabilidad.
+- Fase 09: completada; media, mediana, variables, probabilidad y Bayes operan
+  mediante FastAPI y conservan datasets, observaciones e historial en Supabase.
+- Siguiente fase: 10 - Dashboard Analytics y graficos estadisticos.
 
 El frontend utiliza datos reales para la sesion, usuarios, clientes, categorias,
-productos, ventas e inventario. Los modulos analiticos conservan datos
-demostrativos hasta sus fases funcionales correspondientes.
+productos, ventas, inventario, estadistica y probabilidad. El dashboard
+ejecutivo conserva datos demostrativos hasta completar la fase 10.

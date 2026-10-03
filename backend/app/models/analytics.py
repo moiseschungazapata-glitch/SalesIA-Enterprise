@@ -4,6 +4,7 @@ from datetime import date, datetime
 from decimal import Decimal
 
 from sqlalchemy import (
+    JSON,
     CheckConstraint,
     Date,
     DateTime,
@@ -20,6 +21,8 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, TimestampMixin
+
+JSON_DOCUMENT = JSON().with_variant(JSONB, "postgresql")
 
 
 class Dataset(Base):
@@ -45,7 +48,9 @@ class Dataset(Base):
     name: Mapped[str] = mapped_column(String(160), nullable=False)
     description: Mapped[str | None] = mapped_column(Text)
     source_type: Mapped[str] = mapped_column(String(30), nullable=False)
-    filters: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default=text("'{}'::jsonb"))
+    filters: Mapped[dict] = mapped_column(
+        JSON_DOCUMENT, nullable=False, server_default=text("'{}'")
+    )
     period_start: Mapped[date | None] = mapped_column(Date)
     period_end: Mapped[date | None] = mapped_column(Date)
     created_at: Mapped[datetime] = mapped_column(
@@ -131,7 +136,7 @@ class StatisticalAnalysis(Base):
     analysis_type: Mapped[str] = mapped_column(String(30), nullable=False)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")
     parameters: Mapped[dict] = mapped_column(
-        JSONB, nullable=False, server_default=text("'{}'::jsonb")
+        JSON_DOCUMENT, nullable=False, server_default=text("'{}'")
     )
     error_message: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(
@@ -144,7 +149,7 @@ class StatisticalResult(Base):
     __tablename__ = "statistical_results"
     __table_args__ = (
         CheckConstraint(
-            "numeric_value IS NOT NULL OR text_value IS NOT NULL OR details <> '{}'::jsonb",
+            "numeric_value IS NOT NULL OR text_value IS NOT NULL OR details <> '{}'",
             name="result_has_value",
         ),
         UniqueConstraint("analysis_id", "variable_id", "metric"),
@@ -160,7 +165,9 @@ class StatisticalResult(Base):
     metric: Mapped[str] = mapped_column(String(60), nullable=False)
     numeric_value: Mapped[Decimal | None] = mapped_column(Numeric(20, 6))
     text_value: Mapped[str | None] = mapped_column(Text)
-    details: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default=text("'{}'::jsonb"))
+    details: Mapped[dict] = mapped_column(
+        JSON_DOCUMENT, nullable=False, server_default=text("'{}'")
+    )
 
 
 class BayesAnalysis(Base):
@@ -199,7 +206,7 @@ class RandomVariable(TimestampMixin, Base):
     )
     name: Mapped[str] = mapped_column(String(120), nullable=False)
     variable_type: Mapped[str] = mapped_column(String(20), nullable=False)
-    distribution: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    distribution: Mapped[dict] = mapped_column(JSON_DOCUMENT, nullable=False)
     expected_value: Mapped[Decimal | None] = mapped_column(Numeric(20, 6))
     variance: Mapped[Decimal | None] = mapped_column(Numeric(20, 6))
 
@@ -222,7 +229,7 @@ class Insight(Base):
     description: Mapped[str] = mapped_column(Text, nullable=False)
     severity: Mapped[str] = mapped_column(String(20), nullable=False, default="info")
     evidence: Mapped[dict] = mapped_column(
-        JSONB, nullable=False, server_default=text("'{}'::jsonb")
+        JSON_DOCUMENT, nullable=False, server_default=text("'{}'")
     )
     active: Mapped[bool] = mapped_column(nullable=False, default=True)
     generated_at: Mapped[datetime] = mapped_column(

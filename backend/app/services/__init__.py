@@ -12,3 +12,4 @@ __all__ = [
     "UserService",
     "authenticate_user",
 ]
+"""Application services."""

@@ -2967,3 +2967,65 @@ body {
     justify-content: space-between;
   }
 }
+.analytics-control-panel {
+  margin-bottom: 18px;
+}
+
+.analytics-filter-form {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.5fr) repeat(2, minmax(150px, 1fr)) auto;
+  align-items: end;
+  gap: 12px;
+  padding: 0 18px 18px;
+}
+
+.analytics-filter-form label,
+.random-metadata-form label {
+  display: grid;
+  gap: 7px;
+  color: var(--salesia-text);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.analytics-filter-form input,
+.analytics-filter-form select,
+.random-metadata-form input,
+.random-metadata-form select {
+  min-height: 40px;
+  padding: 0 11px;
+  border: 1px solid var(--salesia-gray-300);
+  border-radius: 8px;
+  background: var(--salesia-white);
+  color: var(--salesia-text);
+}
+
+.analysis-dataset-reference {
+  display: block;
+  margin-top: 10px;
+  color: var(--salesia-text-soft);
+}
+
+.random-variable-form .primary-button {
+  margin-top: 14px;
+}
+
+.probability-submit-form {
+  align-items: end;
+}
+
+.probability-submit-form .primary-button {
+  min-height: 40px;
+}
+
+@media (max-width: 900px) {
+  .analytics-filter-form {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .analytics-filter-form {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,154 +1,151 @@
-﻿import { useMemo, useState } from 'react'
+import { useState, type FormEvent } from 'react'
 import PageHeader from '../../components/PageHeader'
+import StateMessage from '../../components/StateMessage'
+import {
+  analyzeRandomVariable,
+  calculateBayes,
+  calculateEventProbability,
+} from '../../services/analytics'
+import type { AnalysisExecutionRecord } from '../../types/api'
 
-type ProbabilitySection =
-  | 'events'
-  | 'random'
-  | 'bayes'
+type ProbabilitySection = 'events' | 'random' | 'bayes'
+
+function resultNumber(result: AnalysisExecutionRecord | null, metric: string) {
+  const value = result?.results.find((item) => item.metric === metric)
+    ?.numeric_value
+  return value === null || value === undefined ? null : Number(value)
+}
+
+function percentage(value: number | null) {
+  return value === null ? '—' : `${(value * 100).toFixed(2)}%`
+}
 
 function Probability() {
-  const [section, setSection] =
-    useState<ProbabilitySection>('events')
+  const [section, setSection] = useState<ProbabilitySection>('events')
+  const [result, setResult] = useState<AnalysisExecutionRecord | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
-  const [successes, setSuccesses] =
-    useState('7')
+  const [eventName, setEventName] = useState('Compra completada')
+  const [successes, setSuccesses] = useState('7')
+  const [total, setTotal] = useState('10')
 
-  const [total, setTotal] =
-    useState('10')
+  const [randomName, setRandomName] = useState('Monto de venta')
+  const [randomType, setRandomType] = useState<'discrete' | 'continuous'>(
+    'continuous',
+  )
+  const [randomValues, setRandomValues] = useState(
+    '120, 150, 180, 200, 240, 260, 300',
+  )
 
-  const [prior, setPrior] =
-    useState('0.40')
+  const [eventA, setEventA] = useState('Cliente recurrente')
+  const [eventB, setEventB] = useState('Realiza una compra este mes')
+  const [prior, setPrior] = useState('0.40')
+  const [likelihood, setLikelihood] = useState('0.70')
+  const [evidence, setEvidence] = useState('0.50')
 
-  const [likelihood, setLikelihood] =
-    useState('0.70')
+  const changeSection = (nextSection: ProbabilitySection) => {
+    setSection(nextSection)
+    setResult(null)
+    setError('')
+  }
 
-  const [evidence, setEvidence] =
-    useState('0.50')
-
-  const [randomValues, setRandomValues] =
-    useState('120, 150, 180, 200, 240, 260, 300')
-
-  const eventProbability = useMemo(() => {
-    const favorable = Number(successes)
-    const observations = Number(total)
-
-    if (
-      !Number.isFinite(favorable) ||
-      !Number.isFinite(observations) ||
-      observations <= 0
-    ) {
-      return 0
+  const runRequest = async (request: () => Promise<AnalysisExecutionRecord>) => {
+    setLoading(true)
+    setError('')
+    try {
+      setResult(await request())
+    } catch (requestError) {
+      setResult(null)
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : 'No se pudo completar el cálculo.',
+      )
+    } finally {
+      setLoading(false)
     }
+  }
 
-    return Math.min(
-      1,
-      Math.max(0, favorable / observations),
+  const submitEvent = (event: FormEvent) => {
+    event.preventDefault()
+    void runRequest(() =>
+      calculateEventProbability({
+        event_name: eventName,
+        favorable_cases: Number(successes),
+        total_observations: Number(total),
+      }),
     )
-  }, [successes, total])
+  }
 
-  const parsedRandomValues = useMemo(() => {
-    return randomValues
+  const submitRandom = (event: FormEvent) => {
+    event.preventDefault()
+    const values = randomValues
       .split(',')
       .map((value) => Number(value.trim()))
       .filter((value) => Number.isFinite(value))
-  }, [randomValues])
-
-  const randomMean = useMemo(() => {
-    if (parsedRandomValues.length === 0) {
-      return 0
+    if (values.length === 0) {
+      setError('Ingresa al menos un valor numérico válido.')
+      return
     }
-
-    return (
-      parsedRandomValues.reduce(
-        (sum, value) => sum + value,
-        0,
-      ) / parsedRandomValues.length
+    void runRequest(() =>
+      analyzeRandomVariable({
+        name: randomName,
+        variable_name: 'manual_random_variable',
+        variable_label: randomName,
+        variable_type:
+          randomType === 'discrete'
+            ? 'quantitative_discrete'
+            : 'quantitative_continuous',
+        random_variable_type: randomType,
+        values,
+      }),
     )
-  }, [parsedRandomValues])
+  }
 
-  const randomMin = useMemo(() => {
-    if (parsedRandomValues.length === 0) {
-      return 0
-    }
-
-    return Math.min(...parsedRandomValues)
-  }, [parsedRandomValues])
-
-  const randomMax = useMemo(() => {
-    if (parsedRandomValues.length === 0) {
-      return 0
-    }
-
-    return Math.max(...parsedRandomValues)
-  }, [parsedRandomValues])
-
-  const bayesProbability = useMemo(() => {
-    const pA = Number(prior)
-    const pBgivenA = Number(likelihood)
-    const pB = Number(evidence)
-
-    if (
-      !Number.isFinite(pA) ||
-      !Number.isFinite(pBgivenA) ||
-      !Number.isFinite(pB) ||
-      pB <= 0
-    ) {
-      return 0
-    }
-
-    return Math.min(
-      1,
-      Math.max(
-        0,
-        (pA * pBgivenA) / pB,
-      ),
+  const submitBayes = (event: FormEvent) => {
+    event.preventDefault()
+    void runRequest(() =>
+      calculateBayes({
+        event_a: eventA,
+        event_b: eventB,
+        probability_a: prior,
+        probability_b_given_a: likelihood,
+        probability_b: evidence,
+      }),
     )
-  }, [prior, likelihood, evidence])
+  }
 
-  const percentage = (value: number) =>
-    `${(value * 100).toFixed(2)}%`
+  const eventProbability = resultNumber(result, 'probability')
+  const posterior = resultNumber(result, 'posterior')
 
   return (
     <div className="page">
       <PageHeader
-        eyebrow="PROBABILIDAD"
+        eyebrow="MOTOR ESTADÍSTICO · FASE 09"
         title="Probabilidad y Bayes"
-        description="Herramientas para análisis probabilístico sobre datos comerciales."
+        description="Cálculos reproducibles ejecutados por Python y registrados en Supabase."
       />
 
       <div className="probability-navigation">
         <button
           type="button"
-          className={
-            section === 'events'
-              ? 'analytics-tab active'
-              : 'analytics-tab'
-          }
-          onClick={() => setSection('events')}
+          className={section === 'events' ? 'analytics-tab active' : 'analytics-tab'}
+          onClick={() => changeSection('events')}
         >
           Eventos
         </button>
-
         <button
           type="button"
-          className={
-            section === 'random'
-              ? 'analytics-tab active'
-              : 'analytics-tab'
-          }
-          onClick={() => setSection('random')}
+          className={section === 'random' ? 'analytics-tab active' : 'analytics-tab'}
+          onClick={() => changeSection('random')}
         >
           Variable aleatoria
         </button>
-
         <button
           type="button"
-          className={
-            section === 'bayes'
-              ? 'analytics-tab active'
-              : 'analytics-tab'
-          }
-          onClick={() => setSection('bayes')}
+          className={section === 'bayes' ? 'analytics-tab active' : 'analytics-tab'}
+          onClick={() => changeSection('bayes')}
         >
           Bayes
         </button>
@@ -159,75 +156,36 @@ function Probability() {
           <article className="panel">
             <div className="panel-header">
               <div>
-                <span className="eyebrow">
-                  EVENTOS
-                </span>
-
+                <span className="eyebrow">EVENTOS</span>
                 <h2>Probabilidad básica</h2>
-
-                <p>
-                  Define casos favorables y observaciones
-                  para obtener una probabilidad.
-                </p>
+                <p>P(A) = casos favorables / observaciones.</p>
               </div>
             </div>
-
-            <div className="probability-form">
+            <form className="probability-form probability-submit-form" onSubmit={submitEvent}>
+              <label>
+                Nombre del evento
+                <input value={eventName} onChange={(event) => setEventName(event.target.value)} required />
+              </label>
               <label>
                 Casos favorables
-                <input
-                  type="number"
-                  min="0"
-                  value={successes}
-                  onChange={(event) =>
-                    setSuccesses(event.target.value)
-                  }
-                />
+                <input type="number" min="0" value={successes} onChange={(event) => setSuccesses(event.target.value)} required />
               </label>
-
               <label>
                 Total de observaciones
-                <input
-                  type="number"
-                  min="1"
-                  value={total}
-                  onChange={(event) =>
-                    setTotal(event.target.value)
-                  }
-                />
+                <input type="number" min="1" value={total} onChange={(event) => setTotal(event.target.value)} required />
               </label>
-            </div>
-
-            <div className="probability-equation">
-              <span>
-                P(A) = casos favorables / observaciones
-              </span>
-
-              <strong>
-                P(A) = {successes} / {total}
-              </strong>
-            </div>
+              <button className="primary-button" type="submit" disabled={loading}>
+                {loading ? 'Calculando…' : 'Calcular y guardar'}
+              </button>
+            </form>
           </article>
 
           <article className="probability-result">
-            <span className="eyebrow">
-              RESULTADO
-            </span>
-
-            <strong>
-              {percentage(eventProbability)}
-            </strong>
-
-            <p>
-              Probabilidad estimada del evento A.
-            </p>
-
+            <span className="eyebrow">RESULTADO</span>
+            <strong>{percentage(eventProbability)}</strong>
+            <p>Probabilidad estimada del evento.</p>
             <div className="result-meter">
-              <div
-                style={{
-                  width: `${eventProbability * 100}%`,
-                }}
-              />
+              <div style={{ width: `${(eventProbability || 0) * 100}%` }} />
             </div>
           </article>
         </section>
@@ -238,313 +196,130 @@ function Probability() {
           <section className="panel">
             <div className="panel-header">
               <div>
-                <span className="eyebrow">
-                  VARIABLE ALEATORIA
-                </span>
-
-                <h2>Serie de observaciones</h2>
-
-                <p>
-                  Introduce valores numéricos separados
-                  por comas para analizar la variable.
-                </p>
+                <span className="eyebrow">VARIABLE ALEATORIA</span>
+                <h2>Analizar observaciones</h2>
+                <p>Clasifica la variable y conserva su distribución y resultados.</p>
               </div>
             </div>
-
-            <div className="random-variable-form">
+            <form className="random-variable-form" onSubmit={submitRandom}>
+              <div className="probability-form random-metadata-form">
+                <label>
+                  Nombre
+                  <input value={randomName} onChange={(event) => setRandomName(event.target.value)} required />
+                </label>
+                <label>
+                  Naturaleza
+                  <select value={randomType} onChange={(event) => setRandomType(event.target.value as 'discrete' | 'continuous')}>
+                    <option value="continuous">Continua</option>
+                    <option value="discrete">Discreta</option>
+                  </select>
+                </label>
+              </div>
               <label>
-                Valores observados
-                <textarea
-                  value={randomValues}
-                  onChange={(event) =>
-                    setRandomValues(
-                      event.target.value,
-                    )
-                  }
-                  placeholder="120, 150, 180, 200"
-                  rows={4}
-                />
+                Valores separados por comas
+                <textarea value={randomValues} onChange={(event) => setRandomValues(event.target.value)} rows={4} required />
               </label>
-            </div>
+              <button className="primary-button" type="submit" disabled={loading}>
+                {loading ? 'Analizando…' : 'Analizar y guardar'}
+              </button>
+            </form>
           </section>
 
-          <section className="kpi-grid">
-            <article className="kpi-card">
-              <div className="kpi-top">
-                <span>Observaciones</span>
-              </div>
-
-              <strong className="kpi-value">
-                {parsedRandomValues.length}
-              </strong>
-
-              <span className="kpi-detail">
-                valores válidos
-              </span>
-            </article>
-
-            <article className="kpi-card">
-              <div className="kpi-top">
-                <span>Media</span>
-              </div>
-
-              <strong className="kpi-value">
-                {randomMean.toFixed(2)}
-              </strong>
-
-              <span className="kpi-detail">
-                promedio de la variable
-              </span>
-            </article>
-
-            <article className="kpi-card">
-              <div className="kpi-top">
-                <span>Mínimo</span>
-              </div>
-
-              <strong className="kpi-value">
-                {randomMin}
-              </strong>
-
-              <span className="kpi-detail">
-                valor menor
-              </span>
-            </article>
-
-            <article className="kpi-card">
-              <div className="kpi-top">
-                <span>Máximo</span>
-              </div>
-
-              <strong className="kpi-value">
-                {randomMax}
-              </strong>
-
-              <span className="kpi-detail">
-                valor mayor
-              </span>
-            </article>
-          </section>
-
-          <section className="panel">
-            <div className="panel-header">
-              <div>
-                <span className="eyebrow">
-                  DISTRIBUCIÓN
-                </span>
-
-                <h2>Valores observados</h2>
-
-                <p>
-                  Representación visual de los valores
-                  ingresados.
-                </p>
-              </div>
-            </div>
-
-            <div className="random-bars">
-              {parsedRandomValues.map(
-                (value, index) => {
-                  const base =
-                    Math.max(randomMax, 1)
-
-                  return (
-                    <div
-                      className="random-bar-column"
-                      key={`${value}-${index}`}
-                    >
-                      <span>{value}</span>
-
-                      <div
-                        className="random-bar"
-                        style={{
-                          height: `${
-                            (value / base) * 100
-                          }%`,
-                        }}
-                      />
-
-                      <small>
-                        X{index + 1}
-                      </small>
-                    </div>
-                  )
-                },
-              )}
-            </div>
-          </section>
+          {result && (
+            <section className="kpi-grid">
+              {[
+                ['Observaciones', 'sample_size'],
+                ['Media', 'mean'],
+                ['Mediana', 'median'],
+                ['Mínimo', 'minimum'],
+                ['Máximo', 'maximum'],
+              ].map(([label, metric]) => (
+                <article className="kpi-card" key={metric}>
+                  <div className="kpi-top"><span>{label}</span></div>
+                  <strong className="kpi-value">
+                    {resultNumber(result, metric)?.toLocaleString('es-PE', {
+                      maximumFractionDigits: 2,
+                    }) ?? '—'}
+                  </strong>
+                  <span className="kpi-detail">resultado persistido</span>
+                </article>
+              ))}
+            </section>
+          )}
         </>
       )}
 
       {section === 'bayes' && (
-        <>
-          <section className="probability-layout">
-            <article className="panel">
-              <div className="panel-header">
-                <div>
-                  <span className="eyebrow">
-                    TEOREMA DE BAYES
-                  </span>
-
-                  <h2>Probabilidad posterior</h2>
-
-                  <p>
-                    Configura las probabilidades para
-                    calcular P(A|B).
-                  </p>
-                </div>
+        <section className="probability-layout">
+          <article className="panel">
+            <div className="panel-header">
+              <div>
+                <span className="eyebrow">TEOREMA DE BAYES</span>
+                <h2>Probabilidad posterior</h2>
+                <p>P(A|B) = P(B|A) × P(A) / P(B).</p>
               </div>
+            </div>
+            <form className="probability-form probability-submit-form" onSubmit={submitBayes}>
+              <label>
+                Evento A
+                <input value={eventA} onChange={(event) => setEventA(event.target.value)} required />
+              </label>
+              <label>
+                Evidencia B
+                <input value={eventB} onChange={(event) => setEventB(event.target.value)} required />
+              </label>
+              <label>
+                P(A) · Previa
+                <input type="number" step="0.01" min="0" max="1" value={prior} onChange={(event) => setPrior(event.target.value)} required />
+              </label>
+              <label>
+                P(B|A) · Verosimilitud
+                <input type="number" step="0.01" min="0" max="1" value={likelihood} onChange={(event) => setLikelihood(event.target.value)} required />
+              </label>
+              <label>
+                P(B) · Evidencia
+                <input type="number" step="0.01" min="0.0001" max="1" value={evidence} onChange={(event) => setEvidence(event.target.value)} required />
+              </label>
+              <button className="primary-button" type="submit" disabled={loading}>
+                {loading ? 'Calculando…' : 'Calcular y guardar'}
+              </button>
+            </form>
+          </article>
 
-              <div className="probability-form three">
-                <label>
-                  P(A) · Probabilidad previa
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    max="1"
-                    value={prior}
-                    onChange={(event) =>
-                      setPrior(event.target.value)
-                    }
-                  />
-                </label>
+          <article className="probability-result">
+            <span className="eyebrow">P(A|B)</span>
+            <strong>{percentage(posterior)}</strong>
+            <p>Probabilidad posterior con la evidencia indicada.</p>
+            <div className="result-meter">
+              <div style={{ width: `${(posterior || 0) * 100}%` }} />
+            </div>
+          </article>
+        </section>
+      )}
 
-                <label>
-                  P(B|A) · Verosimilitud
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    max="1"
-                    value={likelihood}
-                    onChange={(event) =>
-                      setLikelihood(
-                        event.target.value,
-                      )
-                    }
-                  />
-                </label>
+      {error && (
+        <StateMessage
+          type="error"
+          title="No se pudo completar el cálculo"
+          description={error}
+        />
+      )}
 
-                <label>
-                  P(B) · Evidencia
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0.01"
-                    max="1"
-                    value={evidence}
-                    onChange={(event) =>
-                      setEvidence(
-                        event.target.value,
-                      )
-                    }
-                  />
-                </label>
-              </div>
-
-              <div className="bayes-formula">
-                <span>
-                  P(A|B) = P(B|A) × P(A) / P(B)
-                </span>
-              </div>
-            </article>
-
-            <article className="probability-result">
-              <span className="eyebrow">
-                POSTERIOR
-              </span>
-
-              <strong>
-                {percentage(bayesProbability)}
-              </strong>
-
-              <p>
-                Resultado calculado para P(A|B).
-              </p>
-
-              <div className="result-meter">
-                <div
-                  style={{
-                    width: `${
-                      bayesProbability * 100
-                    }%`,
-                  }}
-                />
-              </div>
-            </article>
-          </section>
-
-          <section className="analytics-cards">
-            <article className="analysis-card">
-              <span className="eyebrow">
-                P(A)
-              </span>
-
-              <h3>Probabilidad previa</h3>
-
-              <strong>
-                {percentage(Number(prior))}
-              </strong>
-
-              <p>
-                Representa la probabilidad inicial del
-                evento antes de considerar nueva evidencia.
-              </p>
-            </article>
-
-            <article className="analysis-card">
-              <span className="eyebrow">
-                P(B|A)
-              </span>
-
-              <h3>Verosimilitud</h3>
-
-              <strong>
-                {percentage(Number(likelihood))}
-              </strong>
-
-              <p>
-                Representa la probabilidad de observar B
-                cuando A ocurre.
-              </p>
-            </article>
-
-            <article className="analysis-card">
-              <span className="eyebrow">
-                P(A|B)
-              </span>
-
-              <h3>Posterior</h3>
-
-              <strong>
-                {percentage(bayesProbability)}
-              </strong>
-
-              <p>
-                Resultado actualizado utilizando la
-                evidencia disponible.
-              </p>
-            </article>
-          </section>
-        </>
+      {result && (
+        <StateMessage
+          type="success"
+          title={`Análisis #${result.analysis_id} guardado`}
+          description={`Dataset #${result.dataset_id}: ${result.dataset_name}`}
+        />
       )}
 
       <section className="panel probability-note">
-        <div>
-          <span className="eyebrow">
-            ESTADO
-          </span>
-
-          <h2>Interfaz de demostración</h2>
-
-          <p>
-            Los cálculos mostrados actualmente se
-            realizan en el frontend con datos introducidos
-            por el usuario. La conexión con el motor Python
-            se realizará mediante FastAPI.
-          </p>
-        </div>
+        <span className="eyebrow">ESTADO</span>
+        <h2>Motor Python conectado</h2>
+        <p>
+          Los cálculos ya no se realizan en el navegador: la API valida,
+          calcula y registra cada ejecución en la base de datos.
+        </p>
       </section>
     </div>
   )

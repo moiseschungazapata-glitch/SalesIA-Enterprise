@@ -16,11 +16,13 @@ import {
 import StateMessage from './components/StateMessage'
 import { useAuth } from './hooks/useAuth'
 import MainLayout from './layouts/MainLayout'
+import Analytics from './modules/analytics/Analytics'
 import Login from './modules/auth/Login'
 import Customers from './modules/customers/Customers'
 import Dashboard from './modules/dashboard/Dashboard'
 import Inventory from './modules/inventory/Inventory'
 import Products from './modules/products/Products'
+import Probability from './modules/probability/Probability'
 import Sales from './modules/sales/Sales'
 import Users from './modules/users/Users'
 import type { AuthUser } from './types/api'
@@ -106,6 +108,14 @@ function AuthenticatedApplication({
             'users',
             <Users currentUserId={user.id} />,
           )}
+        />
+        <Route
+          path={pagePaths.analytics}
+          element={guarded('analytics', <Analytics />)}
+        />
+        <Route
+          path={pagePaths.probability}
+          element={guarded('probability', <Probability />)}
         />
         <Route
           path="/login"

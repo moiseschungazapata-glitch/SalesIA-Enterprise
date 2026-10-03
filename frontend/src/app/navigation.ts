@@ -9,6 +9,8 @@ export type PageKey =
   | 'customers'
   | 'products'
   | 'inventory'
+  | 'analytics'
+  | 'probability'
   | 'users'
 
 export interface NavigationItem {
@@ -56,6 +58,18 @@ export const navigationItems: NavigationItem[] = [
     roles: allRoles,
   },
   {
+    key: 'analytics',
+    label: 'Analytics',
+    description: 'Media, mediana y variables estadísticas',
+    roles: ['administrator', 'manager'],
+  },
+  {
+    key: 'probability',
+    label: 'Probabilidad',
+    description: 'Eventos, variables aleatorias y Bayes',
+    roles: ['administrator', 'manager'],
+  },
+  {
     key: 'users',
     label: 'Usuarios',
     description: 'Usuarios, roles y estados',
@@ -75,6 +89,8 @@ export const pagePaths: Record<PageKey, string> = {
   customers: '/clientes',
   products: '/productos',
   inventory: '/inventario',
+  analytics: '/analytics',
+  probability: '/probabilidad',
   users: '/usuarios',
 }
 

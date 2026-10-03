@@ -278,3 +278,91 @@ export interface SaleCreateRequest {
     quantity: number
   }>
 }
+
+export type StatisticalVariableType =
+  | 'qualitative'
+  | 'quantitative_discrete'
+  | 'quantitative_continuous'
+
+export type StatisticalAnalysisType =
+  | 'mean'
+  | 'median'
+  | 'comparison'
+  | 'frequency'
+  | 'random_variable'
+  | 'bayes'
+
+export interface StatisticalVariableDefinition {
+  name: string
+  label: string
+  variable_type: StatisticalVariableType
+  data_type: 'integer' | 'decimal' | 'text' | 'boolean' | 'datetime'
+  unit: string | null
+  description: string
+}
+
+export interface StatisticalResultRecord {
+  metric: string
+  numeric_value: string | null
+  text_value: string | null
+  details: Record<string, unknown>
+}
+
+export interface AnalysisExecutionRecord {
+  analysis_id: number
+  dataset_id: number
+  dataset_name: string
+  analysis_type: StatisticalAnalysisType
+  variable_name: string | null
+  variable_label: string | null
+  variable_type: StatisticalVariableType | null
+  observation_count: number
+  results: StatisticalResultRecord[]
+  created_at: string
+  completed_at: string
+}
+
+export interface AnalysisHistoryRecord extends AnalysisExecutionRecord {
+  status: 'pending' | 'completed' | 'failed'
+  parameters: Record<string, unknown>
+}
+
+export interface AnalysisHistoryResponse {
+  items: AnalysisHistoryRecord[]
+  total: number
+  page: number
+  page_size: number
+}
+
+export interface SalesComparisonRequest {
+  metric: 'sale_total' | 'items_per_sale'
+  date_from?: string | null
+  date_to?: string | null
+}
+
+export interface EventProbabilityRequest {
+  event_name: string
+  favorable_cases: number
+  total_observations: number
+}
+
+export interface RandomVariableAnalysisRequest {
+  name: string
+  variable_name: string
+  variable_label: string
+  variable_type: Extract<
+    StatisticalVariableType,
+    'quantitative_discrete' | 'quantitative_continuous'
+  >
+  random_variable_type: 'discrete' | 'continuous'
+  unit?: string | null
+  values: number[]
+}
+
+export interface BayesAnalysisRequest {
+  event_a: string
+  event_b: string
+  probability_a: string
+  probability_b_given_a: string
+  probability_b: string
+}
