@@ -1,5 +1,7 @@
 # Fase 04 - Verificacion y cierre
 
+**Estado:** completa y verificada en Supabase el 2 de octubre de 2026.
+
 ## 1. Resultado implementado
 
 - Registro SQLAlchemy con convencion uniforme de nombres.
@@ -20,6 +22,7 @@ La implementacion se valida con:
 ```powershell
 uv run ruff check app tests ../database/migrations ../database/seeds
 uv run pytest -q
+uv run python scripts/verify_database.py --company-slug "salesia-enterprise"
 uv run alembic -c alembic.ini upgrade head --sql
 uv run alembic -c alembic.ini downgrade 20261002_0001:base --sql
 ```
@@ -34,12 +37,20 @@ Las validaciones comprueban:
 - presencia de restricciones criticas;
 - normalizacion de la URI de Supabase para psycopg 3.
 
-## 3. Limite de la verificacion local
+## 3. Verificacion en infraestructura real
 
-La migracion se ha compilado y validado sin una credencial externa. Para cerrar
-la fase contra infraestructura real falta crear el proyecto Supabase, configurar
-`backend/.env`, aplicar la migracion y ejecutar la semilla. Esos pasos no
-requieren cambios manuales en las tablas.
+La migracion se aplico correctamente al proyecto Supabase configurado mediante
+el Session Pooler y SSL. La comprobacion posterior obtuvo:
+
+- PostgreSQL 17.11.
+- Revision Alembic `20261002_0001 (head)`.
+- 22 tablas de aplicacion.
+- Empresa `SalesIA Enterprise` con slug `salesia-enterprise`.
+- Roles `administrator`, `manager` y `seller`.
+- Una categoria inicial `General`.
+- RLS activo en las 22 tablas de aplicacion.
+- Cero politicas publicas de acceso directo.
+- Semilla ejecutada dos veces sin duplicar registros.
 
 ## 4. Criterios de aceptacion
 
@@ -49,12 +60,11 @@ requieren cambios manuales en las tablas.
 | Entidades analiticas y relaciones | Implementado |
 | Indices para busquedas frecuentes | Implementado |
 | Constraints y claves foraneas | Implementado |
-| Migracion y seed inicial | Implementado y validado sin conexion |
-| Ejecucion sobre Supabase | Pendiente de configurar credencial privada |
+| Migracion y seed inicial | Implementado y verificado |
+| Ejecucion sobre Supabase | Verificada |
 
 ## 5. Condicion final de cierre
 
-La fase 04 quedara cerrada cuando `alembic current` muestre
-`20261002_0001 (head)` en el proyecto Supabase y la semilla haya creado sus
-cuatro grupos de datos de referencia: empresa, tres roles y categoria general.
-
+La condicion se cumplio: `alembic current` corresponde a
+`20261002_0001 (head)` y la semilla creo empresa, tres roles y categoria general
+sin duplicados. La fase 05 puede comenzar sobre este esquema.

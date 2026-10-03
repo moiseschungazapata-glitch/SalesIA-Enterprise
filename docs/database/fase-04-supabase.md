@@ -57,6 +57,7 @@ Ejecutar desde `backend/`:
 uv sync --dev
 uv run alembic -c alembic.ini upgrade head
 uv run alembic -c alembic.ini current
+uv run python scripts/verify_database.py --company-slug "nombre-de-mi-empresa"
 ```
 
 Alembic creara las 22 tablas y activara RLS en todas. Despues cargar los datos
@@ -102,4 +103,3 @@ base que contenga informacion que deba conservarse.
 - [Conectar con PostgreSQL en Supabase](https://supabase.com/docs/guides/database/connecting-to-postgres)
 - [SQLAlchemy con Supabase](https://supabase.com/docs/guides/troubleshooting/using-sqlalchemy-with-supabase-FUqebT)
 - [Row Level Security](https://supabase.com/docs/guides/database/postgres/row-level-security)
-

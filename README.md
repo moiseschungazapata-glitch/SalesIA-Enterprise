@@ -32,8 +32,8 @@ Desarrollo basado en las 16 fases del Plan Integral de Desarrollo.
 - Fase 01: completa.
 - Fase 02: completa.
 - Fase 03: completa.
-- Fase 04: implementada; pendiente de aplicar y verificar en Supabase.
-- Siguiente fase despues de la verificacion: 05 - Backend/API.
+- Fase 04: completa y verificada en Supabase.
+- Siguiente fase: 05 - Backend/API.
 
 El frontend actual es un prototipo UX con datos locales. La autenticacion,
 persistencia, API y reglas transaccionales se implementan en fases posteriores.
