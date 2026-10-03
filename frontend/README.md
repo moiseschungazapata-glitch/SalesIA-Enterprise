@@ -29,5 +29,5 @@ npm run lint
 npm run build
 ```
 
-La autenticacion, las rutas protegidas y Usuarios utilizan datos reales. Los
-modulos comerciales se conectaran en las fases 07 y 08.
+La autenticacion, las rutas protegidas, Usuarios, Clientes y Productos utilizan
+datos reales. Ventas e Inventario se conectaran en la fase 08.

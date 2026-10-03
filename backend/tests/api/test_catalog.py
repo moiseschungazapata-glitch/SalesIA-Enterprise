@@ -1,7 +1,6 @@
 """API tests for phase 07 customers, categories, and products."""
 
 from collections.abc import Generator
-from decimal import Decimal
 
 import pytest
 from fastapi.testclient import TestClient

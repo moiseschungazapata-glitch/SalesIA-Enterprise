@@ -54,9 +54,9 @@ Son reales:
 - listado, busqueda, filtros y paginacion de usuarios;
 - creacion y cambio de estado de usuarios.
 
-Siguen siendo demostrativos hasta fases posteriores:
+La fase 07 sustituyo posteriormente los datos demostrativos de clientes y
+productos por datos reales. Siguen siendo demostrativos:
 
-- clientes y productos: fase 07;
 - ventas e inventario: fase 08;
 - dashboard, estadistica, insights y reportes: fases 09 a 12.
 
@@ -91,4 +91,3 @@ La verificacion manual confirmo:
 - carga del usuario real desde Supabase;
 - restauracion de la sesion al recargar `/usuarios`;
 - ausencia de errores o advertencias en la consola del navegador.
-

@@ -32,8 +32,8 @@ function MainLayout({
         <Header activePage={activePage} user={user} />
 
         <div className="integration-banner" role="status">
-          Sesión y usuarios conectados a la API. Los datos comerciales
-          siguen siendo demostrativos hasta las fases 07 y 08.
+          Sesión, usuarios, clientes y productos conectados a la API.
+          Ventas e inventario siguen demostrativos hasta la fase 08.
         </div>
 
         <main className="content-area">

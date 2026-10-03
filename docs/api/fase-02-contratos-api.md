@@ -847,8 +847,8 @@ generado por FastAPI sera la especificacion ejecutable.
 
 ## 17. Estado de implementacion
 
-La fase 05 implementa la infraestructura comun, `/auth` y `/users`. Los
-contratos de clientes, categorias y productos se implementan en la fase 07; los
-de inventario y ventas en la fase 08; y el resumen comercial junto con la
+La fase 05 implemento la infraestructura comun, `/auth` y `/users`. Los
+contratos de clientes, categorias y productos quedaron implementados en la fase
+07; los de inventario y ventas se implementan en la fase 08; y el resumen comercial junto con la
 integracion visual se completa en sus fases correspondientes. No se publican
 endpoints ficticios ni respuestas simuladas desde el backend.
