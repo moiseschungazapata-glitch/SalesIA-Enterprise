@@ -3,6 +3,7 @@ import {
   roleLabels,
   type UserRole,
 } from '../../app/navigation'
+import FormModal from '../../components/FormModal'
 import PageHeader from '../../components/PageHeader'
 import StateMessage from '../../components/StateMessage'
 import { useUsers } from '../../hooks/useUsers'
@@ -143,11 +144,11 @@ function Users({ currentUserId }: UsersProps) {
             type="button"
             className="primary-button compact"
             onClick={() => {
-              setShowForm((value) => !value)
+              setShowForm(true)
               setFormError('')
             }}
           >
-            {showForm ? 'Cerrar' : '+ Nuevo usuario'}
+            + Nuevo usuario
           </button>
         }
       />
@@ -178,17 +179,13 @@ function Users({ currentUserId }: UsersProps) {
       )}
 
       {showForm && (
-        <section className="panel form-panel">
-          <div className="panel-header">
-            <div>
-              <span className="eyebrow">NUEVO REGISTRO</span>
-              <h2>Crear usuario</h2>
-              <p>
-                El usuario se guardará activo y con uno de los roles autorizados.
-              </p>
-            </div>
-          </div>
-
+        <FormModal
+          eyebrow="NUEVO REGISTRO"
+          title="Crear usuario"
+          description="El usuario se guardará activo y con uno de los roles autorizados."
+          onClose={() => setShowForm(false)}
+          closeDisabled={submitting}
+        >
           <form className="entity-form" onSubmit={handleCreateUser}>
             <label>
               Nombre completo
@@ -294,7 +291,7 @@ function Users({ currentUserId }: UsersProps) {
               </button>
             </div>
           </form>
-        </section>
+        </FormModal>
       )}
 
       <section className="panel">

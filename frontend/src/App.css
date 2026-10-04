@@ -44,6 +44,7 @@ button {
   background: #111111;
   color: #ffffff;
   z-index: 10;
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
 }
 
 .sidebar-brand {
@@ -169,6 +170,7 @@ button {
 .main-area {
   width: calc(100% - 250px);
   margin-left: 250px;
+  transition: width 0.22s ease, margin-left 0.22s ease;
 }
 
 .topbar {
@@ -3656,10 +3658,75 @@ body {
   outline: none;
 }
 
-.mobile-menu-button,
 .sidebar-close-button,
 .sidebar-backdrop {
   display: none;
+}
+
+.mobile-menu-button {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  flex: 0 0 auto;
+  border-radius: 10px;
+}
+
+.topbar {
+  gap: 12px;
+}
+
+.topbar-copy {
+  min-width: 0;
+  flex: 1;
+}
+
+@media (min-width: 761px) {
+  .mobile-menu-button {
+    position: fixed;
+    top: 22px;
+    left: 194px;
+    z-index: 25;
+    border-color: rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.08);
+    color: #FFFFFF;
+    transition:
+      left 0.22s ease,
+      background 0.18s ease,
+      border-color 0.18s ease;
+  }
+
+  .mobile-menu-button:hover {
+    border-color: rgba(255, 255, 255, 0.28);
+    background: rgba(255, 255, 255, 0.14);
+    color: #FFFFFF;
+  }
+
+  .main-layout.sidebar-collapsed .mobile-menu-button {
+    left: 16px;
+    border-color: var(--salesia-gray-200);
+    background: var(--salesia-white);
+    color: var(--salesia-text);
+    box-shadow: 0 5px 18px rgba(15, 23, 42, 0.12);
+  }
+
+  .main-layout.sidebar-collapsed .mobile-menu-button:hover {
+    border-color: var(--salesia-blue);
+    color: var(--salesia-blue);
+  }
+
+  .main-layout.sidebar-collapsed .topbar-copy {
+    padding-left: 48px;
+  }
+
+  .main-layout.sidebar-collapsed .sidebar {
+    transform: translateX(-105%);
+    box-shadow: none;
+  }
+
+  .main-layout.sidebar-collapsed .main-area {
+    width: 100%;
+    margin-left: 0;
+  }
 }
 
 :root[data-theme='dark'] {
@@ -3789,6 +3856,318 @@ body {
 
 :root[data-theme='dark'] .form-success {
   border-color: #166534;
+}
+
+/* High-contrast dark mode for forms, data tables and analytical modules. */
+:root[data-theme='dark'] .analytics-navigation,
+:root[data-theme='dark'] .probability-navigation,
+:root[data-theme='dark'] .analysis-summary-grid > div,
+:root[data-theme='dark'] .variable-card,
+:root[data-theme='dark'] .report-summary-grid > div,
+:root[data-theme='dark'] .inline-entity-form input {
+  border-color: var(--salesia-gray-200);
+  background: #111827;
+  color: var(--salesia-text);
+}
+
+:root[data-theme='dark'] .primary-button,
+:root[data-theme='dark'] .analytics-tab.active,
+:root[data-theme='dark'] .nav-item.active {
+  color: #FFFFFF;
+}
+
+:root[data-theme='dark'] .primary-button:hover,
+:root[data-theme='dark'] .analytics-tab.active:hover {
+  color: #FFFFFF;
+}
+
+:root[data-theme='dark'] .nav-item.active .nav-dot {
+  background: #FFFFFF;
+  color: var(--salesia-blue);
+}
+
+:root[data-theme='dark'] .analytics-tab {
+  color: #CBD5E1;
+}
+
+:root[data-theme='dark'] .analytics-tab:hover {
+  background: #17233A;
+  color: #7DD3FC;
+}
+
+:root[data-theme='dark'] .analytics-tab.active,
+:root[data-theme='dark'] .analytics-tab.active:hover {
+  background: var(--salesia-blue);
+}
+
+:root[data-theme='dark'] .probability-form label,
+:root[data-theme='dark'] .random-variable-form label,
+:root[data-theme='dark'] .entity-form label,
+:root[data-theme='dark'] .sale-form label,
+:root[data-theme='dark'] .sale-summary label,
+:root[data-theme='dark'] .form-grid label,
+:root[data-theme='dark'] .analytics-filter-form label,
+:root[data-theme='dark'] .dashboard-filter-form label,
+:root[data-theme='dark'] .inline-entity-form label {
+  color: #CBD5E1;
+}
+
+:root[data-theme='dark'] th {
+  color: #AEBBD2;
+}
+
+:root[data-theme='dark'] td strong,
+:root[data-theme='dark'] .probability-equation strong,
+:root[data-theme='dark'] .analytics-bar-label strong,
+:root[data-theme='dark'] .analysis-summary-grid strong,
+:root[data-theme='dark'] .selected-product-info strong,
+:root[data-theme='dark'] .cart-row strong,
+:root[data-theme='dark'] .quick-actions button span,
+:root[data-theme='dark'] .report-type-card,
+:root[data-theme='dark'] .category-row strong {
+  color: #F8FAFC;
+}
+
+:root[data-theme='dark'] .kpi-top span:first-child,
+:root[data-theme='dark'] .kpi-detail,
+:root[data-theme='dark'] .mini-stat span,
+:root[data-theme='dark'] .panel-header p,
+:root[data-theme='dark'] .panel-period,
+:root[data-theme='dark'] .results-info,
+:root[data-theme='dark'] .empty-state,
+:root[data-theme='dark'] .table-subtitle,
+:root[data-theme='dark'] .probability-equation span,
+:root[data-theme='dark'] .bayes-formula,
+:root[data-theme='dark'] .probability-note p,
+:root[data-theme='dark'] .analysis-card p,
+:root[data-theme='dark'] .insight-card p,
+:root[data-theme='dark'] .insight-footer,
+:root[data-theme='dark'] .summary-box span,
+:root[data-theme='dark'] .variable-row small,
+:root[data-theme='dark'] .variable-card p,
+:root[data-theme='dark'] .report-card p,
+:root[data-theme='dark'] .report-type-card small,
+:root[data-theme='dark'] .report-print-header p,
+:root[data-theme='dark'] .report-print-footer {
+  color: #AEBBD2;
+}
+
+:root[data-theme='dark'] .analysis-summary-grid,
+:root[data-theme='dark'] .variable-card,
+:root[data-theme='dark'] .report-summary-grid > div,
+:root[data-theme='dark'] .report-result-table,
+:root[data-theme='dark'] .panel-footer,
+:root[data-theme='dark'] .quick-actions button,
+:root[data-theme='dark'] .cart-section,
+:root[data-theme='dark'] .cart-row,
+:root[data-theme='dark'] .sale-summary,
+:root[data-theme='dark'] .inventory-health > div,
+:root[data-theme='dark'] .random-bars,
+:root[data-theme='dark'] .insight-footer {
+  border-color: var(--salesia-gray-200);
+}
+
+:root[data-theme='dark'] .current-user-label {
+  background: #102044;
+  color: #93C5FD;
+}
+
+:root[data-theme='dark'] .profile-avatar,
+:root[data-theme='dark'] .report-icon {
+  background: var(--salesia-blue);
+  color: #FFFFFF;
+}
+
+:root[data-theme='dark'] .password-visibility-button:hover,
+:root[data-theme='dark'] .password-visibility-button:focus-visible {
+  background: #1E293B;
+}
+
+/* =======================================================
+   PROFESSIONAL CREATE / EDIT MODALS
+======================================================= */
+
+.form-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(6, 14, 32, 0.58);
+  backdrop-filter: blur(5px);
+  animation: modal-backdrop-in 0.18s ease both;
+}
+
+.form-modal {
+  width: min(720px, 100%);
+  max-height: min(88dvh, 820px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--salesia-gray-200);
+  border-radius: 18px;
+  background: var(--salesia-white);
+  color: var(--salesia-text);
+  box-shadow: 0 28px 90px rgba(2, 8, 23, 0.32);
+  animation: modal-card-in 0.22s ease both;
+}
+
+.form-modal-wide {
+  width: min(960px, 100%);
+  max-height: 91dvh;
+}
+
+.form-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 22px 24px 18px;
+  border-bottom: 1px solid var(--salesia-gray-200);
+}
+
+.form-modal-header h2 {
+  margin: 6px 0 5px;
+  color: var(--salesia-black);
+  font-size: 21px;
+  letter-spacing: -0.45px;
+}
+
+.form-modal-header p {
+  max-width: 650px;
+  margin: 0;
+  color: var(--salesia-text-soft);
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.form-modal-close {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--salesia-gray-200);
+  border-radius: 10px;
+  background: var(--salesia-gray-50);
+  color: var(--salesia-text-soft);
+}
+
+.form-modal-close:hover:not(:disabled) {
+  border-color: var(--salesia-blue);
+  background: #EFF6FF;
+  color: var(--salesia-blue);
+}
+
+.form-modal-close:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.form-modal-close svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.form-modal-body {
+  min-height: 0;
+  padding: 20px 24px 24px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.form-modal-body .entity-form,
+.form-modal-body .inline-entity-form {
+  padding: 0;
+}
+
+.form-modal-body .entity-form .form-error,
+.form-modal-body .entity-form .state-message {
+  grid-column: 1 / -1;
+}
+
+.form-modal-body .form-actions {
+  margin-top: 4px;
+  padding-top: 16px;
+  border-top: 1px solid var(--salesia-gray-200);
+}
+
+.modal-category-panel {
+  gap: 18px;
+}
+
+.modal-category-panel .category-list {
+  max-height: 330px;
+  overflow-y: auto;
+}
+
+.sale-modal-content .sale-form {
+  padding: 0 0 18px;
+}
+
+.sale-modal-content .cart-section {
+  margin: 0;
+}
+
+.sale-modal-content .sale-summary {
+  grid-template-columns: minmax(150px, 1fr) 210px auto;
+  margin: 18px 0 0;
+}
+
+.sale-modal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.sale-modal-actions button {
+  min-height: 40px;
+  white-space: nowrap;
+}
+
+:root[data-theme='dark'] .form-modal {
+  border-color: #334155;
+  background: #111827;
+  box-shadow: 0 30px 100px rgba(0, 0, 0, 0.56);
+}
+
+:root[data-theme='dark'] .form-modal-header,
+:root[data-theme='dark'] .form-modal-body .form-actions {
+  border-color: #263247;
+}
+
+:root[data-theme='dark'] .form-modal-close {
+  border-color: #374151;
+  background: #0F172A;
+  color: #CBD5E1;
+}
+
+:root[data-theme='dark'] .form-modal-close:hover:not(:disabled) {
+  border-color: var(--salesia-blue);
+  background: #17233A;
+  color: #93C5FD;
+}
+
+@keyframes modal-backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modal-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 @media (max-width: 760px) {
@@ -4021,6 +4400,50 @@ body {
   .password-visibility-button {
     width: 44px;
     height: 44px;
+  }
+
+  .form-modal-backdrop {
+    place-items: end center;
+    padding: 0;
+  }
+
+  .form-modal,
+  .form-modal-wide {
+    width: 100%;
+    max-height: 94dvh;
+    border-width: 1px 0 0;
+    border-radius: 20px 20px 0 0;
+  }
+
+  .form-modal-header {
+    padding: 18px 18px 15px;
+  }
+
+  .form-modal-header h2 {
+    font-size: 19px;
+  }
+
+  .form-modal-body {
+    padding: 17px 18px calc(20px + env(safe-area-inset-bottom));
+  }
+
+  .form-modal-body .entity-form,
+  .form-modal-body .inline-entity-form,
+  .sale-modal-content .sale-form,
+  .sale-modal-content .sale-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .form-modal-body .form-actions,
+  .sale-modal-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
+  }
+
+  .form-modal-body .form-actions button,
+  .sale-modal-actions button {
+    width: 100%;
   }
 }
 

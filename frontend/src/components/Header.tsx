@@ -32,7 +32,8 @@ function Header({ activePage, user, onOpenMenu }: HeaderProps) {
         type="button"
         className="mobile-menu-button"
         onClick={onOpenMenu}
-        aria-label="Abrir menú principal"
+        aria-label="Mostrar u ocultar menú principal"
+        title="Mostrar u ocultar menú"
         aria-controls="salesia-sidebar"
       >
         <svg viewBox="0 0 24 24" aria-hidden="true">

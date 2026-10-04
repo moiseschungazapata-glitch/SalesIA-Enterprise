@@ -1,5 +1,6 @@
 import { useMemo, useState, type FormEvent } from 'react'
 import type { UserRole } from '../../app/navigation'
+import FormModal from '../../components/FormModal'
 import PageHeader from '../../components/PageHeader'
 import StateMessage from '../../components/StateMessage'
 import { useCategories, useProducts } from '../../hooks/useCatalog'
@@ -233,20 +234,20 @@ function Products({ role }: ProductsProps) {
               <button
                 type="button"
                 className="secondary-button compact"
-                onClick={() => setShowCategories((value) => !value)}
+                onClick={() => setShowCategories(true)}
               >
-                {showCategories ? 'Cerrar categorías' : 'Gestionar categorías'}
+                Gestionar categorías
               </button>
               <button
                 type="button"
                 className="primary-button compact"
                 onClick={() => {
-                  setShowForm((value) => !value)
+                  setShowForm(true)
                   setProductFormError('')
                 }}
                 disabled={activeCategories.length === 0}
               >
-                {showForm ? 'Cerrar' : '+ Nuevo producto'}
+                + Nuevo producto
               </button>
             </div>
           ) : undefined
@@ -282,15 +283,15 @@ function Products({ role }: ProductsProps) {
       )}
 
       {canManage && showCategories && (
-        <section className="panel category-panel">
-          <div className="panel-header">
-            <div>
-              <span className="eyebrow">CATEGORÍAS</span>
-              <h2>Gestión de categorías</h2>
-              <p>Crea o desactiva categorías sin eliminar su historial.</p>
-            </div>
-          </div>
-
+        <FormModal
+          eyebrow="CATEGORÍAS"
+          title="Gestión de categorías"
+          description="Crea o desactiva categorías sin eliminar su historial."
+          onClose={() => setShowCategories(false)}
+          closeDisabled={submittingCategory}
+          size="wide"
+        >
+          <div className="category-panel modal-category-panel">
           <form className="inline-entity-form" onSubmit={handleAddCategory}>
             <label>
               Nombre
@@ -377,19 +378,18 @@ function Products({ role }: ProductsProps) {
               ))}
             </div>
           )}
-        </section>
+          </div>
+        </FormModal>
       )}
 
       {canManage && showForm && (
-        <section className="panel form-panel">
-          <div className="panel-header">
-            <div>
-              <span className="eyebrow">NUEVO REGISTRO</span>
-              <h2>Agregar producto</h2>
-              <p>El stock inicial genera un movimiento de inventario.</p>
-            </div>
-          </div>
-
+        <FormModal
+          eyebrow="NUEVO REGISTRO"
+          title="Agregar producto"
+          description="El stock inicial genera un movimiento de inventario."
+          onClose={() => setShowForm(false)}
+          closeDisabled={submittingProduct}
+        >
           <form className="entity-form" onSubmit={handleAddProduct}>
             <label>
               SKU
@@ -507,7 +507,7 @@ function Products({ role }: ProductsProps) {
               </button>
             </div>
           </form>
-        </section>
+        </FormModal>
       )}
 
       <section className="panel">

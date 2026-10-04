@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import type { UserRole } from '../../app/navigation'
+import FormModal from '../../components/FormModal'
 import PageHeader from '../../components/PageHeader'
 import StateMessage from '../../components/StateMessage'
 import { useInventory, useInventoryMovements } from '../../hooks/useOperations'
@@ -93,9 +94,12 @@ function Inventory({ role }: InventoryProps) {
           <button
             type="button"
             className="primary-button compact"
-            onClick={() => setShowForm((value) => !value)}
+            onClick={() => {
+              setShowForm(true)
+              setFormError('')
+            }}
           >
-            {showForm ? 'Cerrar' : '+ Movimiento'}
+            + Movimiento
           </button>
         ) : undefined}
       />
@@ -112,14 +116,13 @@ function Inventory({ role }: InventoryProps) {
       )}
 
       {canManage && showForm && (
-        <section className="panel form-panel">
-          <div className="panel-header">
-            <div>
-              <span className="eyebrow">MOVIMIENTO AUTORIZADO</span>
-              <h2>Registrar movimiento</h2>
-              <p>La cantidad siempre es positiva; el tipo define si suma o resta.</p>
-            </div>
-          </div>
+        <FormModal
+          eyebrow="MOVIMIENTO AUTORIZADO"
+          title="Registrar movimiento"
+          description="La cantidad siempre es positiva; el tipo define si suma o resta."
+          onClose={() => setShowForm(false)}
+          closeDisabled={saving}
+        >
           {formError && (
             <StateMessage type="error" title="No se pudo guardar" description={formError} />
           )}
@@ -162,7 +165,7 @@ function Inventory({ role }: InventoryProps) {
               <button type="submit" className="primary-button" disabled={saving}>{saving ? 'Guardando...' : 'Guardar movimiento'}</button>
             </div>
           </form>
-        </section>
+        </FormModal>
       )}
 
       <section className="panel">

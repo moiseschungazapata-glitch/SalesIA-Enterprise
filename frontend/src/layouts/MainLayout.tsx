@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import type { PageKey } from '../app/navigation'
 import Header from '../components/Header'
 import Sidebar from '../components/Sidebar'
@@ -20,9 +20,30 @@ function MainLayout({
   onLogout,
 }: MainLayoutProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => (
+    window.localStorage.getItem('salesia.sidebar-collapsed') === 'true'
+  ))
+
+  useEffect(() => {
+    window.localStorage.setItem(
+      'salesia.sidebar-collapsed',
+      String(sidebarCollapsed),
+    )
+  }, [sidebarCollapsed])
+
+  const toggleSidebar = () => {
+    if (window.matchMedia('(max-width: 760px)').matches) {
+      setMobileMenuOpen((current) => !current)
+      return
+    }
+
+    setSidebarCollapsed((current) => !current)
+  }
 
   return (
-    <div className="main-layout">
+    <div
+      className={`main-layout ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}
+    >
       <button
         type="button"
         className={`sidebar-backdrop ${mobileMenuOpen ? 'visible' : ''}`}
@@ -43,7 +64,7 @@ function MainLayout({
         <Header
           activePage={activePage}
           user={user}
-          onOpenMenu={() => setMobileMenuOpen(true)}
+          onOpenMenu={toggleSidebar}
         />
 
         <div className="integration-banner" role="status">

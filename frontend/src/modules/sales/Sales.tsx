@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import type { UserRole } from '../../app/navigation'
+import FormModal from '../../components/FormModal'
 import PageHeader from '../../components/PageHeader'
 import StateMessage from '../../components/StateMessage'
 import { useProducts } from '../../hooks/useCatalog'
@@ -38,6 +39,7 @@ function formatDate(value: string) {
 
 function Sales({ role }: SalesProps) {
   const canRegister = role !== 'manager'
+  const [showForm, setShowForm] = useState(false)
   const [search, setSearch] = useState('')
   const sales = useSales({ page: 1, pageSize: 100, number: search })
   const customers = useCustomers({
@@ -123,6 +125,7 @@ function Sales({ role }: SalesProps) {
         })),
       }, idempotencyKey)
       setSuccess(`${created.number} confirmada por S/ ${money(created.total)}.`)
+      setShowForm(false)
       setCart([])
       setSelectedCustomer('')
       setPaymentMethod('cash')
@@ -146,6 +149,19 @@ function Sales({ role }: SalesProps) {
         eyebrow="OPERACIÓN COMERCIAL"
         title="Ventas"
         description="Ventas confirmadas con pago y descuento automático de inventario."
+        action={canRegister ? (
+          <button
+            type="button"
+            className="primary-button compact"
+            onClick={() => {
+              setShowForm(true)
+              setError('')
+              setSuccess('')
+            }}
+          >
+            + Nueva venta
+          </button>
+        ) : undefined}
       />
 
       <section className="kpi-grid">
@@ -155,13 +171,19 @@ function Sales({ role }: SalesProps) {
         <article className="kpi-card"><div className="kpi-top"><span>Estado</span></div><strong className="kpi-value">100%</strong><span className="kpi-detail">pagos completados</span></article>
       </section>
 
-      {error && <StateMessage type="error" title="No se pudo completar la operación" description={error} />}
       {success && <StateMessage type="success" title="Venta registrada" description={success} />}
 
-      {canRegister && (
-        <section className="sales-workspace">
-          <article className="panel sale-form-panel">
-            <div className="panel-header"><div><span className="eyebrow">NUEVA OPERACIÓN</span><h2>Registrar venta</h2><p>El precio y el total son verificados por el servidor.</p></div></div>
+      {canRegister && showForm && (
+        <FormModal
+          eyebrow="NUEVA OPERACIÓN"
+          title="Registrar venta"
+          description="El precio, el stock y el total son verificados por el servidor."
+          onClose={() => setShowForm(false)}
+          closeDisabled={saving}
+          size="wide"
+        >
+          <div className="sale-modal-content">
+            {error && <StateMessage type="error" title="No se pudo completar la operación" description={error} />}
             <div className="sale-form">
               <label>
                 Cliente
@@ -234,10 +256,13 @@ function Sales({ role }: SalesProps) {
                   <option value="bank_transfer">Transferencia bancaria</option>
                 </select>
               </label>
-              <button type="button" className="primary-button" disabled={saving || !selectedCustomer || cart.length === 0} onClick={() => void registerSale()}>{saving ? 'Confirmando...' : 'Registrar venta'}</button>
+              <div className="sale-modal-actions">
+                <button type="button" className="secondary-button" disabled={saving} onClick={() => setShowForm(false)}>Cancelar</button>
+                <button type="button" className="primary-button" disabled={saving || !selectedCustomer || cart.length === 0} onClick={() => void registerSale()}>{saving ? 'Confirmando...' : 'Registrar venta'}</button>
+              </div>
             </div>
-          </article>
-        </section>
+          </div>
+        </FormModal>
       )}
 
       <section className="panel">

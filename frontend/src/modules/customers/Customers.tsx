@@ -1,5 +1,6 @@
 import { useMemo, useState, type FormEvent } from 'react'
 import type { UserRole } from '../../app/navigation'
+import FormModal from '../../components/FormModal'
 import PageHeader from '../../components/PageHeader'
 import StateMessage from '../../components/StateMessage'
 import { useCustomers } from '../../hooks/useCustomers'
@@ -157,11 +158,11 @@ function Customers({ role }: CustomersProps) {
               type="button"
               className="primary-button compact"
               onClick={() => {
-                setShowForm((value) => !value)
+                setShowForm(true)
                 setFormError('')
               }}
             >
-              {showForm ? 'Cerrar' : '+ Nuevo cliente'}
+              + Nuevo cliente
             </button>
           ) : undefined
         }
@@ -196,15 +197,13 @@ function Customers({ role }: CustomersProps) {
       )}
 
       {canManage && showForm && (
-        <section className="panel form-panel">
-          <div className="panel-header">
-            <div>
-              <span className="eyebrow">NUEVO REGISTRO</span>
-              <h2>Agregar cliente</h2>
-              <p>Registra una persona con DNI o una empresa con RUC.</p>
-            </div>
-          </div>
-
+        <FormModal
+          eyebrow="NUEVO REGISTRO"
+          title="Agregar cliente"
+          description="Registra una persona con DNI o una empresa con RUC."
+          onClose={() => setShowForm(false)}
+          closeDisabled={submitting}
+        >
           <form className="entity-form" onSubmit={handleAddCustomer}>
             <label>
               Tipo de cliente
@@ -302,7 +301,7 @@ function Customers({ role }: CustomersProps) {
               </button>
             </div>
           </form>
-        </section>
+        </FormModal>
       )}
 
       <section className="panel">
