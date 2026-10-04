@@ -10,10 +10,13 @@ from app.core.security import ADMIN_ROLE
 from app.db.session import get_db
 from app.schemas.common import ErrorResponse
 from app.schemas.security import (
+    AccessLocationListResponse,
+    AccessLocationResponse,
     AuditLogListResponse,
     AuditLogResponse,
     SessionActionResponse,
     SessionListResponse,
+    SessionLocationUpdate,
     SessionResponse,
 )
 from app.services.security import AuditService, SessionService, record_audit
@@ -32,6 +35,57 @@ def list_sessions(current_user: CurrentUser, session: DatabaseSession) -> Sessio
                 update={"current": item.id == current_user.session_id}
             )
             for item in items
+        ]
+    )
+
+
+@router.post("/sessions/current/location", status_code=204)
+def update_current_session_location(
+    payload: SessionLocationUpdate,
+    current_user: CurrentUser,
+    session: DatabaseSession,
+) -> None:
+    if current_user.session_id is None:
+        return
+    SessionService(session, current_user.company_id, current_user.id).update_location(
+        current_user.session_id, payload.model_dump()
+    )
+    session.commit()
+
+
+@router.get("/access-locations", response_model=AccessLocationListResponse)
+def list_access_locations(
+    current_user: CurrentUser,
+    session: DatabaseSession,
+) -> AccessLocationListResponse:
+    rows = SessionService(session, current_user.company_id, current_user.id).list_access_locations(
+        include_company=current_user.role == ADMIN_ROLE
+    )
+    return AccessLocationListResponse(
+        items=[
+            AccessLocationResponse(
+                id=item.id,
+                user_id=item.user_id,
+                user_name=user.name,
+                user_email=user.email,
+                ip_address=item.ip_address,
+                user_agent=item.user_agent,
+                created_at=item.created_at,
+                last_seen_at=item.last_seen_at,
+                revoked_at=item.revoked_at,
+                current=item.id == current_user.session_id,
+                latitude=float(item.latitude) if item.latitude is not None else None,
+                longitude=float(item.longitude) if item.longitude is not None else None,
+                city=item.city,
+                region=item.region,
+                country=item.country,
+                country_code=item.country_code,
+                isp=item.isp,
+                timezone=item.location_timezone,
+                location_source=item.location_source,
+                located_at=item.located_at,
+            )
+            for item, user in rows
         ]
     )
 

@@ -18,6 +18,7 @@ import type {
   LoginResponse,
   SessionUser,
 } from '../types/api'
+import { captureLoginLocation } from '../services/security'
 import {
   AuthContext,
   type AuthStatus,
@@ -78,6 +79,7 @@ function AuthProvider({ children }: AuthProviderProps) {
     saveAccessToken(response.access_token)
     setUser(response.user)
     setStatus('authenticated')
+    void captureLoginLocation()
   }, [])
 
   const value = useMemo(

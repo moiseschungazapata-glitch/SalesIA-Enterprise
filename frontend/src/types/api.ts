@@ -33,6 +33,33 @@ export interface SecuritySessionList {
   items: SecuritySession[]
 }
 
+export interface AccessLocation {
+  id: number
+  user_id: number
+  user_name: string
+  user_email: string
+  ip_address: string | null
+  user_agent: string | null
+  created_at: string
+  last_seen_at: string
+  revoked_at: string | null
+  current: boolean
+  latitude: number | null
+  longitude: number | null
+  city: string | null
+  region: string | null
+  country: string | null
+  country_code: string | null
+  isp: string | null
+  timezone: string | null
+  location_source: string | null
+  located_at: string | null
+}
+
+export interface AccessLocationList {
+  items: AccessLocation[]
+}
+
 export interface AuditLogRecord {
   id: number
   user_id: number | null

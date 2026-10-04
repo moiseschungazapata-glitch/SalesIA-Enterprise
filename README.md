@@ -36,6 +36,8 @@ Desarrollo basado en las 16 fases del Plan Integral de Desarrollo.
 - [Fase 10 - Dashboard Analytics](docs/analytics/fase-10-dashboard-analytics.md)
 - [Fase 11 - Insights empresariales](docs/analytics/fase-11-insights-empresariales.md)
 - [Fase 12 - Reportes](docs/reports/fase-12-reportes.md)
+- [Fase 13 - Seguridad y auditoria](docs/security/fase-13-seguridad-auditoria.md)
+- [Fase 14 - Pruebas y calidad](docs/testing/fase-14-pruebas-calidad.md)
 
 ## Estado actual
 
@@ -55,8 +57,10 @@ Desarrollo basado en las 16 fases del Plan Integral de Desarrollo.
   trazabilidad hacia datasets y análisis, e historial consultable.
 - Fase 12: completada; genera reportes de ventas, estadística, productos,
   clientes y vendedores con historial, CSV y vista imprimible.
-- Fase 13 completada: sesiones revocables, bloqueo temporal, auditoría y controles de seguridad.
-- Siguiente fase: 14 - Pruebas y calidad.
+- Fase 13: completada; sesiones revocables, bloqueo temporal, auditoría y controles de seguridad.
+- Fase 14: completada; 66 pruebas automatizadas, validación estática,
+  compilación de producción y evidencia reproducible sin fallos.
+- Siguiente fase: 15 - Documentación de usuario y técnica.
 
 El frontend utiliza datos reales para la sesion, usuarios, clientes, categorias,
 productos, ventas, inventario, estadistica, probabilidad y dashboard ejecutivo.

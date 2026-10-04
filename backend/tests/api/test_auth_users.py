@@ -120,6 +120,41 @@ def test_login_and_current_session(client: TestClient) -> None:
     }
 
 
+def test_current_session_records_and_lists_approximate_ip_location(
+    client: TestClient,
+) -> None:
+    token = login(client, ADMIN_EMAIL, ADMIN_PASSWORD)
+    headers = bearer(token)
+
+    updated = client.post(
+        "/api/v1/security/sessions/current/location",
+        headers=headers,
+        json={
+            "ip_address": "190.234.12.34",
+            "latitude": -12.1219,
+            "longitude": -77.0297,
+            "city": "Lima",
+            "region": "Lima",
+            "country": "Peru",
+            "country_code": "PE",
+            "isp": "Proveedor de prueba",
+            "timezone": "America/Lima",
+        },
+    )
+    assert updated.status_code == 204
+
+    response = client.get("/api/v1/security/access-locations", headers=headers)
+    assert response.status_code == 200
+    access = response.json()["items"][0]
+    assert access["user_name"] == "Admin Test"
+    assert access["ip_address"] == "190.234.12.34"
+    assert access["latitude"] == pytest.approx(-12.1219)
+    assert access["longitude"] == pytest.approx(-77.0297)
+    assert access["city"] == "Lima"
+    assert access["location_source"] == "public_ip"
+    assert access["current"] is True
+
+
 def test_invalid_and_inactive_logins_return_safe_errors(client: TestClient) -> None:
     wrong_password = client.post(
         "/api/v1/auth/login",

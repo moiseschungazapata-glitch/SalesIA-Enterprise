@@ -1,13 +1,15 @@
-import { useCallback, useEffect, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
 import PageHeader from '../../components/PageHeader'
 import StateMessage from '../../components/StateMessage'
 import {
+  getAccessLocations,
   getAuditLogs,
   getSessions,
   revokeOtherSessions,
   revokeSession,
 } from '../../services/security'
 import type {
+  AccessLocation,
   AuditLogRecord,
   AuthUser,
   SecuritySession,
@@ -38,6 +40,8 @@ const actionLabels: Record<string, string> = {
   'report.generate': 'Reporte generado',
 }
 
+const AccessMap = lazy(() => import('../../components/AccessMap'))
+
 function deviceLabel(userAgent: string | null) {
   if (!userAgent) return 'Dispositivo no identificado'
   if (/mobile|android|iphone/i.test(userAgent)) return 'Dispositivo móvil'
@@ -50,6 +54,8 @@ function deviceLabel(userAgent: string | null) {
 function Security({ user, onLogout }: SecurityProps) {
   const [sessions, setSessions] = useState<SecuritySession[]>([])
   const [auditLogs, setAuditLogs] = useState<AuditLogRecord[]>([])
+  const [accesses, setAccesses] = useState<AccessLocation[]>([])
+  const [selectedAccessId, setSelectedAccessId] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
@@ -59,14 +65,17 @@ function Security({ user, onLogout }: SecurityProps) {
     setLoading(true)
     setError('')
     try {
-      const [sessionData, auditData] = await Promise.all([
+      const [sessionData, auditData, locationData] = await Promise.all([
         getSessions(signal),
         user.role === 'administrator'
           ? getAuditLogs(signal)
           : Promise.resolve({ items: [] }),
+        getAccessLocations(signal),
       ])
       setSessions(sessionData.items)
       setAuditLogs(auditData.items)
+      setAccesses(locationData.items)
+      setSelectedAccessId((current) => current ?? locationData.items.find((item) => item.current)?.id ?? locationData.items[0]?.id ?? null)
     } catch (requestError) {
       if (requestError instanceof DOMException && requestError.name === 'AbortError') return
       setError(requestError instanceof Error ? requestError.message : 'No se pudo cargar la seguridad.')
@@ -116,6 +125,12 @@ function Security({ user, onLogout }: SecurityProps) {
     }
   }
 
+  const selectedAccess = accesses.find((item) => item.id === selectedAccessId) ?? null
+  const locatedAccesses = accesses.filter(
+    (item) => item.latitude !== null && item.longitude !== null,
+  )
+  const locatedUsers = new Set(locatedAccesses.map((item) => item.user_id)).size
+
   return (
     <div className="page security-page">
       <PageHeader
@@ -132,6 +147,79 @@ function Security({ user, onLogout }: SecurityProps) {
       {loading && <StateMessage type="loading" title="Verificando sesiones" />}
       {!loading && error && <StateMessage type="error" title="No se pudo cargar la seguridad" description={error} actionLabel="Reintentar" onAction={() => void load()} />}
       {success && <p className="form-success security-feedback">{success}</p>}
+
+      {!loading && !error && (
+        <section className="panel security-location-section">
+          <div className="panel-header security-location-heading">
+            <div>
+              <span className="eyebrow">MAPA DE ACCESOS</span>
+              <h2>Ubicaciones aproximadas de inicio de sesión</h2>
+              <p>Calculadas mediante IP pública. No se solicita GPS ni se muestran direcciones exactas.</p>
+            </div>
+            <span className="location-privacy-badge">Estimación por IP</span>
+          </div>
+
+          <div className="security-location-layout">
+            <div className="security-map-shell">
+              <Suspense fallback={<div className="access-map-empty"><strong>Cargando mapa…</strong></div>}>
+                <AccessMap
+                  items={accesses}
+                  selectedId={selectedAccessId}
+                  onSelect={(item) => setSelectedAccessId(item.id)}
+                />
+              </Suspense>
+              <div className="security-map-legend">
+                <span><i className="legend-dot known" /> Acceso ubicado</span>
+                <span><i className="legend-radius" /> Radio orientativo</span>
+              </div>
+            </div>
+
+            <aside className="security-location-summary">
+              <div className="location-kpis">
+                <div><span>Accesos</span><strong>{locatedAccesses.length}</strong></div>
+                <div><span>Usuarios</span><strong>{locatedUsers}</strong></div>
+              </div>
+              {selectedAccess ? (
+                <div className="selected-access-card">
+                  <span className="eyebrow">ACCESO SELECCIONADO</span>
+                  <div className="selected-access-user">
+                    <div className="profile-avatar">{selectedAccess.user_name.charAt(0).toUpperCase()}</div>
+                    <div><strong>{selectedAccess.user_name}</strong><span>{selectedAccess.user_email}</span></div>
+                  </div>
+                  <dl>
+                    <div><dt>Zona aproximada</dt><dd>{[selectedAccess.city, selectedAccess.region, selectedAccess.country].filter(Boolean).join(', ') || 'No disponible'}</dd></div>
+                    <div><dt>Inicio</dt><dd>{new Date(selectedAccess.created_at).toLocaleString('es-PE')}</dd></div>
+                    <div><dt>Dispositivo</dt><dd>{deviceLabel(selectedAccess.user_agent)}</dd></div>
+                    <div><dt>IP pública</dt><dd>{selectedAccess.ip_address || 'No disponible'}</dd></div>
+                    <div><dt>Proveedor</dt><dd>{selectedAccess.isp || 'No disponible'}</dd></div>
+                    <div><dt>Confianza</dt><dd>Orientativa · nivel ciudad/región</dd></div>
+                  </dl>
+                </div>
+              ) : (
+                <p className="location-empty-copy">Inicia sesión nuevamente para registrar la primera ubicación aproximada.</p>
+              )}
+            </aside>
+          </div>
+
+          {accesses.length > 0 && (
+            <div className="table-wrapper access-location-table">
+              <table>
+                <thead><tr><th>Usuario</th><th>Fecha</th><th>Zona aproximada</th><th>IP</th><th>Dispositivo</th><th>Estado</th></tr></thead>
+                <tbody>{accesses.map((item) => (
+                  <tr key={item.id} className={item.id === selectedAccessId ? 'selected-row' : ''} onClick={() => setSelectedAccessId(item.id)}>
+                    <td><strong>{item.user_name}</strong><small>{item.user_email}</small></td>
+                    <td>{new Date(item.created_at).toLocaleString('es-PE')}</td>
+                    <td>{[item.city, item.region, item.country].filter(Boolean).join(', ') || 'Sin estimación'}</td>
+                    <td>{item.ip_address || '—'}</td>
+                    <td>{deviceLabel(item.user_agent)}</td>
+                    <td><span className={`access-status ${item.revoked_at ? 'revoked' : 'known'}`}>{item.revoked_at ? 'Revocada' : item.latitude === null ? 'Sin ubicar' : 'Conocida'}</span></td>
+                  </tr>
+                ))}</tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      )}
 
       {!loading && !error && (
         <section className="panel security-section">

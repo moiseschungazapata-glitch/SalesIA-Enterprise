@@ -16,6 +16,7 @@ venv/
 node_modules/
 dist/
 .vite/
+coverage/
 
 # Editors and operating systems
 .idea/

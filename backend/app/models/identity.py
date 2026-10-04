@@ -7,6 +7,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Index,
+    Numeric,
     String,
     Text,
     UniqueConstraint,
@@ -58,6 +59,7 @@ class AuthSession(Base):
     __table_args__ = (
         Index("ix_auth_sessions_company_created", "company_id", "created_at"),
         Index("ix_auth_sessions_user_active", "user_id", "revoked_at", "expires_at"),
+        Index("ix_auth_sessions_company_location", "company_id", "located_at"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -79,6 +81,16 @@ class AuthSession(Base):
     )
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     revoke_reason: Mapped[str | None] = mapped_column(String(80))
+    latitude: Mapped[float | None] = mapped_column(Numeric(9, 6))
+    longitude: Mapped[float | None] = mapped_column(Numeric(9, 6))
+    city: Mapped[str | None] = mapped_column(String(100))
+    region: Mapped[str | None] = mapped_column(String(100))
+    country: Mapped[str | None] = mapped_column(String(100))
+    country_code: Mapped[str | None] = mapped_column(String(2))
+    isp: Mapped[str | None] = mapped_column(String(160))
+    location_timezone: Mapped[str | None] = mapped_column(String(64))
+    location_source: Mapped[str | None] = mapped_column(String(40))
+    located_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class Employee(TimestampMixin, Base):

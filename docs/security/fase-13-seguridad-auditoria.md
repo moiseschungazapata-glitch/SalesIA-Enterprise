@@ -13,6 +13,7 @@ React como, de forma obligatoria, en FastAPI.
 | Validacion de entrada | Schemas Pydantic, limites de longitud, tipos y errores uniformes 422. |
 | Acciones criticas | Tabla `audit_logs` para accesos, usuarios, catalogos, ventas, inventario, insights y reportes. |
 | Control de sesiones | Tabla `auth_sessions`, JTI almacenado como SHA-256, cierre individual y cierre de otras sesiones. |
+| Mapa de accesos | Ubicacion aproximada por IP publica, sin permiso GPS, con mapa interactivo y detalle por sesion. |
 | Secretos | `SECRET_KEY` fuera de Git, longitud minima, CORS restringido y SSL obligatorio en produccion. |
 
 ## Proteccion de acceso
@@ -55,10 +56,32 @@ Acciones cubiertas:
 | GET | `/api/v1/security/sessions` | Usuario autenticado |
 | POST | `/api/v1/security/sessions/{id}/revoke` | Propietario de la sesion |
 | POST | `/api/v1/security/sessions/revoke-others` | Usuario autenticado |
+| POST | `/api/v1/security/sessions/current/location` | Usuario autenticado; solo su sesion actual |
+| GET | `/api/v1/security/access-locations` | Administrador: empresa; otros roles: accesos propios |
 | GET | `/api/v1/security/audit-logs` | Solo administrador |
 
 La pantalla `/seguridad` permite a cualquier usuario gestionar sus sesiones.
 El historial de auditoria solo aparece para administradores.
+
+## Ubicacion aproximada de accesos
+
+Despues de un inicio de sesion correcto, el navegador consulta la ubicacion
+general asociada a su IP publica y la guarda en la sesion activa. Este proceso
+no utiliza la API GPS del dispositivo, no abre una solicitud de permisos y no
+obtiene una direccion domiciliaria.
+
+La pantalla de Seguridad muestra:
+
+- mapa ampliable y desplazable con OpenStreetMap y Leaflet;
+- un radio orientativo alrededor de cada estimacion;
+- usuario, fecha, dispositivo, IP, proveedor y ciudad o region;
+- historial de accesos ubicados, sin ubicar y revocados;
+- vista adaptable para escritorio, tablet y celular.
+
+La ubicacion por IP puede corresponder al nodo del proveedor de internet, variar
+con redes moviles, VPN o proxy y no debe usarse como prueba de presencia fisica.
+Por esa razon la interfaz siempre la identifica como estimacion a nivel de
+ciudad o region y nunca como ubicacion exacta.
 
 ## Variables de entorno
 
@@ -80,6 +103,9 @@ La revision `20261004_0004` agrega:
 - `users.failed_login_attempts`;
 - `users.locked_until`;
 - `auth_sessions` e indices para usuario, vigencia y empresa.
+
+La revision `20261004_0005` agrega a `auth_sessions` las coordenadas aproximadas,
+ciudad, region, pais, ISP, zona horaria, fuente y fecha de estimacion.
 
 ## Criterios de aceptacion
 

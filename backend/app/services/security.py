@@ -1,5 +1,7 @@
 """Security session lifecycle and append-only audit operations."""
 
+from __future__ import annotations
+
 from datetime import UTC, datetime
 from typing import Any
 
@@ -80,6 +82,47 @@ class SessionService:
                 .order_by(AuthSession.created_at.desc(), AuthSession.id.desc())
                 .limit(50)
             )
+        )
+
+    def update_location(self, session_id: int, data: dict[str, Any]) -> AuthSession:
+        auth_session = self.session.scalar(
+            select(AuthSession).where(
+                AuthSession.id == session_id,
+                AuthSession.company_id == self.company_id,
+                AuthSession.user_id == self.user_id,
+                AuthSession.revoked_at.is_(None),
+            )
+        )
+        if auth_session is None:
+            raise AppError("SESSION_NOT_FOUND", "La sesion no existe", status_code=404)
+        auth_session.ip_address = data["ip_address"]
+        auth_session.latitude = data["latitude"]
+        auth_session.longitude = data["longitude"]
+        auth_session.city = data.get("city")
+        auth_session.region = data.get("region")
+        auth_session.country = data.get("country")
+        auth_session.country_code = data.get("country_code")
+        auth_session.isp = data.get("isp")
+        auth_session.location_timezone = data.get("timezone")
+        auth_session.location_source = "public_ip"
+        auth_session.located_at = datetime.now(UTC)
+        self.session.flush()
+        return auth_session
+
+    def list_access_locations(
+        self, *, include_company: bool = False
+    ) -> list[tuple[AuthSession, User]]:
+        conditions = [AuthSession.company_id == self.company_id]
+        if not include_company:
+            conditions.append(AuthSession.user_id == self.user_id)
+        return list(
+            self.session.execute(
+                select(AuthSession, User)
+                .join(User, User.id == AuthSession.user_id)
+                .where(*conditions)
+                .order_by(AuthSession.created_at.desc(), AuthSession.id.desc())
+                .limit(100)
+            ).all()
         )
 
     def revoke(self, session_id: int, reason: str = "user_revoked") -> int:

@@ -12,6 +12,7 @@ from app.core.config import Settings
 from app.db.base import Base
 
 EXPECTED_TABLES = {
+    "auth_sessions",
     "audit_logs",
     "bayes_analyses",
     "categories",
@@ -34,6 +35,12 @@ EXPECTED_TABLES = {
     "statistical_analyses",
     "statistical_results",
     "users",
+}
+
+POST_INITIAL_TABLES = {"auth_sessions"}
+POST_INITIAL_COLUMNS = {
+    "reports": {"content"},
+    "users": {"failed_login_attempts", "locked_until"},
 }
 
 
@@ -71,14 +78,53 @@ def test_models_compile_for_postgresql() -> None:
 
 def test_migration_snapshot_matches_model_tables_and_columns() -> None:
     migration_metadata = _migration_metadata()
-    assert set(migration_metadata.tables) == set(Base.metadata.tables)
+    assert set(migration_metadata.tables) == set(Base.metadata.tables) - POST_INITIAL_TABLES
 
-    for name, model_table in Base.metadata.tables.items():
-        migration_table = migration_metadata.tables[name]
-        assert set(migration_table.columns.keys()) == set(model_table.columns.keys())
+    for name, migration_table in migration_metadata.tables.items():
+        model_table = Base.metadata.tables[name]
+        assert set(migration_table.columns.keys()) == (
+            set(model_table.columns.keys()) - POST_INITIAL_COLUMNS.get(name, set())
+        )
         assert {(fk.parent.name, fk.target_fullname) for fk in migration_table.foreign_keys} == {
             (fk.parent.name, fk.target_fullname) for fk in model_table.foreign_keys
         }
+
+
+def test_later_migrations_are_reflected_in_current_models() -> None:
+    auth_sessions = Base.metadata.tables["auth_sessions"]
+    assert set(auth_sessions.columns.keys()) == {
+        "id",
+        "company_id",
+        "user_id",
+        "token_jti_hash",
+        "ip_address",
+        "user_agent",
+        "created_at",
+        "expires_at",
+        "last_seen_at",
+        "revoked_at",
+        "revoke_reason",
+        "latitude",
+        "longitude",
+        "city",
+        "region",
+        "country",
+        "country_code",
+        "isp",
+        "location_timezone",
+        "location_source",
+        "located_at",
+    }
+    assert {foreign_key.target_fullname for foreign_key in auth_sessions.foreign_keys} == {
+        "companies.id",
+        "users.id",
+    }
+    assert POST_INITIAL_COLUMNS["reports"] <= set(
+        Base.metadata.tables["reports"].columns.keys()
+    )
+    assert POST_INITIAL_COLUMNS["users"] <= set(
+        Base.metadata.tables["users"].columns.keys()
+    )
 
 
 def test_money_is_decimal_and_core_integrity_checks_exist() -> None:
