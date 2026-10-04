@@ -278,7 +278,7 @@ function Probability() {
               </label>
               <label>
                 P(B) · Evidencia
-                <input type="number" step="0.01" min="0.0001" max="1" value={evidence} onChange={(event) => setEvidence(event.target.value)} required />
+                <input type="number" step="0.01" min="0.01" max="1" value={evidence} onChange={(event) => setEvidence(event.target.value)} required />
               </label>
               <button className="primary-button" type="submit" disabled={loading}>
                 {loading ? 'Calculando…' : 'Calcular y guardar'}
