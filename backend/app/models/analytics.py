@@ -115,7 +115,7 @@ class StatisticalAnalysis(Base):
     __table_args__ = (
         CheckConstraint(
             "analysis_type IN ('mean', 'median', 'comparison', 'frequency', "
-            "'random_variable', 'bayes')",
+            "'random_variable', 'bayes', 'insight')",
             name="analysis_type_allowed",
         ),
         CheckConstraint("status IN ('pending', 'completed', 'failed')", name="status_allowed"),

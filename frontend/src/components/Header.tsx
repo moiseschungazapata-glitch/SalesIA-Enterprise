@@ -4,10 +4,12 @@ import {
   type PageKey,
 } from '../app/navigation'
 import type { AuthUser } from '../types/api'
+import ThemeToggle from './ThemeToggle'
 
 interface HeaderProps {
   activePage: PageKey
   user: AuthUser
+  onOpenMenu: () => void
 }
 
 function getInitials(name: string) {
@@ -19,14 +21,26 @@ function getInitials(name: string) {
     .join('')
 }
 
-function Header({ activePage, user }: HeaderProps) {
+function Header({ activePage, user, onOpenMenu }: HeaderProps) {
   const current = navigationItems.find(
     (item) => item.key === activePage,
   )
 
   return (
     <header className="topbar">
-      <div>
+      <button
+        type="button"
+        className="mobile-menu-button"
+        onClick={onOpenMenu}
+        aria-label="Abrir menú principal"
+        aria-controls="salesia-sidebar"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 7h16M4 12h16M4 17h16" />
+        </svg>
+      </button>
+
+      <div className="topbar-copy">
         <div className="breadcrumb">
           SalesIA Enterprise <span>/</span> {current?.label}
         </div>
@@ -37,6 +51,7 @@ function Header({ activePage, user }: HeaderProps) {
       </div>
 
       <div className="topbar-actions">
+        <ThemeToggle />
         <div className="profile">
           <div className="profile-avatar">
             {getInitials(user.name)}

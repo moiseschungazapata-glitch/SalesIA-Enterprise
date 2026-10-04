@@ -106,7 +106,7 @@ class AnalysisExecutionResponse(BaseModel):
     dataset_id: int
     dataset_name: str
     analysis_type: Literal[
-        "mean", "median", "comparison", "frequency", "random_variable", "bayes"
+        "mean", "median", "comparison", "frequency", "random_variable", "bayes", "insight"
     ]
     variable_name: str | None = None
     variable_label: str | None = None

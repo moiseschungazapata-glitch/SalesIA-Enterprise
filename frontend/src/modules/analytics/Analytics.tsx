@@ -22,6 +22,7 @@ const analysisLabels: Record<StatisticalAnalysisType, string> = {
   frequency: 'Probabilidad de evento',
   random_variable: 'Variable aleatoria',
   bayes: 'Teorema de Bayes',
+  insight: 'Insights empresariales',
 }
 
 function numericMetric(

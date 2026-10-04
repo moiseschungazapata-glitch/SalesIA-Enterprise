@@ -129,3 +129,35 @@ export function apiPatch<T>(path: string, body: unknown) {
     body: JSON.stringify(body),
   })
 }
+
+export async function apiDownload(path: string) {
+  const token = getAccessToken()
+  let response: Response
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
+  } catch {
+    throw new ApiError(
+      'No se pudo conectar con la API. Verifica que el backend esté iniciado.',
+      0,
+      'NETWORK_ERROR',
+    )
+  }
+  if (!response.ok) {
+    const payload = (await parseResponse(response)) as ApiErrorPayload | null
+    if (response.status === 401 && token) {
+      clearAccessToken()
+      window.dispatchEvent(new Event(UNAUTHORIZED_EVENT))
+    }
+    throw new ApiError(
+      payload?.error?.message || `La descarga falló (${response.status}).`,
+      response.status,
+      payload?.error?.code,
+      payload?.error?.details,
+    )
+  }
+  const disposition = response.headers.get('content-disposition') || ''
+  const filename = disposition.match(/filename="([^"]+)"/)?.[1] || 'reporte.csv'
+  return { blob: await response.blob(), filename }
+}

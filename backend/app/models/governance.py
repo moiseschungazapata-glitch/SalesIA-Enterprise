@@ -2,11 +2,13 @@
 
 from datetime import datetime
 
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Index, String, Text, func, text
+from sqlalchemy import JSON, CheckConstraint, DateTime, ForeignKey, Index, String, Text, func, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
+
+JSON_DOCUMENT = JSON().with_variant(JSONB, "postgresql")
 
 
 class Report(Base):
@@ -30,11 +32,14 @@ class Report(Base):
     report_type: Mapped[str] = mapped_column(String(30), nullable=False)
     title: Mapped[str] = mapped_column(String(180), nullable=False)
     parameters: Mapped[dict] = mapped_column(
-        JSONB, nullable=False, server_default=text("'{}'::jsonb")
+        JSON_DOCUMENT, nullable=False, server_default=text("'{}'")
     )
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")
     file_path: Mapped[str | None] = mapped_column(Text)
     error_message: Mapped[str | None] = mapped_column(Text)
+    content: Mapped[dict] = mapped_column(
+        JSON_DOCUMENT, nullable=False, server_default=text("'{}'")
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
@@ -57,7 +62,9 @@ class AuditLog(Base):
     action: Mapped[str] = mapped_column(String(80), nullable=False)
     entity_type: Mapped[str] = mapped_column(String(80), nullable=False)
     entity_id: Mapped[str | None] = mapped_column(String(80))
-    changes: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default=text("'{}'::jsonb"))
+    changes: Mapped[dict] = mapped_column(
+        JSON_DOCUMENT, nullable=False, server_default=text("'{}'")
+    )
     request_id: Mapped[str | None] = mapped_column(String(80))
     ip_address: Mapped[str | None] = mapped_column(String(45))
     created_at: Mapped[datetime] = mapped_column(

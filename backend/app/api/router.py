@@ -7,10 +7,12 @@ from app.api.routes import (
     categories,
     customers,
     dashboard,
+    insights,
     inventory,
     probability,
     products,
     random_variables,
+    reports,
     sales,
     statistics,
     users,
@@ -25,6 +27,8 @@ api_router.include_router(products.router)
 api_router.include_router(inventory.router)
 api_router.include_router(sales.router)
 api_router.include_router(dashboard.router)
+api_router.include_router(insights.router)
 api_router.include_router(statistics.router)
 api_router.include_router(probability.router)
 api_router.include_router(random_variables.router)
+api_router.include_router(reports.router)

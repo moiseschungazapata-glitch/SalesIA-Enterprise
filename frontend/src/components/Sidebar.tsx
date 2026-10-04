@@ -10,6 +10,8 @@ interface SidebarProps {
   role: UserRole
   onNavigate: (page: PageKey) => void
   onLogout: () => void
+  mobileOpen: boolean
+  onClose: () => void
 }
 
 function Sidebar({
@@ -17,11 +19,16 @@ function Sidebar({
   role,
   onNavigate,
   onLogout,
+  mobileOpen,
+  onClose,
 }: SidebarProps) {
   const items = getNavigationItems(role)
 
   return (
-    <aside className="sidebar">
+    <aside
+      id="salesia-sidebar"
+      className={`sidebar ${mobileOpen ? 'mobile-open' : ''}`}
+    >
       <div className="sidebar-brand">
         <div className="brand-mark">S</div>
 
@@ -29,6 +36,17 @@ function Sidebar({
           <strong>SalesIA</strong>
           <span>Enterprise</span>
         </div>
+
+        <button
+          type="button"
+          className="sidebar-close-button"
+          onClick={onClose}
+          aria-label="Cerrar menú principal"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m6 6 12 12M18 6 6 18" />
+          </svg>
+        </button>
       </div>
 
       <div className="sidebar-section-label">
@@ -45,7 +63,10 @@ function Sidebar({
             className={`nav-item ${
               activePage === item.key ? 'active' : ''
             }`}
-            onClick={() => onNavigate(item.key)}
+            onClick={() => {
+              onNavigate(item.key)
+              onClose()
+            }}
           >
             <span className="nav-dot">
               {item.label.charAt(0)}
@@ -64,7 +85,10 @@ function Sidebar({
         <button
           type="button"
           className="logout-button"
-          onClick={onLogout}
+          onClick={() => {
+            onClose()
+            onLogout()
+          }}
         >
           Cerrar sesión
         </button>

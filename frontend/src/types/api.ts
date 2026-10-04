@@ -291,6 +291,7 @@ export type StatisticalAnalysisType =
   | 'frequency'
   | 'random_variable'
   | 'bayes'
+  | 'insight'
 
 export interface StatisticalVariableDefinition {
   name: string
@@ -428,4 +429,102 @@ export interface DashboardSummary {
   sales_by_product: DashboardBreakdownPoint[]
   sales_by_seller: DashboardBreakdownPoint[]
   ticket_distribution: DashboardDistributionPoint[]
+}
+
+export type InsightCategory =
+  | 'sales'
+  | 'products'
+  | 'sellers'
+  | 'customers'
+  | 'statistics'
+
+export type InsightSeverity = 'info' | 'warning' | 'critical'
+
+export interface InsightRecord {
+  id: number
+  analysis_id: number
+  dataset_id: number
+  dataset_name: string
+  title: string
+  description: string
+  category: InsightCategory
+  rule_code: string
+  severity: InsightSeverity
+  evidence: Record<string, unknown>
+  active: boolean
+  period_start: string | null
+  period_end: string | null
+  generated_at: string
+}
+
+export interface InsightGenerationRequest {
+  date_from?: string | null
+  date_to?: string | null
+  branch: 'main'
+  seller_id?: number | null
+  category_id?: number | null
+}
+
+export interface InsightGenerationResponse {
+  analysis_id: number
+  dataset_id: number
+  generated_count: number
+  items: InsightRecord[]
+}
+
+export interface InsightListResponse {
+  items: InsightRecord[]
+  total: number
+  page: number
+  page_size: number
+}
+
+export type ReportType =
+  | 'sales'
+  | 'products'
+  | 'customers'
+  | 'sellers'
+  | 'statistical'
+
+export type ReportStatus = 'pending' | 'completed' | 'failed'
+
+export interface ReportColumn {
+  key: string
+  label: string
+  format: 'text' | 'date' | 'datetime' | 'integer' | 'money' | 'decimal' | 'status'
+}
+
+export interface ReportContent {
+  columns: ReportColumn[]
+  rows: Array<Record<string, unknown>>
+  summary: Record<string, unknown>
+}
+
+export interface ReportRecord {
+  id: number
+  report_type: ReportType
+  title: string
+  parameters: Record<string, unknown>
+  status: ReportStatus
+  row_count: number
+  created_at: string
+  generated_at: string | null
+}
+
+export interface ReportDetail extends ReportRecord {
+  content: ReportContent
+}
+
+export interface ReportListResponse {
+  items: ReportRecord[]
+  total: number
+  page: number
+  page_size: number
+}
+
+export interface ReportGenerateRequest {
+  report_type: ReportType
+  title?: string | null
+  date_from?: string | null
+  date_to?: string | null
 }

@@ -21,8 +21,10 @@ import Login from './modules/auth/Login'
 import Customers from './modules/customers/Customers'
 import Dashboard from './modules/dashboard/Dashboard'
 import Inventory from './modules/inventory/Inventory'
+import Insights from './modules/insights/Insights'
 import Products from './modules/products/Products'
 import Probability from './modules/probability/Probability'
+import Reports from './modules/reports/Reports'
 import Sales from './modules/sales/Sales'
 import Users from './modules/users/Users'
 import type { AuthUser } from './types/api'
@@ -116,6 +118,14 @@ function AuthenticatedApplication({
         <Route
           path={pagePaths.probability}
           element={guarded('probability', <Probability />)}
+        />
+        <Route
+          path={pagePaths.insights}
+          element={guarded('insights', <Insights />)}
+        />
+        <Route
+          path={pagePaths.reports}
+          element={guarded('reports', <Reports />)}
         />
         <Route
           path="/login"
