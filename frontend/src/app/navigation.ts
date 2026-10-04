@@ -13,6 +13,7 @@ export type PageKey =
   | 'probability'
   | 'insights'
   | 'reports'
+  | 'security'
   | 'users'
 
 export interface NavigationItem {
@@ -84,6 +85,12 @@ export const navigationItems: NavigationItem[] = [
     roles: ['administrator', 'manager'],
   },
   {
+    key: 'security',
+    label: 'Seguridad',
+    description: 'Sesiones activas y registro de auditoría',
+    roles: allRoles,
+  },
+  {
     key: 'users',
     label: 'Usuarios',
     description: 'Usuarios, roles y estados',
@@ -107,6 +114,7 @@ export const pagePaths: Record<PageKey, string> = {
   probability: '/probabilidad',
   insights: '/insights',
   reports: '/reportes',
+  security: '/seguridad',
   users: '/usuarios',
 }
 

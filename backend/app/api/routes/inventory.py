@@ -3,7 +3,7 @@
 from datetime import date
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, Request, status
 from sqlalchemy.orm import Session
 
 from app.api.dependencies import CurrentUser, Principal, require_roles
@@ -18,6 +18,7 @@ from app.schemas.inventory import (
     InventoryMovementResponse,
 )
 from app.services.operations import InventoryService
+from app.services.security import record_audit
 
 router = APIRouter(prefix="/inventory", tags=["inventory"])
 
@@ -106,11 +107,18 @@ def list_movements(
 )
 def create_movement(
     payload: InventoryMovementCreate,
+    request: Request,
     current_user: AdminUser,
     session: DatabaseSession,
 ) -> InventoryMovementResponse:
     movement = InventoryService(
         session, current_user.company_id, current_user.id
     ).create_movement(payload)
+    record_audit(
+        session, company_id=current_user.company_id, user_id=current_user.id,
+        action="inventory.adjust", entity_type="inventory_movement", entity_id=movement.id,
+        request=request,
+        changes={"product_id": payload.product_id, "movement_type": payload.movement_type},
+    )
     session.commit()
     return InventoryMovementResponse.model_validate(movement)

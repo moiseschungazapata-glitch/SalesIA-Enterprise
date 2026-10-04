@@ -55,7 +55,8 @@ Desarrollo basado en las 16 fases del Plan Integral de Desarrollo.
   trazabilidad hacia datasets y análisis, e historial consultable.
 - Fase 12: completada; genera reportes de ventas, estadística, productos,
   clientes y vendedores con historial, CSV y vista imprimible.
-- Siguiente fase: 13 - Seguridad y auditoría.
+- Fase 13 completada: sesiones revocables, bloqueo temporal, auditoría y controles de seguridad.
+- Siguiente fase: 14 - Pruebas y calidad.
 
 El frontend utiliza datos reales para la sesion, usuarios, clientes, categorias,
 productos, ventas, inventario, estadistica, probabilidad y dashboard ejecutivo.

@@ -2,7 +2,7 @@
 
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, Request, status
 from sqlalchemy.orm import Session
 
 from app.api.dependencies import Principal, require_roles
@@ -15,6 +15,7 @@ from app.schemas.insights import (
     InsightListResponse,
 )
 from app.services.insights import InsightService
+from app.services.security import record_audit
 
 router = APIRouter(prefix="/insights", tags=["insights"])
 
@@ -35,12 +36,23 @@ DatabaseSession = Annotated[Session, Depends(get_db)]
 )
 def generate_insights(
     payload: InsightGenerationRequest,
+    request: Request,
     current_user: InsightsUser,
     session: DatabaseSession,
 ) -> InsightGenerationResponse:
     result = InsightService(
         session, current_user.company_id, current_user.id
     ).generate(payload)
+    record_audit(
+        session,
+        company_id=current_user.company_id,
+        user_id=current_user.id,
+        action="insight.generate",
+        entity_type="statistical_analysis",
+        entity_id=result.analysis_id,
+        request=request,
+        changes={"generated_count": result.generated_count},
+    )
     session.commit()
     return InsightGenerationResponse.model_validate(result)
 

@@ -2,7 +2,7 @@
 
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, Request, status
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
@@ -16,6 +16,7 @@ from app.schemas.reports import (
     ReportListResponse,
 )
 from app.services.reports import ReportService
+from app.services.security import record_audit
 
 router = APIRouter(prefix="/reports", tags=["reports"])
 
@@ -31,10 +32,21 @@ DatabaseSession = Annotated[Session, Depends(get_db)]
 )
 def generate_report(
     payload: ReportGenerateRequest,
+    request: Request,
     current_user: ReportsUser,
     session: DatabaseSession,
 ) -> ReportDetailResponse:
     report = ReportService(session, current_user.company_id, current_user.id).generate(payload)
+    record_audit(
+        session,
+        company_id=current_user.company_id,
+        user_id=current_user.id,
+        action="report.generate",
+        entity_type="report",
+        entity_id=report.id,
+        request=request,
+        changes={"report_type": payload.report_type},
+    )
     session.commit()
     return ReportDetailResponse.model_validate(report)
 

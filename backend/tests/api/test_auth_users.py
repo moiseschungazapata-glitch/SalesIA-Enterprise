@@ -13,7 +13,8 @@ from app.db.base import Base
 from app.db.session import get_db
 from app.main import app
 from app.models.company import Company
-from app.models.identity import Role, User
+from app.models.governance import AuditLog
+from app.models.identity import AuthSession, Role, User
 
 ADMIN_EMAIL = "admin@salesia.example.com"
 ADMIN_PASSWORD = "correct-horse-2026"
@@ -30,7 +31,13 @@ def session() -> Generator[Session, None, None]:
     )
     Base.metadata.create_all(
         test_engine,
-        tables=[Company.__table__, Role.__table__, User.__table__],
+        tables=[
+            Company.__table__,
+            Role.__table__,
+            User.__table__,
+            AuthSession.__table__,
+            AuditLog.__table__,
+        ],
     )
 
     with Session(test_engine, expire_on_commit=False) as database_session:

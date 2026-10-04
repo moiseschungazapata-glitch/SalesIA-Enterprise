@@ -2,7 +2,7 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, Request, status
 from sqlalchemy.orm import Session
 
 from app.api.dependencies import Principal, require_roles
@@ -17,6 +17,7 @@ from app.schemas.users import (
     UserUpdate,
 )
 from app.services.identity import UserRecord, UserService
+from app.services.security import SessionService, record_audit
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -69,10 +70,21 @@ def list_users(
 )
 def create_user(
     payload: UserCreate,
+    request: Request,
     current_user: AdminUser,
     session: DatabaseSession,
 ) -> UserResponse:
     user = UserService(session, current_user.company_id).create(payload)
+    record_audit(
+        session,
+        company_id=current_user.company_id,
+        user_id=current_user.id,
+        action="user.create",
+        entity_type="user",
+        entity_id=user.id,
+        request=request,
+        changes={"role": user.role, "active": user.active},
+    )
     session.commit()
     return _response(user)
 
@@ -107,9 +119,33 @@ def get_user(
 def update_user(
     user_id: int,
     payload: UserUpdate,
+    request: Request,
     current_user: AdminUser,
     session: DatabaseSession,
 ) -> UserResponse:
     user = UserService(session, current_user.company_id).update(user_id, payload)
+    sensitive_change = any(
+        field in payload.model_fields_set
+        for field in {"email", "role", "active", "new_password"}
+    )
+    if sensitive_change:
+        SessionService(session, current_user.company_id, user_id).revoke_all(
+            "user_security_change"
+        )
+    changes = {
+        "fields": sorted(payload.model_fields_set - {"new_password"}),
+        "password_changed": "new_password" in payload.model_fields_set,
+        "sessions_revoked": sensitive_change,
+    }
+    record_audit(
+        session,
+        company_id=current_user.company_id,
+        user_id=current_user.id,
+        action="user.update",
+        entity_type="user",
+        entity_id=user_id,
+        request=request,
+        changes=changes,
+    )
     session.commit()
     return _response(user)

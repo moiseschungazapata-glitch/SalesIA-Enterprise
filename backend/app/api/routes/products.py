@@ -2,7 +2,7 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, Request, status
 from sqlalchemy.orm import Session
 
 from app.api.dependencies import CurrentUser, Principal, require_roles
@@ -16,6 +16,7 @@ from app.schemas.catalog import (
 )
 from app.schemas.common import ErrorResponse
 from app.services.catalog import ProductRecord, ProductService
+from app.services.security import record_audit
 
 router = APIRouter(prefix="/products", tags=["products"])
 
@@ -70,10 +71,16 @@ def list_products(
 )
 def create_product(
     payload: ProductCreate,
+    request: Request,
     current_user: AdminUser,
     session: DatabaseSession,
 ) -> ProductResponse:
     product = ProductService(session, current_user.company_id, current_user.id).create(payload)
+    record_audit(
+        session, company_id=current_user.company_id, user_id=current_user.id,
+        action="product.create", entity_type="product", entity_id=product.id,
+        request=request, changes={"fields": sorted(payload.model_fields_set)},
+    )
     session.commit()
     return _response(product)
 
@@ -110,11 +117,17 @@ def get_product(
 def update_product(
     product_id: int,
     payload: ProductUpdate,
+    request: Request,
     current_user: AdminUser,
     session: DatabaseSession,
 ) -> ProductResponse:
     product = ProductService(session, current_user.company_id, current_user.id).update(
         product_id, payload
+    )
+    record_audit(
+        session, company_id=current_user.company_id, user_id=current_user.id,
+        action="product.update", entity_type="product", entity_id=product_id,
+        request=request, changes={"fields": sorted(payload.model_fields_set)},
     )
     session.commit()
     return _response(product)

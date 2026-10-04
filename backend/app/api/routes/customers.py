@@ -2,7 +2,7 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, Request, status
 from sqlalchemy.orm import Session
 
 from app.api.dependencies import CurrentUser, Principal, require_roles
@@ -16,6 +16,7 @@ from app.schemas.customers import (
     CustomerUpdate,
 )
 from app.services.catalog import CustomerService
+from app.services.security import record_audit
 
 router = APIRouter(prefix="/customers", tags=["customers"])
 
@@ -63,10 +64,16 @@ def list_customers(
 )
 def create_customer(
     payload: CustomerCreate,
+    request: Request,
     current_user: AdminUser,
     session: DatabaseSession,
 ) -> CustomerResponse:
     customer = CustomerService(session, current_user.company_id).create(payload)
+    record_audit(
+        session, company_id=current_user.company_id, user_id=current_user.id,
+        action="customer.create", entity_type="customer", entity_id=customer.id,
+        request=request, changes={"fields": sorted(payload.model_fields_set)},
+    )
     session.commit()
     return CustomerResponse.model_validate(customer)
 
@@ -102,9 +109,15 @@ def get_customer(
 def update_customer(
     customer_id: int,
     payload: CustomerUpdate,
+    request: Request,
     current_user: AdminUser,
     session: DatabaseSession,
 ) -> CustomerResponse:
     customer = CustomerService(session, current_user.company_id).update(customer_id, payload)
+    record_audit(
+        session, company_id=current_user.company_id, user_id=current_user.id,
+        action="customer.update", entity_type="customer", entity_id=customer_id,
+        request=request, changes={"fields": sorted(payload.model_fields_set)},
+    )
     session.commit()
     return CustomerResponse.model_validate(customer)

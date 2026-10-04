@@ -29,6 +29,8 @@ class Settings(BaseSettings):
     database_pool_recycle_seconds: int = Field(default=300, ge=30)
     secret_key: SecretStr = SecretStr("replace-with-a-random-secret")
     access_token_expire_minutes: int = Field(default=30, ge=5, le=1440)
+    login_max_failed_attempts: int = Field(default=5, ge=3, le=20)
+    login_lock_minutes: int = Field(default=15, ge=1, le=1440)
     jwt_algorithm: Literal["HS256"] = "HS256"
     cors_origins: str = "http://localhost:5173"
     log_level: str = "INFO"
@@ -79,6 +81,8 @@ class Settings(BaseSettings):
             raise ValueError("SECRET_KEY debe ser aleatoria y tener al menos 32 caracteres")
         if self.environment == "production" and "*" in self.cors_origin_list:
             raise ValueError("CORS_ORIGINS no puede contener * en produccion")
+        if self.environment == "production" and self.database_ssl_mode in {"disable", "allow"}:
+            raise ValueError("DATABASE_SSL_MODE debe proteger la conexion en produccion")
         return self
 
     @property

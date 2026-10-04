@@ -2,7 +2,7 @@
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import Depends
@@ -11,10 +11,10 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.exceptions import AppError
-from app.core.security import ALLOWED_ROLES, decode_access_token
+from app.core.security import ALLOWED_ROLES, decode_access_token, hash_token_jti
 from app.db.session import get_db
 from app.models.company import Company
-from app.models.identity import Role, User
+from app.models.identity import AuthSession, Role, User
 
 bearer_scheme = HTTPBearer(bearerFormat="JWT", auto_error=False)
 
@@ -29,6 +29,7 @@ class Principal:
     active: bool
     created_at: datetime
     updated_at: datetime
+    session_id: int | None = None
 
 
 def get_current_user(
@@ -43,12 +44,21 @@ def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    user_id = decode_access_token(credentials.credentials)
+    claims = decode_access_token(credentials.credentials)
     row = session.execute(
-        select(User, Role.code, Role.active, Company.active)
+        select(User, Role.code, Role.active, Company.active, AuthSession.id)
         .join(Role, Role.id == User.role_id)
         .join(Company, Company.id == User.company_id)
-        .where(User.id == user_id)
+        .join(
+            AuthSession,
+            (AuthSession.user_id == User.id)
+            & (AuthSession.token_jti_hash == hash_token_jti(claims.jti)),
+        )
+        .where(
+            User.id == claims.user_id,
+            AuthSession.revoked_at.is_(None),
+            AuthSession.expires_at > datetime.now(UTC),
+        )
     ).one_or_none()
 
     if row is None:
@@ -59,7 +69,7 @@ def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    user, role_code, role_is_active, company_is_active = row
+    user, role_code, role_is_active, company_is_active, session_id = row
     if not user.active:
         raise AppError("USER_INACTIVE", "El usuario esta inactivo", status_code=403)
     if role_code not in ALLOWED_ROLES or not role_is_active or not company_is_active:
@@ -74,6 +84,7 @@ def get_current_user(
         active=user.active,
         created_at=user.created_at,
         updated_at=user.updated_at,
+        session_id=session_id,
     )
 
 

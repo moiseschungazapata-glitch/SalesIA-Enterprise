@@ -15,6 +15,8 @@ from app.db.base import Base
 from app.db.session import get_db
 from app.main import app
 from app.models import (
+    AuditLog,
+    AuthSession,
     Category,
     Company,
     Customer,
@@ -49,6 +51,8 @@ def session() -> Generator[Session, None, None]:
             Company.__table__,
             Role.__table__,
             User.__table__,
+            AuthSession.__table__,
+            AuditLog.__table__,
             Customer.__table__,
             Category.__table__,
             Product.__table__,

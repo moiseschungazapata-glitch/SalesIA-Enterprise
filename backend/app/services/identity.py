@@ -1,12 +1,13 @@
 """Authentication and user-management business services."""
 
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.core.exceptions import AppError
 from app.core.security import hash_password, verify_password_or_dummy
 from app.models.company import Company
@@ -59,6 +60,26 @@ def authenticate_user(session: Session, email: str, password: str) -> UserRecord
         user.password_hash if user is not None else None,
     )
     if user is None or not password_is_valid:
+        if user is not None:
+            if user.locked_until is not None:
+                locked_until = user.locked_until
+                if locked_until.tzinfo is None:
+                    locked_until = locked_until.replace(tzinfo=UTC)
+                if locked_until <= datetime.now(UTC):
+                    user.locked_until = None
+                    user.failed_login_attempts = 0
+            user.failed_login_attempts += 1
+            if user.failed_login_attempts >= settings.login_max_failed_attempts:
+                user.locked_until = datetime.now(UTC) + timedelta(
+                    minutes=settings.login_lock_minutes
+                )
+                user.failed_login_attempts = 0
+            session.info["login_failure"] = {
+                "company_id": user.company_id,
+                "user_id": user.id,
+                "locked": user.locked_until is not None,
+            }
+            session.flush()
         raise AppError(
             "INVALID_CREDENTIALS",
             "El correo o la contraseña son incorrectos",
@@ -66,13 +87,32 @@ def authenticate_user(session: Session, email: str, password: str) -> UserRecord
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    now = datetime.now(UTC)
+    locked_until = user.locked_until
+    if locked_until is not None:
+        if locked_until.tzinfo is None:
+            locked_until = locked_until.replace(tzinfo=UTC)
+        if locked_until > now:
+            session.info["login_failure"] = {
+                "company_id": user.company_id,
+                "user_id": user.id,
+                "locked": True,
+            }
+            raise AppError(
+                "ACCOUNT_LOCKED",
+                "La cuenta esta bloqueada temporalmente por seguridad",
+                status_code=423,
+            )
+
     role_code, role_is_active, company_is_active = row[1], row[2], row[3]
     if not user.active:
         raise AppError("USER_INACTIVE", "El usuario esta inactivo", status_code=403)
     if not role_is_active or not company_is_active:
         raise AppError("FORBIDDEN", "El acceso del usuario no esta disponible", status_code=403)
 
-    user.last_login_at = datetime.now(UTC)
+    user.failed_login_attempts = 0
+    user.locked_until = None
+    user.last_login_at = now
     session.flush()
     return _to_record(user, role_code)
 

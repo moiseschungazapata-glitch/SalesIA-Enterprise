@@ -4,7 +4,7 @@ from datetime import date
 from typing import Annotated, Literal
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Header, Query, status
+from fastapi import APIRouter, Depends, Header, Query, Request, status
 from sqlalchemy.orm import Session
 
 from app.api.dependencies import CurrentUser, Principal, require_roles
@@ -13,6 +13,7 @@ from app.db.session import get_db
 from app.schemas.common import ErrorResponse
 from app.schemas.sales import SaleCreate, SaleListItemResponse, SaleListResponse, SaleResponse
 from app.services.operations import SalesService
+from app.services.security import record_audit
 
 router = APIRouter(prefix="/sales", tags=["sales"])
 
@@ -74,6 +75,7 @@ def list_sales(
 )
 def create_sale(
     payload: SaleCreate,
+    request: Request,
     current_user: SalesCreator,
     session: DatabaseSession,
     idempotency_key: Annotated[UUID, Header(alias="Idempotency-Key")],
@@ -84,6 +86,12 @@ def create_sale(
         current_user.id,
         current_user.role,
     ).create(payload, idempotency_key)
+    record_audit(
+        session, company_id=current_user.company_id, user_id=current_user.id,
+        action="sale.create", entity_type="sale", entity_id=sale.id,
+        request=request,
+        changes={"customer_id": payload.customer_id, "items": len(payload.items)},
+    )
     session.commit()
     return SaleResponse.model_validate(sale)
 

@@ -34,6 +34,9 @@ function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<AuthUser | null>(null)
 
   const logout = useCallback(() => {
+    if (getAccessToken()) {
+      void apiPost<void>('/auth/logout', {}).catch(() => undefined)
+    }
     clearAccessToken()
     setUser(null)
     setStatus('anonymous')

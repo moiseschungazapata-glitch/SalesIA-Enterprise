@@ -2,7 +2,7 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, Request, status
 from sqlalchemy.orm import Session
 
 from app.api.dependencies import CurrentUser, Principal, require_roles
@@ -16,6 +16,7 @@ from app.schemas.catalog import (
 )
 from app.schemas.common import ErrorResponse
 from app.services.catalog import CategoryService
+from app.services.security import record_audit
 
 router = APIRouter(prefix="/categories", tags=["categories"])
 
@@ -62,10 +63,16 @@ def list_categories(
 )
 def create_category(
     payload: CategoryCreate,
+    request: Request,
     current_user: AdminUser,
     session: DatabaseSession,
 ) -> CategoryResponse:
     category = CategoryService(session, current_user.company_id).create(payload)
+    record_audit(
+        session, company_id=current_user.company_id, user_id=current_user.id,
+        action="category.create", entity_type="category", entity_id=category.id,
+        request=request, changes={"fields": sorted(payload.model_fields_set)},
+    )
     session.commit()
     return CategoryResponse.model_validate(category)
 
@@ -83,9 +90,15 @@ def create_category(
 def update_category(
     category_id: int,
     payload: CategoryUpdate,
+    request: Request,
     current_user: AdminUser,
     session: DatabaseSession,
 ) -> CategoryResponse:
     category = CategoryService(session, current_user.company_id).update(category_id, payload)
+    record_audit(
+        session, company_id=current_user.company_id, user_id=current_user.id,
+        action="category.update", entity_type="category", entity_id=category_id,
+        request=request, changes={"fields": sorted(payload.model_fields_set)},
+    )
     session.commit()
     return CategoryResponse.model_validate(category)

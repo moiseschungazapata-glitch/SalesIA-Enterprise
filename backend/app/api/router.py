@@ -14,6 +14,7 @@ from app.api.routes import (
     random_variables,
     reports,
     sales,
+    security,
     statistics,
     users,
 )
@@ -32,3 +33,4 @@ api_router.include_router(statistics.router)
 api_router.include_router(probability.router)
 api_router.include_router(random_variables.router)
 api_router.include_router(reports.router)
+api_router.include_router(security.router)

@@ -26,6 +26,7 @@ import Products from './modules/products/Products'
 import Probability from './modules/probability/Probability'
 import Reports from './modules/reports/Reports'
 import Sales from './modules/sales/Sales'
+import Security from './modules/security/Security'
 import Users from './modules/users/Users'
 import type { AuthUser } from './types/api'
 
@@ -126,6 +127,10 @@ function AuthenticatedApplication({
         <Route
           path={pagePaths.reports}
           element={guarded('reports', <Reports />)}
+        />
+        <Route
+          path={pagePaths.security}
+          element={guarded('security', <Security user={user} onLogout={onLogout} />)}
         />
         <Route
           path="/login"

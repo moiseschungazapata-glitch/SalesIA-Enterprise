@@ -14,12 +14,13 @@ from app.models.catalog import Category, Product
 from app.models.company import Company
 from app.models.customer import Customer
 from app.models.governance import AuditLog, Report
-from app.models.identity import Employee, Role, User
+from app.models.identity import AuthSession, Employee, Role, User
 from app.models.inventory import Inventory, InventoryMovement
 from app.models.sales import Payment, Sale, SaleDetail
 
 __all__ = [
     "AuditLog",
+    "AuthSession",
     "BayesAnalysis",
     "Category",
     "Company",

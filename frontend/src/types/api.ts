@@ -18,6 +18,41 @@ export interface LoginResponse {
   user: AuthUser
 }
 
+export interface SecuritySession {
+  id: number
+  ip_address: string | null
+  user_agent: string | null
+  created_at: string
+  expires_at: string
+  last_seen_at: string
+  revoked_at: string | null
+  current: boolean
+}
+
+export interface SecuritySessionList {
+  items: SecuritySession[]
+}
+
+export interface AuditLogRecord {
+  id: number
+  user_id: number | null
+  user_name: string | null
+  action: string
+  entity_type: string
+  entity_id: string | null
+  changes: Record<string, unknown>
+  request_id: string | null
+  ip_address: string | null
+  created_at: string
+}
+
+export interface AuditLogList {
+  items: AuditLogRecord[]
+  total: number
+  page: number
+  page_size: number
+}
+
 export interface UserRecord extends SessionUser {
   created_at: string
   updated_at: string
