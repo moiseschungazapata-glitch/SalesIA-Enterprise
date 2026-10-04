@@ -366,3 +366,66 @@ export interface BayesAnalysisRequest {
   probability_b_given_a: string
   probability_b: string
 }
+
+export type DashboardGranularity = 'day' | 'week' | 'month'
+
+export interface DashboardKpis {
+  sales_total: string
+  transactions: number
+  active_customers: number
+  units_sold: number
+  ticket_average: string
+  sales_mean: string
+  sales_median: string
+}
+
+export interface DashboardPeriodPoint {
+  period: string
+  revenue: string
+  transactions: number
+}
+
+export interface DashboardBreakdownPoint {
+  id: number
+  label: string
+  revenue: string
+  transactions: number
+  units: number
+  share: string
+}
+
+export interface DashboardDistributionPoint {
+  label: string
+  frequency: number
+  percentage: string
+}
+
+export interface DashboardIntegerOption {
+  id: number
+  label: string
+}
+
+export interface DashboardSummary {
+  generated_at: string
+  currency: 'PEN'
+  period: {
+    date_from: string
+    date_to: string
+    granularity: DashboardGranularity
+  }
+  applied_filters: {
+    branch: 'main'
+    seller_id: number | null
+    category_id: number | null
+  }
+  filter_options: {
+    branches: Array<{ id: 'main'; label: string }>
+    sellers: DashboardIntegerOption[]
+    categories: DashboardIntegerOption[]
+  }
+  kpis: DashboardKpis
+  sales_by_period: DashboardPeriodPoint[]
+  sales_by_product: DashboardBreakdownPoint[]
+  sales_by_seller: DashboardBreakdownPoint[]
+  ticket_distribution: DashboardDistributionPoint[]
+}

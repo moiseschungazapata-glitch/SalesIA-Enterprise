@@ -33,6 +33,7 @@ Desarrollo basado en las 16 fases del Plan Integral de Desarrollo.
 - [Fase 07 - Clientes y productos](docs/catalog/fase-07-clientes-productos.md)
 - [Fase 08 - Ventas e inventario](docs/operations/fase-08-ventas-inventario.md)
 - [Fase 09 - Motor estadistico](docs/analytics/fase-09-motor-estadistico.md)
+- [Fase 10 - Dashboard Analytics](docs/analytics/fase-10-dashboard-analytics.md)
 
 ## Estado actual
 
@@ -46,8 +47,9 @@ Desarrollo basado en las 16 fases del Plan Integral de Desarrollo.
 - Fase 08: completada; ventas, pagos e inventario operan de forma transaccional.
 - Fase 09: completada; media, mediana, variables, probabilidad y Bayes operan
   mediante FastAPI y conservan datasets, observaciones e historial en Supabase.
-- Siguiente fase: 10 - Dashboard Analytics y graficos estadisticos.
+- Fase 10: completada; el dashboard calcula KPIs, series, distribuciones y
+  desgloses desde ventas reales con filtros comerciales.
+- Siguiente fase: 11 - Insights empresariales.
 
 El frontend utiliza datos reales para la sesion, usuarios, clientes, categorias,
-productos, ventas, inventario, estadistica y probabilidad. El dashboard
-ejecutivo conserva datos demostrativos hasta completar la fase 10.
+productos, ventas, inventario, estadistica, probabilidad y dashboard ejecutivo.
