@@ -21,7 +21,7 @@ class SessionResponse(BaseModel):
 
 
 class SessionLocationUpdate(BaseModel):
-    ip_address: str = Field(min_length=3, max_length=45)
+    ip_address: str | None = Field(default=None, min_length=3, max_length=45)
     latitude: float = Field(ge=-90, le=90)
     longitude: float = Field(ge=-180, le=180)
     city: str | None = Field(default=None, max_length=100)
@@ -30,11 +30,13 @@ class SessionLocationUpdate(BaseModel):
     country_code: str | None = Field(default=None, min_length=2, max_length=2)
     isp: str | None = Field(default=None, max_length=160)
     timezone: str | None = Field(default=None, max_length=64)
+    source: str = Field(default="public_ip", pattern="^(public_ip|device_location)$")
+    accuracy_m: float | None = Field(default=None, ge=0, le=100000)
 
     @field_validator("ip_address")
     @classmethod
-    def validate_ip_address(cls, value: str) -> str:
-        return str(ip_address(value))
+    def validate_ip_address(cls, value: str | None) -> str | None:
+        return str(ip_address(value)) if value else None
 
     @field_validator("city", "region", "country", "isp", "timezone", mode="before")
     @classmethod
@@ -62,6 +64,7 @@ class AccessLocationResponse(BaseModel):
     isp: str | None
     timezone: str | None
     location_source: str | None
+    accuracy_m: float | None
     located_at: datetime | None
 
 

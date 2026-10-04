@@ -58,23 +58,25 @@ function AccessMap({ items, selectedId, onSelect }: AccessMapProps) {
       {located.map((item) => {
         const center: [number, number] = [item.latitude!, item.longitude!]
         const selected = item.id === selectedId
+        const precise = item.location_source === 'device_location'
+        const markerColor = precise ? '#16a34a' : '#087cf0'
         return (
           <Fragment key={item.id}>
             <Circle
               center={center}
-              radius={12000}
-              pathOptions={{ color: selected ? '#f59e0b' : '#0ea5e9', fillOpacity: 0.08, weight: 1 }}
+              radius={precise ? Math.max(item.accuracy_m ?? 30, 15) : 12000}
+              pathOptions={{ color: selected ? '#f59e0b' : markerColor, fillOpacity: precise ? 0.18 : 0.08, weight: 1 }}
             />
             <CircleMarker
               center={center}
               radius={selected ? 11 : 8}
               eventHandlers={{ click: () => onSelect(item) }}
-              pathOptions={{ color: '#fff', fillColor: selected ? '#f59e0b' : '#087cf0', fillOpacity: 1, weight: 3 }}
+              pathOptions={{ color: '#fff', fillColor: selected ? '#f59e0b' : markerColor, fillOpacity: 1, weight: 3 }}
             >
               <Popup>
                 <strong>{item.user_name}</strong><br />
                 {item.city || item.region || 'Zona no identificada'}<br />
-                <small>Estimación por IP pública</small>
+                <small>{precise ? `Ubicación del dispositivo · ± ${Math.round(item.accuracy_m ?? 0)} m` : 'Estimación por IP pública'}</small>
               </Popup>
             </CircleMarker>
           </Fragment>

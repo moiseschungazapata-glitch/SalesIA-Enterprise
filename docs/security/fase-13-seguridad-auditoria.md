@@ -13,7 +13,7 @@ React como, de forma obligatoria, en FastAPI.
 | Validacion de entrada | Schemas Pydantic, limites de longitud, tipos y errores uniformes 422. |
 | Acciones criticas | Tabla `audit_logs` para accesos, usuarios, catalogos, ventas, inventario, insights y reportes. |
 | Control de sesiones | Tabla `auth_sessions`, JTI almacenado como SHA-256, cierre individual y cierre de otras sesiones. |
-| Mapa de accesos | Ubicacion aproximada por IP publica, sin permiso GPS, con mapa interactivo y detalle por sesion. |
+| Mapa de accesos | Ubicacion precisa autorizada por el usuario, respaldo por IP y detalle por sesion. |
 | Secretos | `SECRET_KEY` fuera de Git, longitud minima, CORS restringido y SSL obligatorio en produccion. |
 
 ## Proteccion de acceso
@@ -63,25 +63,32 @@ Acciones cubiertas:
 La pantalla `/seguridad` permite a cualquier usuario gestionar sus sesiones.
 El historial de auditoria solo aparece para administradores.
 
-## Ubicacion aproximada de accesos
+## Ubicacion de accesos
 
-Despues de un inicio de sesion correcto, el navegador consulta la ubicacion
-general asociada a su IP publica y la guarda en la sesion activa. Este proceso
-no utiliza la API GPS del dispositivo, no abre una solicitud de permisos y no
-obtiene una direccion domiciliaria.
+Despues de un inicio de sesion correcto, el navegador solicita permiso para
+obtener la posicion del dispositivo con alta precision. Si se autoriza, guarda
+las coordenadas y el margen de precision informado por el propio dispositivo.
+Si se rechaza, expira o no esta disponible, conserva la estimacion por IP para
+que el acceso no quede sin referencia ni se bloquee el inicio de sesion.
 
 La pantalla de Seguridad muestra:
 
 - mapa ampliable y desplazable con OpenStreetMap y Leaflet;
-- un radio orientativo alrededor de cada estimacion;
+- punto verde y radio real para ubicaciones del dispositivo;
+- punto azul y radio orientativo para estimaciones por IP;
 - usuario, fecha, dispositivo, IP, proveedor y ciudad o region;
 - historial de accesos ubicados, sin ubicar y revocados;
 - vista adaptable para escritorio, tablet y celular.
 
 La ubicacion por IP puede corresponder al nodo del proveedor de internet, variar
 con redes moviles, VPN o proxy y no debe usarse como prueba de presencia fisica.
-Por esa razon la interfaz siempre la identifica como estimacion a nivel de
-ciudad o region y nunca como ubicacion exacta.
+La ubicacion del dispositivo suele ser mucho mas precisa, pero tambien conserva
+un margen y depende de GPS, Wi-Fi, antenas, configuracion y cobertura.
+
+La API de geolocalizacion del navegador requiere permiso explicito y un contexto
+seguro HTTPS. `localhost` se admite durante el desarrollo en la misma maquina,
+pero el acceso desde un celular mediante una IP local HTTP solo puede usar el
+respaldo por IP hasta que se publique con HTTPS o se utilice un tunel seguro.
 
 ## Variables de entorno
 
@@ -106,6 +113,9 @@ La revision `20261004_0004` agrega:
 
 La revision `20261004_0005` agrega a `auth_sessions` las coordenadas aproximadas,
 ciudad, region, pais, ISP, zona horaria, fuente y fecha de estimacion.
+
+La revision `20261004_0006` agrega el margen de precision en metros comunicado
+por el dispositivo.
 
 ## Criterios de aceptacion
 

@@ -90,6 +90,7 @@ class AuthSession(Base):
     isp: Mapped[str | None] = mapped_column(String(160))
     location_timezone: Mapped[str | None] = mapped_column(String(64))
     location_source: Mapped[str | None] = mapped_column(String(40))
+    location_accuracy_m: Mapped[float | None] = mapped_column(Numeric(10, 2))
     located_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 

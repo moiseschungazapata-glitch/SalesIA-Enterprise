@@ -53,6 +53,7 @@ export interface AccessLocation {
   isp: string | null
   timezone: string | null
   location_source: string | null
+  accuracy_m: number | null
   located_at: string | null
 }
 

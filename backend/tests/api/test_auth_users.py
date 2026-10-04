@@ -139,6 +139,8 @@ def test_current_session_records_and_lists_approximate_ip_location(
             "country_code": "PE",
             "isp": "Proveedor de prueba",
             "timezone": "America/Lima",
+            "source": "device_location",
+            "accuracy_m": 18.5,
         },
     )
     assert updated.status_code == 204
@@ -151,7 +153,8 @@ def test_current_session_records_and_lists_approximate_ip_location(
     assert access["latitude"] == pytest.approx(-12.1219)
     assert access["longitude"] == pytest.approx(-77.0297)
     assert access["city"] == "Lima"
-    assert access["location_source"] == "public_ip"
+    assert access["location_source"] == "device_location"
+    assert access["accuracy_m"] == pytest.approx(18.5)
     assert access["current"] is True
 
 

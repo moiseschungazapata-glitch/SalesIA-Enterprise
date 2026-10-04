@@ -1183,6 +1183,13 @@ td strong {
   white-space: nowrap;
 }
 
+.security-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
 .security-location-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.8fr) minmax(280px, 0.7fr);
@@ -1257,6 +1264,11 @@ td strong {
 .legend-dot.known {
   background: #087cf0;
   box-shadow: 0 0 0 3px rgb(8 124 240 / 18%);
+}
+
+.legend-dot.precise {
+  background: #16a34a;
+  box-shadow: 0 0 0 3px rgb(22 163 74 / 18%);
 }
 
 .legend-radius {
@@ -1378,6 +1390,11 @@ td strong {
   color: #16a34a;
 }
 
+.access-status.precise {
+  background: rgb(22 163 74 / 12%);
+  color: #15803d;
+}
+
 .access-status.revoked {
   background: rgb(239 68 68 / 10%);
   color: #dc2626;
@@ -1471,6 +1488,14 @@ td strong {
 }
 
 @media (max-width: 560px) {
+  .security-header-actions {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .security-header-actions button {
+    flex: 1 1 100%;
+  }
   .security-location-heading {
     align-items: flex-start;
     padding: 16px 16px 0;

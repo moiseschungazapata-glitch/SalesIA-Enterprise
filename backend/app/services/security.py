@@ -95,7 +95,8 @@ class SessionService:
         )
         if auth_session is None:
             raise AppError("SESSION_NOT_FOUND", "La sesion no existe", status_code=404)
-        auth_session.ip_address = data["ip_address"]
+        if data.get("ip_address"):
+            auth_session.ip_address = data["ip_address"]
         auth_session.latitude = data["latitude"]
         auth_session.longitude = data["longitude"]
         auth_session.city = data.get("city")
@@ -104,7 +105,8 @@ class SessionService:
         auth_session.country_code = data.get("country_code")
         auth_session.isp = data.get("isp")
         auth_session.location_timezone = data.get("timezone")
-        auth_session.location_source = "public_ip"
+        auth_session.location_source = data.get("source", "public_ip")
+        auth_session.location_accuracy_m = data.get("accuracy_m")
         auth_session.located_at = datetime.now(UTC)
         self.session.flush()
         return auth_session

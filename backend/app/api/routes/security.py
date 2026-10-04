@@ -83,6 +83,11 @@ def list_access_locations(
                 isp=item.isp,
                 timezone=item.location_timezone,
                 location_source=item.location_source,
+                accuracy_m=(
+                    float(item.location_accuracy_m)
+                    if item.location_accuracy_m is not None
+                    else None
+                ),
                 located_at=item.located_at,
             )
             for item, user in rows

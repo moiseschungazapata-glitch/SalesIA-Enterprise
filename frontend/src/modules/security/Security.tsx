@@ -5,6 +5,7 @@ import {
   getAccessLocations,
   getAuditLogs,
   getSessions,
+  captureLoginLocation,
   revokeOtherSessions,
   revokeSession,
 } from '../../services/security'
@@ -59,6 +60,7 @@ function Security({ user, onLogout }: SecurityProps) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [locating, setLocating] = useState(false)
   const [success, setSuccess] = useState('')
 
   const load = useCallback(async (signal?: AbortSignal) => {
@@ -125,6 +127,17 @@ function Security({ user, onLogout }: SecurityProps) {
     }
   }
 
+  const refreshPreciseLocation = async () => {
+    setLocating(true)
+    setError('')
+    setSuccess('')
+    const result = await captureLoginLocation()
+    await load()
+    if (result.mode === 'unavailable') setError(result.message)
+    else setSuccess(result.message)
+    setLocating(false)
+  }
+
   const selectedAccess = accesses.find((item) => item.id === selectedAccessId) ?? null
   const locatedAccesses = accesses.filter(
     (item) => item.latitude !== null && item.longitude !== null,
@@ -137,11 +150,14 @@ function Security({ user, onLogout }: SecurityProps) {
         eyebrow="FASE 13 · PROTECCIÓN Y TRAZABILIDAD"
         title="Seguridad y auditoría"
         description="Controla tus accesos y consulta las acciones críticas registradas por el sistema."
-        action={(
-          <button type="button" className="secondary-button" disabled={busy} onClick={() => void closeOtherSessions()}>
+        action={(<div className="security-header-actions">
+          <button type="button" className="primary-button" disabled={locating || busy} onClick={() => void refreshPreciseLocation()}>
+            {locating ? 'Obteniendo ubicación…' : 'Actualizar ubicación precisa'}
+          </button>
+          <button type="button" className="secondary-button" disabled={busy || locating} onClick={() => void closeOtherSessions()}>
             Cerrar otras sesiones
           </button>
-        )}
+        </div>)}
       />
 
       {loading && <StateMessage type="loading" title="Verificando sesiones" />}
@@ -154,9 +170,9 @@ function Security({ user, onLogout }: SecurityProps) {
             <div>
               <span className="eyebrow">MAPA DE ACCESOS</span>
               <h2>Ubicaciones aproximadas de inicio de sesión</h2>
-              <p>Calculadas mediante IP pública. No se solicita GPS ni se muestran direcciones exactas.</p>
+              <p>Usa la ubicación del dispositivo si autorizas el permiso; si no, conserva la estimación por IP.</p>
             </div>
-            <span className="location-privacy-badge">Estimación por IP</span>
+            <span className="location-privacy-badge">GPS opcional + respaldo por IP</span>
           </div>
 
           <div className="security-location-layout">
@@ -169,7 +185,8 @@ function Security({ user, onLogout }: SecurityProps) {
                 />
               </Suspense>
               <div className="security-map-legend">
-                <span><i className="legend-dot known" /> Acceso ubicado</span>
+                <span><i className="legend-dot precise" /> Ubicación del dispositivo</span>
+                <span><i className="legend-dot known" /> Estimación por IP</span>
                 <span><i className="legend-radius" /> Radio orientativo</span>
               </div>
             </div>
@@ -187,12 +204,13 @@ function Security({ user, onLogout }: SecurityProps) {
                     <div><strong>{selectedAccess.user_name}</strong><span>{selectedAccess.user_email}</span></div>
                   </div>
                   <dl>
-                    <div><dt>Zona aproximada</dt><dd>{[selectedAccess.city, selectedAccess.region, selectedAccess.country].filter(Boolean).join(', ') || 'No disponible'}</dd></div>
+                    <div><dt>Tipo de ubicación</dt><dd>{selectedAccess.location_source === 'device_location' ? 'Ubicación precisa del dispositivo' : 'Estimación por IP pública'}</dd></div>
+                    <div><dt>Zona de referencia</dt><dd>{[selectedAccess.city, selectedAccess.region, selectedAccess.country].filter(Boolean).join(', ') || 'Consulta el punto en el mapa'}</dd></div>
                     <div><dt>Inicio</dt><dd>{new Date(selectedAccess.created_at).toLocaleString('es-PE')}</dd></div>
                     <div><dt>Dispositivo</dt><dd>{deviceLabel(selectedAccess.user_agent)}</dd></div>
                     <div><dt>IP pública</dt><dd>{selectedAccess.ip_address || 'No disponible'}</dd></div>
                     <div><dt>Proveedor</dt><dd>{selectedAccess.isp || 'No disponible'}</dd></div>
-                    <div><dt>Confianza</dt><dd>Orientativa · nivel ciudad/región</dd></div>
+                    <div><dt>Precisión</dt><dd>{selectedAccess.location_source === 'device_location' && selectedAccess.accuracy_m !== null ? `Margen informado por el dispositivo: ± ${Math.round(selectedAccess.accuracy_m)} m` : 'Orientativa · nivel ciudad/región'}</dd></div>
                   </dl>
                 </div>
               ) : (
@@ -212,7 +230,7 @@ function Security({ user, onLogout }: SecurityProps) {
                     <td>{[item.city, item.region, item.country].filter(Boolean).join(', ') || 'Sin estimación'}</td>
                     <td>{item.ip_address || '—'}</td>
                     <td>{deviceLabel(item.user_agent)}</td>
-                    <td><span className={`access-status ${item.revoked_at ? 'revoked' : 'known'}`}>{item.revoked_at ? 'Revocada' : item.latitude === null ? 'Sin ubicar' : 'Conocida'}</span></td>
+                    <td><span className={`access-status ${item.revoked_at ? 'revoked' : item.location_source === 'device_location' ? 'precise' : 'known'}`}>{item.revoked_at ? 'Revocada' : item.latitude === null ? 'Sin ubicar' : item.location_source === 'device_location' ? 'Precisa' : 'Por IP'}</span></td>
                   </tr>
                 ))}</tbody>
               </table>
