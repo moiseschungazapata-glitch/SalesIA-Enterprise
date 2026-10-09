@@ -86,8 +86,11 @@ class Settings(BaseSettings):
         return self
 
     @property
-    def database_connect_args(self) -> dict[str, str]:
-        return {"sslmode": self.database_ssl_mode}
+    def database_connect_args(self) -> dict[str, object]:
+        return {
+            "sslmode": self.database_ssl_mode,
+            "prepare_threshold": None,
+        }
 
     @property
     def cors_origin_list(self) -> list[str]:
