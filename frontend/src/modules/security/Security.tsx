@@ -142,7 +142,12 @@ function Security({ user, onLogout }: SecurityProps) {
   const locatedAccesses = accesses.filter(
     (item) => item.latitude !== null && item.longitude !== null,
   )
-  const locatedUsers = new Set(locatedAccesses.map((item) => item.user_id)).size
+  const locatedUsers = new Set(
+    locatedAccesses
+      .filter((item) => !item.is_anonymous && item.user_id !== null)
+      .map((item) => item.user_id),
+  ).size
+  const anonymousVisits = locatedAccesses.filter((item) => item.is_anonymous).length
 
   return (
     <div className="page security-page">
@@ -169,8 +174,8 @@ function Security({ user, onLogout }: SecurityProps) {
           <div className="panel-header security-location-heading">
             <div>
               <span className="eyebrow">MAPA DE ACCESOS</span>
-              <h2>Ubicaciones aproximadas de inicio de sesión</h2>
-              <p>Usa la ubicación del dispositivo si autorizas el permiso; si no, conserva la estimación por IP.</p>
+              <h2>Visitas y ubicaciones de inicio de sesión</h2>
+              <p>Registra una estimación por IP al abrir el enlace y mejora la precisión si el usuario autoriza su dispositivo.</p>
             </div>
             <span className="location-privacy-badge">GPS opcional + respaldo por IP</span>
           </div>
@@ -195,6 +200,7 @@ function Security({ user, onLogout }: SecurityProps) {
               <div className="location-kpis">
                 <div><span>Accesos</span><strong>{locatedAccesses.length}</strong></div>
                 <div><span>Usuarios</span><strong>{locatedUsers}</strong></div>
+                <div><span>Visitantes</span><strong>{anonymousVisits}</strong></div>
               </div>
               {selectedAccess ? (
                 <div className="selected-access-card">
@@ -204,7 +210,7 @@ function Security({ user, onLogout }: SecurityProps) {
                     <div><strong>{selectedAccess.user_name}</strong><span>{selectedAccess.user_email}</span></div>
                   </div>
                   <dl>
-                    <div><dt>Tipo de ubicación</dt><dd>{selectedAccess.location_source === 'device_location' ? 'Ubicación precisa del dispositivo' : 'Estimación por IP pública'}</dd></div>
+                    <div><dt>Tipo de ubicación</dt><dd>{selectedAccess.is_anonymous ? 'Visita anónima · estimación por IP' : selectedAccess.location_source === 'device_location' ? 'Ubicación precisa del dispositivo' : 'Estimación por IP pública'}</dd></div>
                     <div><dt>Zona de referencia</dt><dd>{[selectedAccess.city, selectedAccess.region, selectedAccess.country].filter(Boolean).join(', ') || 'Consulta el punto en el mapa'}</dd></div>
                     <div><dt>Inicio</dt><dd>{new Date(selectedAccess.created_at).toLocaleString('es-PE')}</dd></div>
                     <div><dt>Dispositivo</dt><dd>{deviceLabel(selectedAccess.user_agent)}</dd></div>
@@ -230,7 +236,7 @@ function Security({ user, onLogout }: SecurityProps) {
                     <td>{[item.city, item.region, item.country].filter(Boolean).join(', ') || 'Sin estimación'}</td>
                     <td>{item.ip_address || '—'}</td>
                     <td>{deviceLabel(item.user_agent)}</td>
-                    <td><span className={`access-status ${item.revoked_at ? 'revoked' : item.location_source === 'device_location' ? 'precise' : 'known'}`}>{item.revoked_at ? 'Revocada' : item.latitude === null ? 'Sin ubicar' : item.location_source === 'device_location' ? 'Precisa' : 'Por IP'}</span></td>
+                    <td><span className={`access-status ${item.revoked_at ? 'revoked' : item.location_source === 'device_location' ? 'precise' : 'known'}`}>{item.revoked_at ? 'Revocada' : item.latitude === null ? 'Sin ubicar' : item.is_anonymous ? 'Visita web' : item.location_source === 'device_location' ? 'Precisa' : 'Por IP'}</span></td>
                   </tr>
                 ))}</tbody>
               </table>

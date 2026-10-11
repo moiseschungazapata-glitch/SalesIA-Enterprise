@@ -38,7 +38,7 @@ function AccessMap({ items, selectedId, onSelect }: AccessMapProps) {
     return (
       <div className="access-map-empty">
         <strong>Aún no hay accesos ubicados</strong>
-        <span>La ubicación aproximada aparecerá después del próximo inicio de sesión.</span>
+        <span>La ubicación aproximada aparecerá cuando alguien abra el enlace público.</span>
       </div>
     )
   }
@@ -76,7 +76,7 @@ function AccessMap({ items, selectedId, onSelect }: AccessMapProps) {
               <Popup>
                 <strong>{item.user_name}</strong><br />
                 {item.city || item.region || 'Zona no identificada'}<br />
-                <small>{precise ? `Ubicación del dispositivo · ± ${Math.round(item.accuracy_m ?? 0)} m` : 'Estimación por IP pública'}</small>
+                <small>{item.is_anonymous ? 'Visita anónima · estimación por IP' : precise ? `Ubicación del dispositivo · ± ${Math.round(item.accuracy_m ?? 0)} m` : 'Estimación por IP pública'}</small>
               </Popup>
             </CircleMarker>
           </Fragment>

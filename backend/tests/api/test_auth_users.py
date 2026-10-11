@@ -14,7 +14,7 @@ from app.db.session import get_db
 from app.main import app
 from app.models.company import Company
 from app.models.governance import AuditLog
-from app.models.identity import AuthSession, Role, User
+from app.models.identity import AnonymousVisit, AuthSession, Role, User
 
 ADMIN_EMAIL = "admin@salesia.example.com"
 ADMIN_PASSWORD = "correct-horse-2026"
@@ -36,6 +36,7 @@ def session() -> Generator[Session, None, None]:
             Role.__table__,
             User.__table__,
             AuthSession.__table__,
+            AnonymousVisit.__table__,
             AuditLog.__table__,
         ],
     )

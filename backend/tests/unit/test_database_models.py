@@ -12,6 +12,7 @@ from app.core.config import Settings
 from app.db.base import Base
 
 EXPECTED_TABLES = {
+    "anonymous_visits",
     "auth_sessions",
     "audit_logs",
     "bayes_analyses",
@@ -37,7 +38,7 @@ EXPECTED_TABLES = {
     "users",
 }
 
-POST_INITIAL_TABLES = {"auth_sessions"}
+POST_INITIAL_TABLES = {"anonymous_visits", "auth_sessions"}
 POST_INITIAL_COLUMNS = {
     "reports": {"content"},
     "users": {"failed_login_attempts", "locked_until"},
@@ -126,6 +127,10 @@ def test_later_migrations_are_reflected_in_current_models() -> None:
     assert POST_INITIAL_COLUMNS["users"] <= set(
         Base.metadata.tables["users"].columns.keys()
     )
+    anonymous_visits = Base.metadata.tables["anonymous_visits"]
+    assert {foreign_key.target_fullname for foreign_key in anonymous_visits.foreign_keys} == {
+        "companies.id"
+    }
 
 
 def test_money_is_decimal_and_core_integrity_checks_exist() -> None:

@@ -31,6 +31,8 @@ export interface LocationCaptureResult {
   message: string
 }
 
+const ANONYMOUS_VISIT_KEY = 'salesia.anonymous_visit_recorded'
+
 async function getPublicIpLocation(): Promise<IpWhoResponse | null> {
   const controller = new AbortController()
   const timeout = window.setTimeout(() => controller.abort(), 6000)
@@ -46,6 +48,32 @@ async function getPublicIpLocation(): Promise<IpWhoResponse | null> {
     return null
   } finally {
     window.clearTimeout(timeout)
+  }
+}
+
+export async function captureAnonymousVisit(): Promise<void> {
+  if (sessionStorage.getItem(ANONYMOUS_VISIT_KEY)) return
+  const location = await getPublicIpLocation()
+  if (
+    !location ||
+    typeof location.latitude !== 'number' ||
+    typeof location.longitude !== 'number'
+  ) return
+
+  try {
+    await apiPost<void>('/public/visits', {
+      latitude: location.latitude,
+      longitude: location.longitude,
+      city: location.city || null,
+      region: location.region || null,
+      country: location.country || null,
+      country_code: location.country_code || null,
+      isp: location.connection?.isp || null,
+      timezone: location.timezone?.id || null,
+    })
+    sessionStorage.setItem(ANONYMOUS_VISIT_KEY, '1')
+  } catch {
+    // Tracking must never prevent the public login page from working.
   }
 }
 

@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
+from ipaddress import ip_address as parse_ip_address
 from typing import Any
 
 from fastapi import Request
@@ -12,14 +13,74 @@ from sqlalchemy.orm import Session
 from app.core.exceptions import AppError
 from app.core.security import AccessToken, hash_token_jti
 from app.models.governance import AuditLog
-from app.models.identity import AuthSession, User
+from app.models.identity import AnonymousVisit, AuthSession, User
 
 
 def request_metadata(request: Request) -> tuple[str | None, str | None, str | None]:
-    ip_address = request.client.host if request.client else None
+    forwarded = request.headers.get("x-forwarded-for", "").split(",", 1)[0].strip()
+    candidate = forwarded or (request.client.host if request.client else "")
+    try:
+        ip_address = str(parse_ip_address(candidate)) if candidate else None
+    except ValueError:
+        ip_address = None
     user_agent = request.headers.get("user-agent")
     request_id = getattr(request.state, "request_id", None)
     return ip_address, user_agent[:300] if user_agent else None, request_id
+
+
+class AnonymousVisitService:
+    """Store and list pre-authentication visits without requesting GPS access."""
+
+    def __init__(self, session: Session, company_id: int) -> None:
+        self.session = session
+        self.company_id = company_id
+
+    def record(self, request: Request, data: dict[str, Any]) -> AnonymousVisit:
+        ip_address, user_agent, _request_id = request_metadata(request)
+        cutoff = datetime.now(UTC) - timedelta(minutes=15)
+        existing = self.session.scalar(
+            select(AnonymousVisit)
+            .where(
+                AnonymousVisit.company_id == self.company_id,
+                AnonymousVisit.ip_address == ip_address,
+                AnonymousVisit.user_agent == user_agent,
+                AnonymousVisit.last_seen_at >= cutoff,
+            )
+            .order_by(AnonymousVisit.last_seen_at.desc())
+            .limit(1)
+        )
+        if existing is not None:
+            existing.last_seen_at = datetime.now(UTC)
+            existing.visit_count += 1
+            return existing
+
+        visit = AnonymousVisit(
+            company_id=self.company_id,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            latitude=data["latitude"],
+            longitude=data["longitude"],
+            city=data.get("city"),
+            region=data.get("region"),
+            country=data.get("country"),
+            country_code=data.get("country_code"),
+            isp=data.get("isp"),
+            location_timezone=data.get("timezone"),
+            last_seen_at=datetime.now(UTC),
+        )
+        self.session.add(visit)
+        self.session.flush()
+        return visit
+
+    def list(self) -> list[AnonymousVisit]:
+        return list(
+            self.session.scalars(
+                select(AnonymousVisit)
+                .where(AnonymousVisit.company_id == self.company_id)
+                .order_by(AnonymousVisit.created_at.desc(), AnonymousVisit.id.desc())
+                .limit(100)
+            )
+        )
 
 
 def record_audit(

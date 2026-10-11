@@ -18,7 +18,10 @@ import type {
   LoginResponse,
   SessionUser,
 } from '../types/api'
-import { captureLoginLocation } from '../services/security'
+import {
+  captureAnonymousVisit,
+  captureLoginLocation,
+} from '../services/security'
 import {
   AuthContext,
   type AuthStatus,
@@ -33,6 +36,10 @@ function AuthProvider({ children }: AuthProviderProps) {
     getAccessToken() ? 'loading' : 'anonymous',
   )
   const [user, setUser] = useState<AuthUser | null>(null)
+
+  useEffect(() => {
+    if (!getAccessToken()) void captureAnonymousVisit()
+  }, [])
 
   const logout = useCallback(() => {
     if (getAccessToken()) {

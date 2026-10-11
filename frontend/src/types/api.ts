@@ -35,7 +35,7 @@ export interface SecuritySessionList {
 
 export interface AccessLocation {
   id: number
-  user_id: number
+  user_id: number | null
   user_name: string
   user_email: string
   ip_address: string | null
@@ -55,6 +55,7 @@ export interface AccessLocation {
   location_source: string | null
   accuracy_m: number | null
   located_at: string | null
+  is_anonymous: boolean
 }
 
 export interface AccessLocationList {

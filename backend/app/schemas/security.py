@@ -44,9 +44,25 @@ class SessionLocationUpdate(BaseModel):
         return value.strip() if isinstance(value, str) and value.strip() else None
 
 
+class AnonymousVisitCreate(BaseModel):
+    latitude: float = Field(ge=-90, le=90)
+    longitude: float = Field(ge=-180, le=180)
+    city: str | None = Field(default=None, max_length=100)
+    region: str | None = Field(default=None, max_length=100)
+    country: str | None = Field(default=None, max_length=100)
+    country_code: str | None = Field(default=None, min_length=2, max_length=2)
+    isp: str | None = Field(default=None, max_length=160)
+    timezone: str | None = Field(default=None, max_length=64)
+
+    @field_validator("city", "region", "country", "isp", "timezone", mode="before")
+    @classmethod
+    def clean_optional_text(cls, value: object) -> object:
+        return value.strip() if isinstance(value, str) and value.strip() else None
+
+
 class AccessLocationResponse(BaseModel):
     id: int
-    user_id: int
+    user_id: int | None
     user_name: str
     user_email: str
     ip_address: str | None
@@ -66,6 +82,7 @@ class AccessLocationResponse(BaseModel):
     location_source: str | None
     accuracy_m: float | None
     located_at: datetime | None
+    is_anonymous: bool = False
 
 
 class AccessLocationListResponse(BaseModel):

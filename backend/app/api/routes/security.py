@@ -19,7 +19,12 @@ from app.schemas.security import (
     SessionLocationUpdate,
     SessionResponse,
 )
-from app.services.security import AuditService, SessionService, record_audit
+from app.services.security import (
+    AnonymousVisitService,
+    AuditService,
+    SessionService,
+    record_audit,
+)
 
 router = APIRouter(prefix="/security", tags=["security"])
 AdminUser = Annotated[Principal, Depends(require_roles(ADMIN_ROLE))]
@@ -61,8 +66,7 @@ def list_access_locations(
     rows = SessionService(session, current_user.company_id, current_user.id).list_access_locations(
         include_company=current_user.role == ADMIN_ROLE
     )
-    return AccessLocationListResponse(
-        items=[
+    items = [
             AccessLocationResponse(
                 id=item.id,
                 user_id=item.user_id,
@@ -92,7 +96,36 @@ def list_access_locations(
             )
             for item, user in rows
         ]
-    )
+    if current_user.role == ADMIN_ROLE:
+        items.extend(
+            AccessLocationResponse(
+                id=-visit.id,
+                user_id=None,
+                user_name="Visitante anónimo",
+                user_email="Sin iniciar sesión",
+                ip_address=visit.ip_address,
+                user_agent=visit.user_agent,
+                created_at=visit.created_at,
+                last_seen_at=visit.last_seen_at,
+                revoked_at=None,
+                current=False,
+                latitude=float(visit.latitude) if visit.latitude is not None else None,
+                longitude=float(visit.longitude) if visit.longitude is not None else None,
+                city=visit.city,
+                region=visit.region,
+                country=visit.country,
+                country_code=visit.country_code,
+                isp=visit.isp,
+                timezone=visit.location_timezone,
+                location_source="public_ip",
+                accuracy_m=None,
+                located_at=visit.last_seen_at,
+                is_anonymous=True,
+            )
+            for visit in AnonymousVisitService(session, current_user.company_id).list()
+        )
+    items.sort(key=lambda item: item.created_at, reverse=True)
+    return AccessLocationListResponse(items=items[:100])
 
 
 @router.post(

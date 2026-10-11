@@ -94,6 +94,38 @@ class AuthSession(Base):
     located_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
+class AnonymousVisit(Base):
+    """Approximate, IP-based visit captured before authentication."""
+
+    __tablename__ = "anonymous_visits"
+    __table_args__ = (
+        Index("ix_anonymous_visits_company_created", "company_id", "created_at"),
+        Index("ix_anonymous_visits_company_ip", "company_id", "ip_address"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    company_id: Mapped[int] = mapped_column(
+        ForeignKey("companies.id", ondelete="CASCADE"), nullable=False
+    )
+    ip_address: Mapped[str | None] = mapped_column(String(45))
+    user_agent: Mapped[str | None] = mapped_column(String(300))
+    latitude: Mapped[float | None] = mapped_column(Numeric(9, 6))
+    longitude: Mapped[float | None] = mapped_column(Numeric(9, 6))
+    city: Mapped[str | None] = mapped_column(String(100))
+    region: Mapped[str | None] = mapped_column(String(100))
+    country: Mapped[str | None] = mapped_column(String(100))
+    country_code: Mapped[str | None] = mapped_column(String(2))
+    isp: Mapped[str | None] = mapped_column(String(160))
+    location_timezone: Mapped[str | None] = mapped_column(String(64))
+    visit_count: Mapped[int] = mapped_column(nullable=False, default=1)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    last_seen_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
 class Employee(TimestampMixin, Base):
     __tablename__ = "employees"
     __table_args__ = (
