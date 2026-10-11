@@ -15,12 +15,14 @@ from sqlalchemy.orm import Session
 from app.core.exceptions import AppError
 from app.core.security import SELLER_ROLE
 from app.models.catalog import Category, Product
+from app.models.company import Company
 from app.models.customer import Customer
 from app.models.identity import User
 from app.models.inventory import Inventory, InventoryMovement
 from app.models.sales import Payment, Sale, SaleDetail
 from app.schemas.inventory import InventoryMovementCreate
 from app.schemas.sales import SaleCreate
+from app.services.pricing import calculate_pricing
 
 
 @dataclass(frozen=True)
@@ -66,6 +68,9 @@ class SaleItemRecord:
     category_name: str
     quantity: int
     unit_price: Decimal
+    gross_subtotal: Decimal
+    discount_percent: Decimal
+    discount_amount: Decimal
     subtotal: Decimal
 
 
@@ -88,6 +93,11 @@ class SaleRecord:
     items: list[SaleItemRecord]
     payment: PaymentRecord
     currency: str
+    subtotal: Decimal
+    discount_total: Decimal
+    tax_total: Decimal
+    tax_rate: Decimal
+    general_discount_percent: Decimal
     total: Decimal
 
 
@@ -102,6 +112,11 @@ class SaleListRecord:
     items_count: int
     payment_method: str
     currency: str
+    subtotal: Decimal
+    discount_total: Decimal
+    tax_total: Decimal
+    tax_rate: Decimal
+    general_discount_percent: Decimal
     total: Decimal
 
 
@@ -191,9 +206,7 @@ class InventoryService:
             .offset((page - 1) * page_size)
             .limit(page_size)
         ).all()
-        total = self.session.scalar(
-            select(func.count(InventoryMovement.id)).where(*filters)
-        )
+        total = self.session.scalar(select(func.count(InventoryMovement.id)).where(*filters))
         return [
             MovementRecord(
                 id=movement.id,
@@ -354,6 +367,11 @@ class SalesService:
                 items_count=int(items_count),
                 payment_method=payment_method,
                 currency=sale.currency,
+                subtotal=sale.subtotal,
+                discount_total=sale.discount_total,
+                tax_total=sale.tax_total,
+                tax_rate=sale.tax_rate,
+                general_discount_percent=sale.general_discount_percent,
                 total=sale.total,
             )
             for sale, customer_name, seller_name, items_count, payment_method in rows
@@ -401,7 +419,7 @@ class SalesService:
         if not customer.active:
             raise AppError("CUSTOMER_INACTIVE", "El cliente esta inactivo", status_code=409)
 
-        requested = {item.product_id: item.quantity for item in payload.items}
+        requested = {item.product_id: item for item in payload.items}
         rows = self.session.execute(
             select(Product, Category.name, Inventory)
             .join(Category, Category.id == Product.category_id)
@@ -421,7 +439,7 @@ class SalesService:
             )
 
         for product, _category_name, inventory in rows:
-            quantity = requested[product.id]
+            quantity = requested[product.id].quantity
             if not product.active:
                 raise AppError(
                     "PRODUCT_INACTIVE",
@@ -441,10 +459,25 @@ class SalesService:
                     },
                 )
 
-        total = sum(
-            (product.unit_price * requested[product.id] for product, _category, _stock in rows),
-            start=Decimal("0.00"),
-        ).quantize(Decimal("0.01"))
+        company = self.session.get(Company, self.company_id)
+        if company is None:
+            raise AppError("COMPANY_NOT_FOUND", "La empresa no existe", status_code=404)
+        pricing = calculate_pricing(
+            [
+                (
+                    product.id,
+                    product.unit_price,
+                    requested[product.id].quantity,
+                    requested[product.id].discount_percent,
+                )
+                for product, _category, _stock in rows
+            ],
+            tax_rate=company.tax_rate,
+            prices_include_tax=company.prices_include_tax,
+            max_discount_percent=company.max_discount_percent,
+            general_discount_percent=payload.discount_percent,
+        )
+        priced_by_product = {line.product_id: line for line in pricing.lines}
         sale = Sale(
             company_id=self.company_id,
             customer_id=customer.id,
@@ -454,15 +487,20 @@ class SalesService:
             request_hash=request_hash,
             status="confirmed",
             currency="PEN",
-            total=total,
+            subtotal=pricing.subtotal,
+            discount_total=pricing.discount_total,
+            tax_total=pricing.tax_total,
+            tax_rate=company.tax_rate,
+            general_discount_percent=payload.discount_percent,
+            total=pricing.total,
         )
         self.session.add(sale)
         self.session.flush()
         sale.number = f"V-{sale.id:06d}"
 
         for product, category_name, inventory in rows:
-            quantity = requested[product.id]
-            subtotal = (product.unit_price * quantity).quantize(Decimal("0.01"))
+            quantity = requested[product.id].quantity
+            priced = priced_by_product[product.id]
             stock_before = inventory.quantity
             stock_after = stock_before - quantity
             inventory.quantity = stock_after
@@ -474,7 +512,10 @@ class SalesService:
                         product_id=product.id,
                         quantity=quantity,
                         unit_price=product.unit_price,
-                        subtotal=subtotal,
+                        gross_subtotal=priced.gross_subtotal,
+                        discount_percent=priced.discount_percent,
+                        discount_amount=priced.discount_amount,
+                        subtotal=priced.subtotal,
                         sku_snapshot=product.sku,
                         product_name_snapshot=product.name,
                         category_name_snapshot=category_name,
@@ -497,7 +538,7 @@ class SalesService:
             Payment(
                 sale_id=sale.id,
                 method=payload.payment_method.value,
-                amount=total,
+                amount=pricing.total,
                 status="completed",
             )
         )
@@ -509,9 +550,14 @@ class SalesService:
         canonical = {
             "customer_id": payload.customer_id,
             "payment_method": payload.payment_method.value,
+            "discount_percent": str(payload.discount_percent),
             "items": sorted(
                 (
-                    {"product_id": item.product_id, "quantity": item.quantity}
+                    {
+                        "product_id": item.product_id,
+                        "quantity": item.quantity,
+                        "discount_percent": str(item.discount_percent),
+                    }
                     for item in payload.items
                 ),
                 key=lambda item: item["product_id"],
@@ -546,6 +592,9 @@ class SalesService:
                     category_name=detail.category_name_snapshot,
                     quantity=detail.quantity,
                     unit_price=detail.unit_price,
+                    gross_subtotal=detail.gross_subtotal,
+                    discount_percent=detail.discount_percent,
+                    discount_amount=detail.discount_amount,
                     subtotal=detail.subtotal,
                 )
                 for detail in details
@@ -557,5 +606,10 @@ class SalesService:
                 paid_at=payment.paid_at,
             ),
             currency=sale.currency,
+            subtotal=sale.subtotal,
+            discount_total=sale.discount_total,
+            tax_total=sale.tax_total,
+            tax_rate=sale.tax_rate,
+            general_discount_percent=sale.general_discount_percent,
             total=sale.total,
         )

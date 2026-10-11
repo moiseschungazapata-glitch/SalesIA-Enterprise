@@ -29,6 +29,7 @@ import Reports from './modules/reports/Reports'
 import Sales from './modules/sales/Sales'
 import Security from './modules/security/Security'
 import Users from './modules/users/Users'
+import Settings from './modules/settings/Settings'
 import type { AuthUser } from './types/api'
 
 interface AuthenticatedApplicationProps {
@@ -117,6 +118,7 @@ function AuthenticatedApplication({
             <Users currentUserId={user.id} />,
           )}
         />
+        <Route path={pagePaths.settings} element={guarded('settings', <Settings />)} />
         <Route
           path={pagePaths.analytics}
           element={guarded('analytics', <Analytics />)}

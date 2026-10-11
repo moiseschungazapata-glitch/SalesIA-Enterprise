@@ -66,9 +66,7 @@ class AuthSession(Base):
     company_id: Mapped[int] = mapped_column(
         ForeignKey("companies.id", ondelete="CASCADE"), nullable=False
     )
-    user_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id", ondelete="CASCADE"), nullable=False
-    )
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     token_jti_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
     ip_address: Mapped[str | None] = mapped_column(String(45))
     user_agent: Mapped[str | None] = mapped_column(String(300))
@@ -118,9 +116,7 @@ class AnonymousVisit(Base):
     country_code: Mapped[str | None] = mapped_column(String(2))
     isp: Mapped[str | None] = mapped_column(String(160))
     location_timezone: Mapped[str | None] = mapped_column(String(64))
-    location_source: Mapped[str] = mapped_column(
-        String(40), nullable=False, default="public_ip"
-    )
+    location_source: Mapped[str] = mapped_column(String(40), nullable=False, default="public_ip")
     location_accuracy_m: Mapped[float | None] = mapped_column(Numeric(10, 2))
     location_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     visit_count: Mapped[int] = mapped_column(nullable=False, default=1)

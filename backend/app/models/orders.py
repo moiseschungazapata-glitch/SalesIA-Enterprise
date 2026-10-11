@@ -17,6 +17,9 @@ class Order(TimestampMixin, Base):
             name="status_allowed",
         ),
         CheckConstraint("total > 0", name="total_positive"),
+        CheckConstraint("subtotal >= 0", name="subtotal_non_negative"),
+        CheckConstraint("discount_total >= 0", name="discount_non_negative"),
+        CheckConstraint("tax_total >= 0", name="tax_non_negative"),
         Index("ix_orders_company_created", "company_id", "created_at"),
         Index("ix_orders_company_status", "company_id", "status"),
     )
@@ -38,6 +41,13 @@ class Order(TimestampMixin, Base):
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")
     currency: Mapped[str] = mapped_column(String(3), nullable=False, default="PEN")
     total: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False)
+    subtotal: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False, default=0)
+    discount_total: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False, default=0)
+    tax_total: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False, default=0)
+    tax_rate: Mapped[Decimal] = mapped_column(Numeric(5, 2), nullable=False, default=0)
+    general_discount_percent: Mapped[Decimal] = mapped_column(
+        Numeric(5, 2), nullable=False, default=0
+    )
     approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     cancelled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     converted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
@@ -48,6 +58,9 @@ class OrderDetail(Base):
     __table_args__ = (
         CheckConstraint("quantity > 0", name="quantity_positive"),
         CheckConstraint("unit_price > 0", name="unit_price_positive"),
+        CheckConstraint("gross_subtotal > 0", name="gross_subtotal_positive"),
+        CheckConstraint("discount_percent >= 0 AND discount_percent <= 100", name="discount_range"),
+        CheckConstraint("discount_amount >= 0", name="discount_amount_non_negative"),
         Index("ix_order_details_order", "order_id"),
     )
 
@@ -60,6 +73,13 @@ class OrderDetail(Base):
     )
     quantity: Mapped[int] = mapped_column(nullable=False)
     unit_price: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False)
+    gross_subtotal: Mapped[Decimal] = mapped_column(
+        Numeric(14, 2),
+        nullable=False,
+        default=lambda context: context.get_current_parameters()["subtotal"],
+    )
+    discount_percent: Mapped[Decimal] = mapped_column(Numeric(5, 2), nullable=False, default=0)
+    discount_amount: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False, default=0)
     subtotal: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False)
     sku_snapshot: Mapped[str] = mapped_column(String(50), nullable=False)
     product_name_snapshot: Mapped[str] = mapped_column(String(180), nullable=False)

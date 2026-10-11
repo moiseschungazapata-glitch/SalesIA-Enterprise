@@ -293,6 +293,9 @@ export interface SaleItemRecord {
   category_name: string
   quantity: number
   unit_price: string
+  gross_subtotal: string
+  discount_percent: string
+  discount_amount: string
   subtotal: string
 }
 
@@ -313,6 +316,11 @@ export interface SaleRecord {
   items: SaleItemRecord[]
   payment: SalePaymentRecord
   currency: 'PEN'
+  subtotal: string
+  discount_total: string
+  tax_total: string
+  tax_rate: string
+  general_discount_percent: string
   total: string
 }
 
@@ -326,6 +334,11 @@ export interface SaleListItem {
   items_count: number
   payment_method: PaymentMethod
   currency: 'PEN'
+  subtotal: string
+  discount_total: string
+  tax_total: string
+  tax_rate: string
+  general_discount_percent: string
   total: string
 }
 
@@ -339,9 +352,11 @@ export interface SaleListResponse {
 export interface SaleCreateRequest {
   customer_id: number
   payment_method: PaymentMethod
+  discount_percent?: string
   items: Array<{
     product_id: number
     quantity: number
+    discount_percent?: string
   }>
 }
 
@@ -357,6 +372,11 @@ export interface OrderRecord {
   seller_name: string
   sale_id: number | null
   currency: 'PEN'
+  subtotal: string
+  discount_total: string
+  tax_total: string
+  tax_rate: string
+  general_discount_percent: string
   total: string
   items: SaleItemRecord[]
   created_at: string
@@ -372,7 +392,14 @@ export interface OrderListResponse {
 
 export interface OrderCreateRequest {
   customer_id: number
-  items: Array<{ product_id: number; quantity: number }>
+  discount_percent?: string
+  items: Array<{ product_id: number; quantity: number; discount_percent?: string }>
+}
+
+export interface CommercialSettings {
+  tax_rate: string
+  prices_include_tax: boolean
+  max_discount_percent: string
 }
 
 export interface OrderConversionResponse {

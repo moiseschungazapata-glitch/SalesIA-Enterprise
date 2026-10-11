@@ -125,13 +125,10 @@ def update_user(
 ) -> UserResponse:
     user = UserService(session, current_user.company_id).update(user_id, payload)
     sensitive_change = any(
-        field in payload.model_fields_set
-        for field in {"email", "role", "active", "new_password"}
+        field in payload.model_fields_set for field in {"email", "role", "active", "new_password"}
     )
     if sensitive_change:
-        SessionService(session, current_user.company_id, user_id).revoke_all(
-            "user_security_change"
-        )
+        SessionService(session, current_user.company_id, user_id).revoke_all("user_security_change")
     changes = {
         "fields": sorted(payload.model_fields_set - {"new_password"}),
         "password_changed": "new_password" in payload.model_fields_set,

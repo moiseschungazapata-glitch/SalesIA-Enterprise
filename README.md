@@ -33,6 +33,7 @@ Desarrollo basado en las 16 fases del Plan Integral de Desarrollo.
 - [Fase 07 - Clientes y productos](docs/catalog/fase-07-clientes-productos.md)
 - [Fase 08 - Ventas e inventario](docs/operations/fase-08-ventas-inventario.md)
 - [Parte 01 - Pedidos y conversión a venta](docs/operations/parte-01-pedidos.md)
+- [Parte 02 - Impuestos, descuentos y configuración](docs/operations/parte-02-impuestos-descuentos.md)
 - [Fase 09 - Motor estadistico](docs/analytics/fase-09-motor-estadistico.md)
 - [Fase 10 - Dashboard Analytics](docs/analytics/fase-10-dashboard-analytics.md)
 - [Fase 11 - Insights empresariales](docs/analytics/fase-11-insights-empresariales.md)
@@ -52,6 +53,8 @@ Desarrollo basado en las 16 fases del Plan Integral de Desarrollo.
 - Fase 08: completada; ventas, pagos e inventario operan de forma transaccional.
   El flujo incluye pedidos editables, aprobación, cancelación y conversión segura
   a venta sin descontar inventario antes de la conversión.
+  También incluye IGV configurable, precios con o sin impuesto, descuentos por
+  producto y generales, límites administrativos y desglose histórico de importes.
 - Fase 09: completada; media, mediana, variables, probabilidad y Bayes operan
   mediante FastAPI y conservan datasets, observaciones e historial en Supabase.
 - Fase 10: completada; el dashboard calcula KPIs, series, distribuciones y

@@ -87,8 +87,12 @@ def create_sale(
         current_user.role,
     ).create(payload, idempotency_key)
     record_audit(
-        session, company_id=current_user.company_id, user_id=current_user.id,
-        action="sale.create", entity_type="sale", entity_id=sale.id,
+        session,
+        company_id=current_user.company_id,
+        user_id=current_user.id,
+        action="sale.create",
+        entity_type="sale",
+        entity_id=sale.id,
         request=request,
         changes={"customer_id": payload.customer_id, "items": len(payload.items)},
     )

@@ -17,6 +17,7 @@ class PaymentMethod(StrEnum):
 class SaleItemCreate(BaseModel):
     product_id: int = Field(gt=0)
     quantity: int = Field(gt=0)
+    discount_percent: Decimal = Field(default=Decimal("0"), ge=0, le=100)
 
     @field_validator("quantity", mode="before")
     @classmethod
@@ -30,14 +31,13 @@ class SaleCreate(BaseModel):
     customer_id: int = Field(gt=0)
     payment_method: PaymentMethod
     items: list[SaleItemCreate] = Field(min_length=1, max_length=100)
+    discount_percent: Decimal = Field(default=Decimal("0"), ge=0, le=100)
 
     @field_validator("payment_method", mode="before")
     @classmethod
     def validate_payment_method(cls, value: object) -> object:
         if value not in {method.value for method in PaymentMethod}:
-            raise PydanticCustomError(
-                "invalid_payment_method", "El metodo de pago no es valido"
-            )
+            raise PydanticCustomError("invalid_payment_method", "El metodo de pago no es valido")
         return value
 
     @field_validator("items", mode="before")
@@ -71,6 +71,9 @@ class SaleItemResponse(BaseModel):
     category_name: str
     quantity: int = Field(gt=0)
     unit_price: Decimal
+    gross_subtotal: Decimal
+    discount_percent: Decimal
+    discount_amount: Decimal
     subtotal: Decimal
 
 
@@ -95,6 +98,11 @@ class SaleResponse(BaseModel):
     items: list[SaleItemResponse]
     payment: SalePaymentResponse
     currency: str
+    subtotal: Decimal
+    discount_total: Decimal
+    tax_total: Decimal
+    tax_rate: Decimal
+    general_discount_percent: Decimal
     total: Decimal
 
 
@@ -110,6 +118,11 @@ class SaleListItemResponse(BaseModel):
     items_count: int = Field(ge=1)
     payment_method: PaymentMethod
     currency: str
+    subtotal: Decimal
+    discount_total: Decimal
+    tax_total: Decimal
+    tax_rate: Decimal
+    general_discount_percent: Decimal
     total: Decimal
 
 

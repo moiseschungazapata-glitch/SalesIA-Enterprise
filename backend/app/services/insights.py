@@ -256,8 +256,7 @@ class InsightService:
                 "severity": "info",
                 "title": "Actividad comercial del periodo",
                 "description": (
-                    f"Se confirmaron {transactions} ventas por un total de "
-                    f"S/ {total:,.2f}."
+                    f"Se confirmaron {transactions} ventas por un total de S/ {total:,.2f}."
                 ),
                 "evidence": {
                     "metric": "sales_total",

@@ -66,9 +66,7 @@ def list_reports(
         Query(alias="status"),
     ] = None,
 ) -> ReportListResponse:
-    items, total = ReportService(
-        session, current_user.company_id, current_user.id
-    ).history(
+    items, total = ReportService(session, current_user.company_id, current_user.id).history(
         page=page,
         page_size=page_size,
         report_type=report_type,
@@ -95,9 +93,9 @@ def export_report(
     export_format: Annotated[Literal["csv"], Query(alias="format")] = "csv",
 ) -> Response:
     del export_format
-    content, filename = ReportService(
-        session, current_user.company_id, current_user.id
-    ).csv_export(report_id)
+    content, filename = ReportService(session, current_user.company_id, current_user.id).csv_export(
+        report_id
+    )
     return Response(
         content=content.encode("utf-8"),
         media_type="text/csv; charset=utf-8",

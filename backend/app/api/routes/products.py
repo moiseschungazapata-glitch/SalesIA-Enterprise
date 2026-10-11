@@ -77,9 +77,14 @@ def create_product(
 ) -> ProductResponse:
     product = ProductService(session, current_user.company_id, current_user.id).create(payload)
     record_audit(
-        session, company_id=current_user.company_id, user_id=current_user.id,
-        action="product.create", entity_type="product", entity_id=product.id,
-        request=request, changes={"fields": sorted(payload.model_fields_set)},
+        session,
+        company_id=current_user.company_id,
+        user_id=current_user.id,
+        action="product.create",
+        entity_type="product",
+        entity_id=product.id,
+        request=request,
+        changes={"fields": sorted(payload.model_fields_set)},
     )
     session.commit()
     return _response(product)
@@ -125,9 +130,14 @@ def update_product(
         product_id, payload
     )
     record_audit(
-        session, company_id=current_user.company_id, user_id=current_user.id,
-        action="product.update", entity_type="product", entity_id=product_id,
-        request=request, changes={"fields": sorted(payload.model_fields_set)},
+        session,
+        company_id=current_user.company_id,
+        user_id=current_user.id,
+        action="product.update",
+        entity_type="product",
+        entity_id=product_id,
+        request=request,
+        changes={"fields": sorted(payload.model_fields_set)},
     )
     session.commit()
     return _response(product)

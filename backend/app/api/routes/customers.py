@@ -70,9 +70,14 @@ def create_customer(
 ) -> CustomerResponse:
     customer = CustomerService(session, current_user.company_id).create(payload)
     record_audit(
-        session, company_id=current_user.company_id, user_id=current_user.id,
-        action="customer.create", entity_type="customer", entity_id=customer.id,
-        request=request, changes={"fields": sorted(payload.model_fields_set)},
+        session,
+        company_id=current_user.company_id,
+        user_id=current_user.id,
+        action="customer.create",
+        entity_type="customer",
+        entity_id=customer.id,
+        request=request,
+        changes={"fields": sorted(payload.model_fields_set)},
     )
     session.commit()
     return CustomerResponse.model_validate(customer)
@@ -115,9 +120,14 @@ def update_customer(
 ) -> CustomerResponse:
     customer = CustomerService(session, current_user.company_id).update(customer_id, payload)
     record_audit(
-        session, company_id=current_user.company_id, user_id=current_user.id,
-        action="customer.update", entity_type="customer", entity_id=customer_id,
-        request=request, changes={"fields": sorted(payload.model_fields_set)},
+        session,
+        company_id=current_user.company_id,
+        user_id=current_user.id,
+        action="customer.update",
+        entity_type="customer",
+        entity_id=customer_id,
+        request=request,
+        changes={"fields": sorted(payload.model_fields_set)},
     )
     session.commit()
     return CustomerResponse.model_validate(customer)

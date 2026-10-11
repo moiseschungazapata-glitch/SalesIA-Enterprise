@@ -22,10 +22,7 @@ def record_anonymous_visit(
     session: DatabaseSession,
 ) -> None:
     company_id = session.scalar(
-        select(Company.id)
-        .where(Company.active.is_(True))
-        .order_by(Company.id)
-        .limit(1)
+        select(Company.id).where(Company.active.is_(True)).order_by(Company.id).limit(1)
     )
     if company_id is None:
         return

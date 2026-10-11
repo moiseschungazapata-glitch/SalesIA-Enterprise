@@ -55,9 +55,7 @@ def login(
         raise
 
     access_token = create_access_token(user.id)
-    auth_session = SessionService(session, user.company_id, user.id).create(
-        access_token, request
-    )
+    auth_session = SessionService(session, user.company_id, user.id).create(access_token, request)
     record_audit(
         session,
         company_id=user.company_id,

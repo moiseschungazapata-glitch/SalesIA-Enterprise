@@ -62,9 +62,9 @@ def _execute_manual(
     session: Session,
     analysis_type: str,
 ) -> AnalysisExecutionResponse:
-    result = AnalyticsService(
-        session, current_user.company_id, current_user.id
-    ).analyze_series(payload, analysis_type)
+    result = AnalyticsService(session, current_user.company_id, current_user.id).analyze_series(
+        payload, analysis_type
+    )
     session.commit()
     return AnalysisExecutionResponse.model_validate(result)
 
@@ -107,9 +107,9 @@ def list_analysis_history(
     page: Annotated[int, Query(ge=1)] = 1,
     page_size: Annotated[int, Query(ge=1, le=100)] = 20,
 ) -> AnalysisHistoryResponse:
-    items, total = AnalyticsService(
-        session, current_user.company_id, current_user.id
-    ).history(page, page_size)
+    items, total = AnalyticsService(session, current_user.company_id, current_user.id).history(
+        page, page_size
+    )
     return AnalysisHistoryResponse(
         items=items,
         total=total,

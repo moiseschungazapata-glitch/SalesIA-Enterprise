@@ -111,12 +111,16 @@ def create_movement(
     current_user: AdminUser,
     session: DatabaseSession,
 ) -> InventoryMovementResponse:
-    movement = InventoryService(
-        session, current_user.company_id, current_user.id
-    ).create_movement(payload)
+    movement = InventoryService(session, current_user.company_id, current_user.id).create_movement(
+        payload
+    )
     record_audit(
-        session, company_id=current_user.company_id, user_id=current_user.id,
-        action="inventory.adjust", entity_type="inventory_movement", entity_id=movement.id,
+        session,
+        company_id=current_user.company_id,
+        user_id=current_user.id,
+        action="inventory.adjust",
+        entity_type="inventory_movement",
+        entity_id=movement.id,
         request=request,
         changes={"product_id": payload.product_id, "movement_type": payload.movement_type},
     )

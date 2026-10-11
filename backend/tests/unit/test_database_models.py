@@ -42,7 +42,10 @@ EXPECTED_TABLES = {
 
 POST_INITIAL_TABLES = {"anonymous_visits", "auth_sessions", "order_details", "orders"}
 POST_INITIAL_COLUMNS = {
+    "companies": {"tax_rate", "prices_include_tax", "max_discount_percent"},
     "reports": {"content"},
+    "sales": {"subtotal", "discount_total", "tax_total", "tax_rate", "general_discount_percent"},
+    "sale_details": {"gross_subtotal", "discount_percent", "discount_amount"},
     "users": {"failed_login_attempts", "locked_until"},
 }
 
@@ -149,7 +152,8 @@ def test_money_is_decimal_and_core_integrity_checks_exist() -> None:
         if isinstance(constraint, CheckConstraint)
     }
     assert "ck_inventory_quantity_non_negative" in check_names
-    assert "ck_sale_details_subtotal_matches" in check_names
+    assert "ck_sale_details_discount_range" in check_names
+    assert "ck_companies_tax_rate_range" in check_names
     assert "ck_inventory_movements_sale_reference_matches_type" in check_names
 
 

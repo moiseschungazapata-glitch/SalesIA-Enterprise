@@ -40,9 +40,7 @@ def generate_insights(
     current_user: InsightsUser,
     session: DatabaseSession,
 ) -> InsightGenerationResponse:
-    result = InsightService(
-        session, current_user.company_id, current_user.id
-    ).generate(payload)
+    result = InsightService(session, current_user.company_id, current_user.id).generate(payload)
     record_audit(
         session,
         company_id=current_user.company_id,
@@ -70,9 +68,7 @@ def list_insights(
     severity: Annotated[Literal["info", "warning", "critical"] | None, Query()] = None,
     active: Annotated[bool | None, Query()] = None,
 ) -> InsightListResponse:
-    items, total = InsightService(
-        session, current_user.company_id, current_user.id
-    ).history(
+    items, total = InsightService(session, current_user.company_id, current_user.id).history(
         page=page,
         page_size=page_size,
         category=category,

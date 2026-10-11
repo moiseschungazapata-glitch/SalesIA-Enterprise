@@ -11,12 +11,14 @@ from sqlalchemy.orm import Session
 from app.core.exceptions import AppError
 from app.core.security import SELLER_ROLE
 from app.models.catalog import Category, Product
+from app.models.company import Company
 from app.models.customer import Customer
 from app.models.identity import User
 from app.models.orders import Order, OrderDetail
 from app.schemas.orders import OrderCreate
 from app.schemas.sales import SaleCreate
 from app.services.operations import SalesService
+from app.services.pricing import calculate_pricing
 
 
 class OrderService:
@@ -96,8 +98,14 @@ class OrderService:
                 customer_id=order.customer_id,
                 payment_method=payment_method,
                 items=[
-                    {"product_id": item.product_id, "quantity": item.quantity} for item in details
+                    {
+                        "product_id": item.product_id,
+                        "quantity": item.quantity,
+                        "discount_percent": item.discount_percent,
+                    }
+                    for item in details
                 ],
+                discount_percent=order.general_discount_percent,
             ),
             key,
         )
@@ -131,39 +139,65 @@ class OrderService:
             raise AppError(
                 "CUSTOMER_NOT_FOUND", "El cliente no existe o está inactivo", status_code=404
             )
-        quantities = {item.product_id: item.quantity for item in payload.items}
+        requested = {item.product_id: item for item in payload.items}
         rows = self.session.execute(
             select(Product, Category.name)
             .join(Category, Category.id == Product.category_id)
             .where(
                 Product.company_id == self.company_id,
-                Product.id.in_(quantities),
+                Product.id.in_(requested),
                 Product.active.is_(True),
             )
         ).all()
-        if len(rows) != len(quantities):
+        if len(rows) != len(requested):
             raise AppError(
                 "PRODUCT_NOT_FOUND",
                 "Uno o más productos no existen o están inactivos",
                 status_code=404,
             )
-        total = Decimal("0")
+        company = self.session.get(Company, self.company_id)
+        if company is None:
+            raise AppError("COMPANY_NOT_FOUND", "La empresa no existe", status_code=404)
+        pricing = calculate_pricing(
+            [
+                (
+                    product.id,
+                    product.unit_price,
+                    requested[product.id].quantity,
+                    requested[product.id].discount_percent,
+                )
+                for product, _category_name in rows
+            ],
+            tax_rate=company.tax_rate,
+            prices_include_tax=company.prices_include_tax,
+            max_discount_percent=company.max_discount_percent,
+            general_discount_percent=payload.discount_percent,
+        )
+        priced_by_product = {line.product_id: line for line in pricing.lines}
         for product, category_name in rows:
-            subtotal = (product.unit_price * quantities[product.id]).quantize(Decimal("0.01"))
-            total += subtotal
+            item = requested[product.id]
+            priced = priced_by_product[product.id]
             self.session.add(
                 OrderDetail(
                     order_id=order.id,
                     product_id=product.id,
-                    quantity=quantities[product.id],
+                    quantity=item.quantity,
                     unit_price=product.unit_price,
-                    subtotal=subtotal,
+                    gross_subtotal=priced.gross_subtotal,
+                    discount_percent=priced.discount_percent,
+                    discount_amount=priced.discount_amount,
+                    subtotal=priced.subtotal,
                     sku_snapshot=product.sku,
                     product_name_snapshot=product.name,
                     category_name_snapshot=category_name,
                 )
             )
-        order.total = total.quantize(Decimal("0.01"))
+        order.subtotal = pricing.subtotal
+        order.discount_total = pricing.discount_total
+        order.tax_total = pricing.tax_total
+        order.tax_rate = company.tax_rate
+        order.general_discount_percent = payload.discount_percent
+        order.total = pricing.total
         self.session.flush()
 
     def _record(self, order: Order) -> dict[str, Any]:
@@ -184,6 +218,11 @@ class OrderService:
             "seller_name": str(seller),
             "sale_id": order.sale_id,
             "currency": order.currency,
+            "subtotal": order.subtotal,
+            "discount_total": order.discount_total,
+            "tax_total": order.tax_total,
+            "tax_rate": order.tax_rate,
+            "general_discount_percent": order.general_discount_percent,
             "total": order.total,
             "items": [
                 {
@@ -193,6 +232,9 @@ class OrderService:
                     "category_name": item.category_name_snapshot,
                     "quantity": item.quantity,
                     "unit_price": item.unit_price,
+                    "gross_subtotal": item.gross_subtotal,
+                    "discount_percent": item.discount_percent,
+                    "discount_amount": item.discount_amount,
                     "subtotal": item.subtotal,
                 }
                 for item in details

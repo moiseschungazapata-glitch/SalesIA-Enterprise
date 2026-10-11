@@ -69,9 +69,14 @@ def create_category(
 ) -> CategoryResponse:
     category = CategoryService(session, current_user.company_id).create(payload)
     record_audit(
-        session, company_id=current_user.company_id, user_id=current_user.id,
-        action="category.create", entity_type="category", entity_id=category.id,
-        request=request, changes={"fields": sorted(payload.model_fields_set)},
+        session,
+        company_id=current_user.company_id,
+        user_id=current_user.id,
+        action="category.create",
+        entity_type="category",
+        entity_id=category.id,
+        request=request,
+        changes={"fields": sorted(payload.model_fields_set)},
     )
     session.commit()
     return CategoryResponse.model_validate(category)
@@ -96,9 +101,14 @@ def update_category(
 ) -> CategoryResponse:
     category = CategoryService(session, current_user.company_id).update(category_id, payload)
     record_audit(
-        session, company_id=current_user.company_id, user_id=current_user.id,
-        action="category.update", entity_type="category", entity_id=category_id,
-        request=request, changes={"fields": sorted(payload.model_fields_set)},
+        session,
+        company_id=current_user.company_id,
+        user_id=current_user.id,
+        action="category.update",
+        entity_type="category",
+        entity_id=category_id,
+        request=request,
+        changes={"fields": sorted(payload.model_fields_set)},
     )
     session.commit()
     return CategoryResponse.model_validate(category)

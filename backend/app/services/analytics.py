@@ -88,9 +88,7 @@ class AnalyticsService:
     def variable_catalog() -> list[dict[str, Any]]:
         return VARIABLE_CATALOG
 
-    def analyze_series(
-        self, payload: NumericSeriesRequest, analysis_type: str
-    ) -> dict[str, Any]:
+    def analyze_series(self, payload: NumericSeriesRequest, analysis_type: str) -> dict[str, Any]:
         dataset, variable = self._create_series_dataset(
             name=payload.name.strip(),
             source_type="manual",
@@ -113,8 +111,7 @@ class AnalyticsService:
             filters.append(Sale.created_at >= datetime.combine(payload.date_from, time.min))
         if payload.date_to:
             filters.append(
-                Sale.created_at
-                < datetime.combine(payload.date_to + timedelta(days=1), time.min)
+                Sale.created_at < datetime.combine(payload.date_to + timedelta(days=1), time.min)
             )
 
         item_count = func.sum(SaleDetail.quantity)

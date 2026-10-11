@@ -9,7 +9,7 @@ import { changeOrderStatus, convertOrder, createOrder, listOrders, updateOrder }
 import type { OrderRecord, OrderStatus, PaymentMethod, ProductRecord } from '../../types/api'
 
 interface Props { role: UserRole }
-interface CartItem { product: ProductRecord; quantity: number }
+interface CartItem { product: ProductRecord; quantity: number; discountPercent: number }
 const labels: Record<OrderStatus, string> = { draft: 'Borrador', pending: 'Pendiente', approved: 'Aprobado', cancelled: 'Cancelado', converted: 'Convertido' }
 const money = (value: string | number) => Number(value).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
@@ -25,6 +25,8 @@ function Orders({ role }: Props) {
   const [customerId, setCustomerId] = useState('')
   const [productId, setProductId] = useState('')
   const [quantity, setQuantity] = useState('1')
+  const [itemDiscount, setItemDiscount] = useState('0')
+  const [generalDiscount, setGeneralDiscount] = useState('0')
   const [cart, setCart] = useState<CartItem[]>([])
   const [busy, setBusy] = useState(false)
   const [payment, setPayment] = useState<PaymentMethod>('cash')
@@ -43,25 +45,26 @@ function Orders({ role }: Props) {
     const timer = window.setTimeout(load, 0)
     return () => window.clearTimeout(timer)
   }, [load])
-  const total = useMemo(() => cart.reduce((sum, item) => sum + Number(item.product.unit_price) * item.quantity, 0), [cart])
+  const total = useMemo(() => cart.reduce((sum, item) => sum + Number(item.product.unit_price) * item.quantity * (1 - item.discountPercent / 100), 0) * (1 - Number(generalDiscount || 0) / 100), [cart, generalDiscount])
 
-  const openCreate = () => { setEditing(null); setCustomerId(''); setCart([]); setError(''); setShowForm(true) }
+  const openCreate = () => { setEditing(null); setCustomerId(''); setCart([]); setGeneralDiscount('0'); setError(''); setShowForm(true) }
   const openEdit = (order: OrderRecord) => {
     setEditing(order); setCustomerId(String(order.customer_id));
-    setCart(order.items.map((item) => ({ product: products.data.items.find((p) => p.id === item.product_id) ?? { id: item.product_id, sku: item.sku, name: item.product_name, description: null, category_id: 0, category_name: item.category_name, unit_price: item.unit_price, stock: 0, active: true, created_at: '', updated_at: '' }, quantity: item.quantity })))
+    setGeneralDiscount(order.general_discount_percent)
+    setCart(order.items.map((item) => ({ product: products.data.items.find((p) => p.id === item.product_id) ?? { id: item.product_id, sku: item.sku, name: item.product_name, description: null, category_id: 0, category_name: item.category_name, unit_price: item.unit_price, stock: 0, active: true, created_at: '', updated_at: '' }, quantity: item.quantity, discountPercent: Number(item.discount_percent) })))
     setShowForm(true)
   }
   const addItem = () => {
     const product = products.data.items.find((item) => item.id === Number(productId)); const requested = Number(quantity)
     if (!product || requested < 1) return setError('Selecciona un producto y una cantidad válida.')
     const existing = cart.find((item) => item.product.id === product.id)
-    setCart(existing ? cart.map((item) => item.product.id === product.id ? { ...item, quantity: item.quantity + requested } : item) : [...cart, { product, quantity: requested }])
-    setProductId(''); setQuantity('1'); setError('')
+    setCart(existing ? cart.map((item) => item.product.id === product.id ? { ...item, quantity: item.quantity + requested, discountPercent: Number(itemDiscount || 0) } : item) : [...cart, { product, quantity: requested, discountPercent: Number(itemDiscount || 0) }])
+    setProductId(''); setQuantity('1'); setItemDiscount('0'); setError('')
   }
   const save = async () => {
     if (!customerId || !cart.length) return setError('Selecciona un cliente y agrega productos.')
     setBusy(true); setError('')
-    const payload = { customer_id: Number(customerId), items: cart.map((item) => ({ product_id: item.product.id, quantity: item.quantity })) }
+    const payload = { customer_id: Number(customerId), discount_percent: generalDiscount, items: cart.map((item) => ({ product_id: item.product.id, quantity: item.quantity, discount_percent: String(item.discountPercent) })) }
     try { const result = editing ? await updateOrder(editing.id, payload) : await createOrder(payload); setSuccess(`${result.number} guardado correctamente.`); setShowForm(false); load() }
     catch (e) { setError(e instanceof Error ? e.message : 'No se pudo guardar el pedido.') } finally { setBusy(false) }
   }

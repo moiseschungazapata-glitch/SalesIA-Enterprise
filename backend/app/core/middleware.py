@@ -38,9 +38,7 @@ class SecurityHeadersMiddleware:
                 if path.startswith(f"{settings.api_v1_prefix}/auth"):
                     headers["Cache-Control"] = "no-store"
                 if settings.environment == "production":
-                    headers["Strict-Transport-Security"] = (
-                        "max-age=31536000; includeSubDomains"
-                    )
+                    headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
             await send(message)
 
         await self.app(scope, receive, send_with_security_headers)

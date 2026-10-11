@@ -95,9 +95,7 @@ class DashboardService:
         sales_total = sum(totals, start=Decimal("0"))
         transactions = len(sale_rows)
         units_sold = sum(int(row.units) for row in sale_rows)
-        ticket_average = (
-            sales_total / Decimal(transactions) if transactions else Decimal("0")
-        )
+        ticket_average = sales_total / Decimal(transactions) if transactions else Decimal("0")
         mean_value = arithmetic_mean(totals) if totals else Decimal("0")
         median_value = median(totals) if totals else Decimal("0")
         granularity = self._granularity(start_date, end_date)
@@ -134,9 +132,7 @@ class DashboardService:
         }
 
     def _company_timezone(self) -> ZoneInfo:
-        company = self.session.scalar(
-            select(Company).where(Company.id == self.company_id)
-        )
+        company = self.session.scalar(select(Company).where(Company.id == self.company_id))
         if company is None:
             raise AppError("COMPANY_NOT_FOUND", "La empresa no existe", status_code=404)
         try:
@@ -164,9 +160,7 @@ class DashboardService:
             )
         return start_date, end_date
 
-    def _validate_filter_ids(
-        self, seller_id: int | None, category_id: int | None
-    ) -> None:
+    def _validate_filter_ids(self, seller_id: int | None, category_id: int | None) -> None:
         if seller_id is not None:
             seller_exists = self.session.scalar(
                 select(User.id).where(
@@ -256,9 +250,7 @@ class DashboardService:
         )
         for row in sale_rows:
             key = cls._period_key(cls._local_date(row.created_at, timezone), granularity)
-            aggregates[key]["revenue"] = Decimal(aggregates[key]["revenue"]) + Decimal(
-                row.revenue
-            )
+            aggregates[key]["revenue"] = Decimal(aggregates[key]["revenue"]) + Decimal(row.revenue)
             aggregates[key]["transactions"] = int(aggregates[key]["transactions"]) + 1
 
         cursor = cls._period_key(start_date, granularity)
@@ -312,9 +304,7 @@ class DashboardService:
         ]
 
     @staticmethod
-    def _sales_by_seller(
-        sale_rows: list[Any], sales_total: Decimal
-    ) -> list[dict[str, Any]]:
+    def _sales_by_seller(sale_rows: list[Any], sales_total: Decimal) -> list[dict[str, Any]]:
         aggregates: dict[int, dict[str, Any]] = {}
         for row in sale_rows:
             item = aggregates.setdefault(
@@ -330,9 +320,7 @@ class DashboardService:
             item["revenue"] += Decimal(row.revenue)
             item["transactions"] += 1
             item["units"] += int(row.units)
-        values = sorted(
-            aggregates.values(), key=lambda item: (-item["revenue"], item["id"])
-        )
+        values = sorted(aggregates.values(), key=lambda item: (-item["revenue"], item["id"]))
         return [
             {
                 **item,
@@ -356,8 +344,7 @@ class DashboardService:
             frequency = sum(
                 1
                 for value in totals
-                if (minimum is None or value >= minimum)
-                and (maximum is None or value < maximum)
+                if (minimum is None or value >= minimum) and (maximum is None or value < maximum)
             )
             result.append(
                 {

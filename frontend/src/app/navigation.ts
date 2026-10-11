@@ -16,6 +16,7 @@ export type PageKey =
   | 'reports'
   | 'security'
   | 'users'
+  | 'settings'
 
 export interface NavigationItem {
   key: PageKey
@@ -103,6 +104,12 @@ export const navigationItems: NavigationItem[] = [
     description: 'Usuarios, roles y estados',
     roles: ['administrator'],
   },
+  {
+    key: 'settings',
+    label: 'Configuración',
+    description: 'IGV, precios y descuentos',
+    roles: ['administrator'],
+  },
 ]
 
 export const roleLabels: Record<UserRole, string> = {
@@ -124,6 +131,7 @@ export const pagePaths: Record<PageKey, string> = {
   reports: '/reportes',
   security: '/seguridad',
   users: '/usuarios',
+  settings: '/configuracion',
 }
 
 const pathPages = Object.fromEntries(

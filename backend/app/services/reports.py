@@ -45,9 +45,7 @@ class ReportService:
         self.user_id = user_id
 
     def generate(self, payload: ReportGenerateRequest) -> dict[str, Any]:
-        date_from, date_to, start_at, end_at = self._period(
-            payload.date_from, payload.date_to
-        )
+        date_from, date_to, start_at, end_at = self._period(payload.date_from, payload.date_to)
         content = getattr(self, f"_{payload.report_type}_content")(start_at, end_at)
         timestamp = datetime.now(UTC)
         report = Report(
@@ -153,6 +151,9 @@ class ReportService:
                 Customer.name.label("customer"),
                 User.name.label("seller"),
                 func.sum(SaleDetail.quantity).label("units"),
+                Sale.subtotal,
+                Sale.discount_total,
+                Sale.tax_total,
                 Sale.total,
                 Sale.currency,
             )
@@ -167,6 +168,9 @@ class ReportService:
                 Customer.name,
                 User.name,
                 Sale.total,
+                Sale.subtotal,
+                Sale.discount_total,
+                Sale.tax_total,
                 Sale.currency,
             )
             .order_by(Sale.created_at.desc(), Sale.id.desc())
@@ -178,6 +182,9 @@ class ReportService:
                 "customer": row.customer,
                 "seller": row.seller,
                 "units": int(row.units),
+                "subtotal": _money(row.subtotal),
+                "discount": _money(row.discount_total),
+                "tax": _money(row.tax_total),
                 "total": _money(row.total),
                 "currency": row.currency,
             }
@@ -191,6 +198,9 @@ class ReportService:
                 {"key": "customer", "label": "Cliente", "format": "text"},
                 {"key": "seller", "label": "Vendedor", "format": "text"},
                 {"key": "units", "label": "Unidades", "format": "integer"},
+                {"key": "subtotal", "label": "Subtotal", "format": "money"},
+                {"key": "discount", "label": "Descuento", "format": "money"},
+                {"key": "tax", "label": "IGV", "format": "money"},
                 {"key": "total", "label": "Total", "format": "money"},
             ],
             "rows": rows,
@@ -395,9 +405,10 @@ class ReportService:
                 .where(StatisticalResult.analysis_id == analysis.id)
                 .order_by(StatisticalResult.metric, StatisticalResult.id)
             ).all()
-            result_text = "; ".join(
-                f"{item.metric}={self._result_value(item)}" for item in results
-            ) or "Sin resultados"
+            result_text = (
+                "; ".join(f"{item.metric}={self._result_value(item)}" for item in results)
+                or "Sin resultados"
+            )
             rows.append(
                 {
                     "analysis_id": analysis.id,

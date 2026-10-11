@@ -16,6 +16,7 @@ interface SalesProps {
 interface CartItem {
   product: ProductRecord
   quantity: number
+  discountPercent: number
 }
 
 const paymentLabels: Record<PaymentMethod, string> = {
@@ -55,6 +56,8 @@ function Sales({ role }: SalesProps) {
   const [selectedCustomer, setSelectedCustomer] = useState('')
   const [selectedProduct, setSelectedProduct] = useState('')
   const [quantity, setQuantity] = useState('1')
+  const [itemDiscount, setItemDiscount] = useState('0')
+  const [generalDiscount, setGeneralDiscount] = useState('0')
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash')
   const [cart, setCart] = useState<CartItem[]>([])
   const [saving, setSaving] = useState(false)
@@ -67,10 +70,10 @@ function Sales({ role }: SalesProps) {
   )
   const total = useMemo(
     () => cart.reduce(
-      (sum, item) => sum + Number(item.product.unit_price) * item.quantity, 0,
+      (sum, item) => sum + Number(item.product.unit_price) * item.quantity * (1 - item.discountPercent / 100), 0,
     ),
     [cart],
-  )
+  ) * (1 - Number(generalDiscount || 0) / 100)
   const salesTotal = sales.data.items.reduce(
     (sum, sale) => sum + Number(sale.total), 0,
   )
@@ -94,11 +97,12 @@ function Sales({ role }: SalesProps) {
     }
     setCart((current) => existing
       ? current.map((item) => item.product.id === selectedProductData.id
-        ? { ...item, quantity: newQuantity }
+        ? { ...item, quantity: newQuantity, discountPercent: Number(itemDiscount || 0) }
         : item)
-      : [...current, { product: selectedProductData, quantity: requested }])
+      : [...current, { product: selectedProductData, quantity: requested, discountPercent: Number(itemDiscount || 0) }])
     setSelectedProduct('')
     setQuantity('1')
+    setItemDiscount('0')
     changeRequest()
   }
 
@@ -119,9 +123,11 @@ function Sales({ role }: SalesProps) {
       const created = await createSale({
         customer_id: Number(selectedCustomer),
         payment_method: paymentMethod,
+        discount_percent: generalDiscount,
         items: cart.map((item) => ({
           product_id: item.product.id,
           quantity: item.quantity,
+          discount_percent: String(item.discountPercent),
         })),
       }, idempotencyKey)
       setSuccess(`${created.number} confirmada por S/ ${money(created.total)}.`)
@@ -129,6 +135,7 @@ function Sales({ role }: SalesProps) {
       setCart([])
       setSelectedCustomer('')
       setPaymentMethod('cash')
+      setGeneralDiscount('0')
       setIdempotencyKey(crypto.randomUUID())
       sales.reload()
       products.reload()
@@ -214,6 +221,10 @@ function Sales({ role }: SalesProps) {
                 Cantidad
                 <input type="number" min="1" value={quantity} onChange={(event) => setQuantity(event.target.value)} />
               </label>
+              <label>
+                Descuento del producto (%)
+                <input type="number" min="0" max="100" step="0.01" value={itemDiscount} onChange={(event) => setItemDiscount(event.target.value)} />
+              </label>
               <div className="sale-add-row">
                 <div className="selected-product-info">
                   <strong>{selectedProductData?.name ?? 'Selecciona un producto'}</strong>
@@ -231,8 +242,8 @@ function Sales({ role }: SalesProps) {
                 <div className="cart-list">
                   {cart.map((item) => (
                     <div className="cart-row" key={item.product.id}>
-                      <div><strong>{item.product.name}</strong><span>{item.quantity} × S/ {money(item.product.unit_price)}</span></div>
-                      <strong>S/ {money(Number(item.product.unit_price) * item.quantity)}</strong>
+                      <div><strong>{item.product.name}</strong><span>{item.quantity} × S/ {money(item.product.unit_price)} · Desc. {item.discountPercent}%</span></div>
+                      <strong>S/ {money(Number(item.product.unit_price) * item.quantity * (1 - item.discountPercent / 100))}</strong>
                       <button type="button" className="remove-button" onClick={() => removeFromCart(item.product.id)}>Quitar</button>
                     </div>
                   ))}
@@ -241,6 +252,7 @@ function Sales({ role }: SalesProps) {
             </div>
 
             <div className="sale-summary">
+              <label>Descuento general (%)<input type="number" min="0" max="100" step="0.01" value={generalDiscount} onChange={(event) => { setGeneralDiscount(event.target.value); changeRequest() }} /></label>
               <div><span>Total estimado</span><strong>S/ {money(total)}</strong></div>
               <label>
                 Método de pago
@@ -277,7 +289,7 @@ function Sales({ role }: SalesProps) {
         ) : (
           <div className="table-wrapper">
             <table>
-              <thead><tr><th>Venta</th><th>Cliente</th><th>Vendedor</th><th>Fecha</th><th>Unidades</th><th>Total</th><th>Pago</th><th>Estado</th></tr></thead>
+              <thead><tr><th>Venta</th><th>Cliente</th><th>Vendedor</th><th>Fecha</th><th>Unidades</th><th>Subtotal</th><th>Descuento</th><th>IGV</th><th>Total</th><th>Pago</th><th>Estado</th></tr></thead>
               <tbody>
                 {sales.data.items.map((sale) => (
                   <tr key={sale.id}>
@@ -286,6 +298,9 @@ function Sales({ role }: SalesProps) {
                     <td>{sale.seller.name}</td>
                     <td>{formatDate(sale.created_at)}</td>
                     <td>{sale.items_count}</td>
+                    <td>S/ {money(sale.subtotal)}</td>
+                    <td>S/ {money(sale.discount_total)}</td>
+                    <td>S/ {money(sale.tax_total)}</td>
                     <td>S/ {money(sale.total)}</td>
                     <td>{paymentLabels[sale.payment_method]}</td>
                     <td><span className="status-pill success">Confirmada</span></td>

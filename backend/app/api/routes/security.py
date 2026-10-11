@@ -93,37 +93,35 @@ def list_access_locations(
         include_company=current_user.role == ADMIN_ROLE
     )
     items = [
-            AccessLocationResponse(
-                id=item.id,
-                user_id=item.user_id,
-                user_name=user.name,
-                user_email=user.email,
-                ip_address=item.ip_address,
-                user_agent=item.user_agent,
-                created_at=item.created_at,
-                last_seen_at=item.last_seen_at,
-                revoked_at=item.revoked_at,
-                current=item.id == current_user.session_id,
-                latitude=float(item.latitude) if item.latitude is not None else None,
-                longitude=float(item.longitude) if item.longitude is not None else None,
-                city=item.city,
-                region=item.region,
-                country=item.country,
-                country_code=item.country_code,
-                isp=item.isp,
-                timezone=item.location_timezone,
-                location_source=item.location_source,
-                accuracy_m=(
-                    float(item.location_accuracy_m)
-                    if item.location_accuracy_m is not None
-                    else None
-                ),
-                located_at=item.located_at,
-                online=is_online(item.last_seen_at, revoked=item.revoked_at is not None),
-                location_active=item.location_active,
-            )
-            for item, user in rows
-        ]
+        AccessLocationResponse(
+            id=item.id,
+            user_id=item.user_id,
+            user_name=user.name,
+            user_email=user.email,
+            ip_address=item.ip_address,
+            user_agent=item.user_agent,
+            created_at=item.created_at,
+            last_seen_at=item.last_seen_at,
+            revoked_at=item.revoked_at,
+            current=item.id == current_user.session_id,
+            latitude=float(item.latitude) if item.latitude is not None else None,
+            longitude=float(item.longitude) if item.longitude is not None else None,
+            city=item.city,
+            region=item.region,
+            country=item.country,
+            country_code=item.country_code,
+            isp=item.isp,
+            timezone=item.location_timezone,
+            location_source=item.location_source,
+            accuracy_m=(
+                float(item.location_accuracy_m) if item.location_accuracy_m is not None else None
+            ),
+            located_at=item.located_at,
+            online=is_online(item.last_seen_at, revoked=item.revoked_at is not None),
+            location_active=item.location_active,
+        )
+        for item, user in rows
+    ]
     if current_user.role == ADMIN_ROLE:
         items.extend(
             AccessLocationResponse(
@@ -173,9 +171,7 @@ def revoke_session(
     current_user: CurrentUser,
     session: DatabaseSession,
 ) -> SessionActionResponse:
-    revoked = SessionService(session, current_user.company_id, current_user.id).revoke(
-        session_id
-    )
+    revoked = SessionService(session, current_user.company_id, current_user.id).revoke(session_id)
     record_audit(
         session,
         company_id=current_user.company_id,
