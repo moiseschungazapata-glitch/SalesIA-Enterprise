@@ -3,11 +3,16 @@ import type {
   InventoryMovementCreateRequest,
   InventoryMovementListResponse,
   InventoryMovementRecord,
+  OrderConversionResponse,
+  OrderCreateRequest,
+  OrderListResponse,
+  OrderRecord,
+  PaymentMethod,
   SaleCreateRequest,
   SaleListResponse,
   SaleRecord,
 } from '../types/api'
-import { apiGet, apiPost } from './api'
+import { apiGet, apiPatch, apiPost } from './api'
 
 export interface InventoryFilters {
   page: number
@@ -64,4 +69,28 @@ export function createSale(
   return apiPost<SaleRecord>('/sales', payload, {
     'Idempotency-Key': idempotencyKey,
   })
+}
+
+export function listOrders(status = '', signal?: AbortSignal) {
+  const query = new URLSearchParams({ page: '1', page_size: '100' })
+  if (status) query.set('status', status)
+  return apiGet<OrderListResponse>(`/orders?${query}`, signal)
+}
+
+export function createOrder(payload: OrderCreateRequest) {
+  return apiPost<OrderRecord>('/orders', payload)
+}
+
+export function updateOrder(orderId: number, payload: OrderCreateRequest) {
+  return apiPatch<OrderRecord>(`/orders/${orderId}`, payload)
+}
+
+export function changeOrderStatus(orderId: number, status: 'approved' | 'cancelled') {
+  return apiPost<OrderRecord>(`/orders/${orderId}/status`, { status })
+}
+
+export function convertOrder(orderId: number, paymentMethod: PaymentMethod) {
+  return apiPost<OrderConversionResponse>(`/orders/${orderId}/convert`, {
+    payment_method: paymentMethod,
+  }, { 'Idempotency-Key': crypto.randomUUID() })
 }

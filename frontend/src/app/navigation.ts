@@ -6,6 +6,7 @@ export type UserRole =
 export type PageKey =
   | 'dashboard'
   | 'sales'
+  | 'orders'
   | 'customers'
   | 'products'
   | 'inventory'
@@ -35,6 +36,12 @@ export const navigationItems: NavigationItem[] = [
     label: 'Dashboard',
     description: 'Resumen comercial del negocio',
     roles: ['administrator', 'manager'],
+  },
+  {
+    key: 'orders',
+    label: 'Pedidos',
+    description: 'Preparación y conversión de pedidos',
+    roles: allRoles,
   },
   {
     key: 'sales',
@@ -107,6 +114,7 @@ export const roleLabels: Record<UserRole, string> = {
 export const pagePaths: Record<PageKey, string> = {
   dashboard: '/dashboard',
   sales: '/ventas',
+  orders: '/pedidos',
   customers: '/clientes',
   products: '/productos',
   inventory: '/inventario',

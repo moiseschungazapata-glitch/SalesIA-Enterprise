@@ -345,6 +345,41 @@ export interface SaleCreateRequest {
   }>
 }
 
+export type OrderStatus = 'draft' | 'pending' | 'approved' | 'cancelled' | 'converted'
+
+export interface OrderRecord {
+  id: number
+  number: string
+  status: OrderStatus
+  customer_id: number
+  customer_name: string
+  seller_id: number
+  seller_name: string
+  sale_id: number | null
+  currency: 'PEN'
+  total: string
+  items: SaleItemRecord[]
+  created_at: string
+  updated_at: string
+}
+
+export interface OrderListResponse {
+  items: OrderRecord[]
+  total: number
+  page: number
+  page_size: number
+}
+
+export interface OrderCreateRequest {
+  customer_id: number
+  items: Array<{ product_id: number; quantity: number }>
+}
+
+export interface OrderConversionResponse {
+  order: OrderRecord
+  sale: SaleRecord
+}
+
 export type StatisticalVariableType =
   | 'qualitative'
   | 'quantitative_discrete'

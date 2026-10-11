@@ -16,6 +16,7 @@ describe('reglas de navegación por rol', () => {
 
   it('limita al vendedor a la operación y seguridad', () => {
     expect(getNavigationItems('seller').map((item) => item.key)).toEqual([
+      'orders',
       'sales',
       'customers',
       'products',

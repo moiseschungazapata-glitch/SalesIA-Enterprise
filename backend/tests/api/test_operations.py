@@ -22,6 +22,8 @@ from app.models import (
     Customer,
     Inventory,
     InventoryMovement,
+    Order,
+    OrderDetail,
     Payment,
     Product,
     Role,
@@ -57,6 +59,8 @@ def session() -> Generator[Session, None, None]:
             Category.__table__,
             Product.__table__,
             Inventory.__table__,
+            Order.__table__,
+            OrderDetail.__table__,
             Sale.__table__,
             SaleDetail.__table__,
             Payment.__table__,
@@ -546,3 +550,87 @@ def test_openapi_publishes_phase_eight_routes(client: TestClient) -> None:
     assert "/api/v1/inventory/movements" in paths
     assert "/api/v1/sales" in paths
     assert "/api/v1/sales/{sale_id}" in paths
+    assert "/api/v1/orders" in paths
+    assert "/api/v1/orders/{order_id}" in paths
+    assert "/api/v1/orders/{order_id}/status" in paths
+    assert "/api/v1/orders/{order_id}/convert" in paths
+
+
+def test_order_lifecycle_converts_atomically_to_sale(
+    client: TestClient, session: Session
+) -> None:
+    seller = login(client, SELLER_EMAIL, SELLER_PASSWORD)
+    customer_id = entity_id(session, Customer, "Ana Torres")
+    product_id = entity_id(session, Product, "Teclado")
+    payload = {
+        "customer_id": customer_id,
+        "items": [{"product_id": product_id, "quantity": 2}],
+    }
+
+    created = client.post("/api/v1/orders", headers=seller, json=payload)
+    assert created.status_code == 201, created.text
+    order = created.json()
+    assert order["number"] == f"P-{order['id']:06d}"
+    assert order["status"] == "pending"
+    assert order["total"] == "300.00"
+    stock = session.scalar(select(Inventory.quantity).where(Inventory.product_id == product_id))
+    assert stock == 10
+
+    approved = client.post(
+        f"/api/v1/orders/{order['id']}/status",
+        headers=seller,
+        json={"status": "approved"},
+    )
+    assert approved.status_code == 200
+    assert approved.json()["status"] == "approved"
+
+    converted = client.post(
+        f"/api/v1/orders/{order['id']}/convert",
+        headers={**seller, "Idempotency-Key": str(uuid4())},
+        json={"payment_method": "card"},
+    )
+    assert converted.status_code == 201, converted.text
+    assert converted.json()["order"]["status"] == "converted"
+    assert converted.json()["sale"]["total"] == "300.00"
+    stock = session.scalar(select(Inventory.quantity).where(Inventory.product_id == product_id))
+    assert stock == 8
+
+    repeated = client.post(
+        f"/api/v1/orders/{order['id']}/convert",
+        headers={**seller, "Idempotency-Key": str(uuid4())},
+        json={"payment_method": "card"},
+    )
+    assert repeated.status_code == 409
+
+
+def test_order_permissions_edit_and_cancel(client: TestClient, session: Session) -> None:
+    admin = login(client, ADMIN_EMAIL, ADMIN_PASSWORD)
+    seller = login(client, SELLER_EMAIL, SELLER_PASSWORD)
+    manager = login(client, MANAGER_EMAIL, MANAGER_PASSWORD)
+    customer_id = entity_id(session, Customer, "Ana Torres")
+    product_id = entity_id(session, Product, "Mouse")
+    payload = {
+        "customer_id": customer_id,
+        "items": [{"product_id": product_id, "quantity": 1}],
+    }
+    assert client.post("/api/v1/orders", headers=manager, json=payload).status_code == 403
+    order = client.post("/api/v1/orders", headers=seller, json=payload).json()
+    assert client.get("/api/v1/orders", headers=admin).json()["total"] == 1
+
+    updated = client.patch(
+        f"/api/v1/orders/{order['id']}",
+        headers=seller,
+        json={**payload, "items": [{"product_id": product_id, "quantity": 2}]},
+    )
+    assert updated.status_code == 200
+    assert updated.json()["total"] == "100.00"
+    cancelled = client.post(
+        f"/api/v1/orders/{order['id']}/status",
+        headers=seller,
+        json={"status": "cancelled"},
+    )
+    assert cancelled.status_code == 200
+    assert cancelled.json()["status"] == "cancelled"
+    assert client.patch(
+        f"/api/v1/orders/{order['id']}", headers=seller, json=payload
+    ).status_code == 409

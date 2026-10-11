@@ -26,6 +26,8 @@ EXPECTED_TABLES = {
     "inventory",
     "inventory_movements",
     "observations",
+    "order_details",
+    "orders",
     "payments",
     "products",
     "random_variables",
@@ -38,7 +40,7 @@ EXPECTED_TABLES = {
     "users",
 }
 
-POST_INITIAL_TABLES = {"anonymous_visits", "auth_sessions"}
+POST_INITIAL_TABLES = {"anonymous_visits", "auth_sessions", "order_details", "orders"}
 POST_INITIAL_COLUMNS = {
     "reports": {"content"},
     "users": {"failed_login_attempts", "locked_until"},
@@ -138,6 +140,7 @@ def test_money_is_decimal_and_core_integrity_checks_exist() -> None:
     assert isinstance(Base.metadata.tables["products"].c.unit_price.type, Numeric)
     assert isinstance(Base.metadata.tables["sales"].c.total.type, Numeric)
     assert isinstance(Base.metadata.tables["payments"].c.amount.type, Numeric)
+    assert isinstance(Base.metadata.tables["orders"].c.total.type, Numeric)
 
     check_names = {
         constraint.name

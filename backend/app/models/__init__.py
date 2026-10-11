@@ -16,6 +16,7 @@ from app.models.customer import Customer
 from app.models.governance import AuditLog, Report
 from app.models.identity import AnonymousVisit, AuthSession, Employee, Role, User
 from app.models.inventory import Inventory, InventoryMovement
+from app.models.orders import Order, OrderDetail
 from app.models.sales import Payment, Sale, SaleDetail
 
 __all__ = [
@@ -33,6 +34,8 @@ __all__ = [
     "Inventory",
     "InventoryMovement",
     "Observation",
+    "Order",
+    "OrderDetail",
     "Payment",
     "Product",
     "RandomVariable",

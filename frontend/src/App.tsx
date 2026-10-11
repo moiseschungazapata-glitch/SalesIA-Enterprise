@@ -23,6 +23,7 @@ import Dashboard from './modules/dashboard/Dashboard'
 import Inventory from './modules/inventory/Inventory'
 import Insights from './modules/insights/Insights'
 import Products from './modules/products/Products'
+import Orders from './modules/orders/Orders'
 import Probability from './modules/probability/Probability'
 import Reports from './modules/reports/Reports'
 import Sales from './modules/sales/Sales'
@@ -79,6 +80,10 @@ function AuthenticatedApplication({
             'dashboard',
             <Dashboard role={user.role} onNavigate={goToPage} />,
           )}
+        />
+        <Route
+          path={pagePaths.orders}
+          element={guarded('orders', <Orders role={user.role} />)}
         />
         <Route
           path={pagePaths.sales}
