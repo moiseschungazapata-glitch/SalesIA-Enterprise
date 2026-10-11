@@ -19,3 +19,32 @@ uv run python ../database/seeds/seed_reference_data.py `
 ```
 
 El comando se puede repetir sin duplicar los registros.
+
+## Datos ficticios para pruebas integrales
+
+`seed_demo_business_data.py` agrega a una empresa existente:
+
+- 4 categorías;
+- 6 clientes ficticios (personas y empresas);
+- 12 productos ficticios;
+- inventario inicial y su movimiento trazable para cada producto nuevo.
+
+No crea usuarios, pedidos, ventas ni pagos y no modifica existencias ya creadas.
+Todos los correos usan el dominio reservado `example.com` y los documentos están
+reservados exclusivamente para demostración.
+
+Vista previa, sin escribir:
+
+```powershell
+cd C:\SalesIA-Enterprise\backend
+.\.venv\Scripts\python.exe ..\database\seeds\seed_demo_business_data.py
+```
+
+Aplicación confirmada:
+
+```powershell
+cd C:\SalesIA-Enterprise\backend
+.\.venv\Scripts\python.exe ..\database\seeds\seed_demo_business_data.py --apply
+```
+
+El script usa `DATABASE_URL` del backend y se puede repetir sin duplicar datos.
