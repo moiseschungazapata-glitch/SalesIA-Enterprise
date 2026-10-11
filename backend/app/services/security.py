@@ -51,7 +51,9 @@ class AnonymousVisitService:
         )
         if existing is not None:
             existing.last_seen_at = datetime.now(UTC)
-            existing.visit_count += 1
+            if not data.get("heartbeat", False):
+                existing.visit_count += 1
+            existing.location_active = data.get("location_active", False)
             if data.get("source") == "device_location":
                 existing.latitude = data["latitude"]
                 existing.longitude = data["longitude"]
@@ -73,6 +75,7 @@ class AnonymousVisitService:
             location_timezone=data.get("timezone"),
             location_source=data.get("source", "public_ip"),
             location_accuracy_m=data.get("accuracy_m"),
+            location_active=data.get("location_active", False),
             last_seen_at=datetime.now(UTC),
         )
         self.session.add(visit)
@@ -175,9 +178,25 @@ class SessionService:
         auth_session.location_timezone = data.get("timezone")
         auth_session.location_source = data.get("source", "public_ip")
         auth_session.location_accuracy_m = data.get("accuracy_m")
+        auth_session.location_active = data.get("location_active", False)
         auth_session.located_at = datetime.now(UTC)
         self.session.flush()
         return auth_session
+
+    def heartbeat(self, session_id: int, *, location_active: bool) -> None:
+        auth_session = self.session.scalar(
+            select(AuthSession).where(
+                AuthSession.id == session_id,
+                AuthSession.company_id == self.company_id,
+                AuthSession.user_id == self.user_id,
+                AuthSession.revoked_at.is_(None),
+            )
+        )
+        if auth_session is None:
+            return
+        auth_session.last_seen_at = datetime.now(UTC)
+        auth_session.location_active = location_active
+        self.session.flush()
 
     def list_access_locations(
         self, *, include_company: bool = False

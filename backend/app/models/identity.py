@@ -91,6 +91,7 @@ class AuthSession(Base):
     location_timezone: Mapped[str | None] = mapped_column(String(64))
     location_source: Mapped[str | None] = mapped_column(String(40))
     location_accuracy_m: Mapped[float | None] = mapped_column(Numeric(10, 2))
+    location_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     located_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
@@ -121,6 +122,7 @@ class AnonymousVisit(Base):
         String(40), nullable=False, default="public_ip"
     )
     location_accuracy_m: Mapped[float | None] = mapped_column(Numeric(10, 2))
+    location_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     visit_count: Mapped[int] = mapped_column(nullable=False, default=1)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()

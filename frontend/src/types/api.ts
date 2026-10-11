@@ -56,6 +56,8 @@ export interface AccessLocation {
   accuracy_m: number | null
   located_at: string | null
   is_anonymous: boolean
+  online: boolean
+  location_active: boolean
 }
 
 export interface AccessLocationList {

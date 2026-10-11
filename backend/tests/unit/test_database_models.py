@@ -115,6 +115,7 @@ def test_later_migrations_are_reflected_in_current_models() -> None:
         "location_timezone",
         "location_source",
         "location_accuracy_m",
+        "location_active",
         "located_at",
     }
     assert {foreign_key.target_fullname for foreign_key in auth_sessions.foreign_keys} == {

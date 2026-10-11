@@ -32,6 +32,7 @@ class SessionLocationUpdate(BaseModel):
     timezone: str | None = Field(default=None, max_length=64)
     source: str = Field(default="public_ip", pattern="^(public_ip|device_location)$")
     accuracy_m: float | None = Field(default=None, ge=0, le=100000)
+    location_active: bool = False
 
     @field_validator("ip_address")
     @classmethod
@@ -55,6 +56,8 @@ class AnonymousVisitCreate(BaseModel):
     timezone: str | None = Field(default=None, max_length=64)
     source: str = Field(default="public_ip", pattern="^(public_ip|device_location)$")
     accuracy_m: float | None = Field(default=None, ge=0, le=100000)
+    location_active: bool = False
+    heartbeat: bool = False
 
     @field_validator("city", "region", "country", "isp", "timezone", mode="before")
     @classmethod
@@ -85,6 +88,12 @@ class AccessLocationResponse(BaseModel):
     accuracy_m: float | None
     located_at: datetime | None
     is_anonymous: bool = False
+    online: bool = False
+    location_active: bool = False
+
+
+class PresenceHeartbeat(BaseModel):
+    location_active: bool = False
 
 
 class AccessLocationListResponse(BaseModel):

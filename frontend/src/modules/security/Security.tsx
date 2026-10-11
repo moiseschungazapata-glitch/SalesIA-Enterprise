@@ -60,9 +60,11 @@ function Security({ user, onLogout }: SecurityProps) {
   const [locating, setLocating] = useState(false)
   const [success, setSuccess] = useState('')
 
-  const load = useCallback(async (signal?: AbortSignal) => {
-    setLoading(true)
-    setError('')
+  const load = useCallback(async (signal?: AbortSignal, silent = false) => {
+    if (!silent) {
+      setLoading(true)
+      setError('')
+    }
     try {
       const [sessionData, auditData, locationData] = await Promise.all([
         getSessions(signal),
@@ -77,9 +79,9 @@ function Security({ user, onLogout }: SecurityProps) {
       setSelectedAccessId((current) => current ?? locationData.items.find((item) => item.current)?.id ?? locationData.items[0]?.id ?? null)
     } catch (requestError) {
       if (requestError instanceof DOMException && requestError.name === 'AbortError') return
-      setError(requestError instanceof Error ? requestError.message : 'No se pudo cargar la seguridad.')
+      if (!silent) setError(requestError instanceof Error ? requestError.message : 'No se pudo cargar la seguridad.')
     } finally {
-      setLoading(false)
+      if (!silent) setLoading(false)
     }
   }, [user.role])
 
@@ -89,6 +91,18 @@ function Security({ user, onLogout }: SecurityProps) {
     return () => {
       window.clearTimeout(timer)
       controller.abort()
+    }
+  }, [load])
+
+  useEffect(() => {
+    const refresh = () => {
+      if (document.visibilityState === 'visible') void load(undefined, true)
+    }
+    const interval = window.setInterval(refresh, 15_000)
+    document.addEventListener('visibilitychange', refresh)
+    return () => {
+      window.clearInterval(interval)
+      document.removeEventListener('visibilitychange', refresh)
     }
   }, [load])
 
@@ -198,6 +212,7 @@ function Security({ user, onLogout }: SecurityProps) {
                   <span key={accessIdentityKey(item)}><i className="legend-dot" style={{ background: accessColor(item) }} /> {accessDisplayName(item)}</span>
                 ))}
                 {mapIdentities.length > 6 && <span>+ {mapIdentities.length - 6} identidades adicionales</span>}
+                <span><i className="legend-dot inactive" /> Desconectado o ubicación desactivada</span>
                 <span><i className="legend-radius" /> Radio estimado por IP</span>
               </div>
             </div>
@@ -216,6 +231,7 @@ function Security({ user, onLogout }: SecurityProps) {
                     <div><strong>{accessDisplayName(selectedAccess)}</strong><span>{selectedAccess.is_anonymous ? 'Visitante sin iniciar sesión' : selectedAccess.user_email}</span></div>
                   </div>
                   <dl>
+                    <div><dt>Presencia</dt><dd>{!selectedAccess.online ? 'Desconectado' : selectedAccess.location_active ? 'En línea · ubicación activa' : 'En línea · ubicación desactivada'}</dd></div>
                     <div><dt>Tipo de ubicación</dt><dd>{selectedAccess.is_anonymous && selectedAccess.location_source !== 'device_location' ? 'Visita anónima · estimación por IP' : selectedAccess.location_source === 'device_location' ? selectedAccess.is_anonymous ? 'Visita anónima · ubicación precisa' : 'Ubicación precisa del dispositivo' : 'Estimación por IP pública'}</dd></div>
                     <div><dt>Zona de referencia</dt><dd>{[selectedAccess.city, selectedAccess.region, selectedAccess.country].filter(Boolean).join(', ') || 'Consulta el punto en el mapa'}</dd></div>
                     <div><dt>Inicio</dt><dd>{new Date(selectedAccess.created_at).toLocaleString('es-PE')}</dd></div>
@@ -236,13 +252,13 @@ function Security({ user, onLogout }: SecurityProps) {
               <table>
                 <thead><tr><th>Usuario</th><th>Fecha</th><th>Zona aproximada</th><th>IP</th><th>Dispositivo</th><th>Estado</th></tr></thead>
                 <tbody>{accesses.map((item) => (
-                  <tr key={item.id} className={item.id === selectedAccessId ? 'selected-row' : ''} onClick={() => setSelectedAccessId(item.id)}>
+                  <tr key={item.id} className={`${item.id === selectedAccessId ? 'selected-row' : ''} ${!item.online || !item.location_active ? 'inactive-row' : ''}`} onClick={() => setSelectedAccessId(item.id)}>
                     <td><strong>{accessDisplayName(item)}</strong><small>{item.is_anonymous ? 'Visitante sin iniciar sesión' : item.user_email}</small></td>
                     <td>{new Date(item.created_at).toLocaleString('es-PE')}</td>
                     <td>{[item.city, item.region, item.country].filter(Boolean).join(', ') || 'Sin estimación'}</td>
                     <td>{item.ip_address || '—'}</td>
                     <td>{describeDevice(item.user_agent)}</td>
-                    <td><span className={`access-status ${item.revoked_at ? 'revoked' : item.location_source === 'device_location' ? 'precise' : 'known'}`}>{item.revoked_at ? 'Revocada' : item.latitude === null ? 'Sin ubicar' : item.is_anonymous && item.location_source === 'device_location' ? 'Visita precisa' : item.is_anonymous ? 'Visita web' : item.location_source === 'device_location' ? 'Precisa' : 'Por IP'}</span></td>
+                    <td><span className={`access-status ${item.revoked_at ? 'revoked' : !item.online || !item.location_active ? 'inactive' : item.location_source === 'device_location' ? 'precise' : 'known'}`}>{item.revoked_at ? 'Revocada' : !item.online ? 'Desconectado' : !item.location_active ? 'Ubicación desactivada' : item.latitude === null ? 'Sin ubicar' : item.is_anonymous && item.location_source === 'device_location' ? 'Visita precisa' : item.is_anonymous ? 'Visita web' : item.location_source === 'device_location' ? 'Precisa' : 'Por IP'}</span></td>
                   </tr>
                 ))}</tbody>
               </table>

@@ -21,6 +21,8 @@ import type {
 import {
   captureAnonymousVisit,
   captureLoginLocation,
+  heartbeatAnonymousVisit,
+  heartbeatAuthenticatedSession,
 } from '../services/security'
 import {
   AuthContext,
@@ -40,6 +42,24 @@ function AuthProvider({ children }: AuthProviderProps) {
   useEffect(() => {
     if (!getAccessToken()) void captureAnonymousVisit()
   }, [])
+
+  useEffect(() => {
+    if (status === 'loading') return
+    const sendHeartbeat = () => {
+      if (document.visibilityState === 'hidden') return
+      if (status === 'authenticated') void heartbeatAuthenticatedSession()
+      else void heartbeatAnonymousVisit()
+    }
+    const interval = window.setInterval(sendHeartbeat, 30_000)
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') sendHeartbeat()
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+    return () => {
+      window.clearInterval(interval)
+      document.removeEventListener('visibilitychange', handleVisibility)
+    }
+  }, [status])
 
   const logout = useCallback(() => {
     if (getAccessToken()) {

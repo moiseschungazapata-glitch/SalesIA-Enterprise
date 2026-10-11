@@ -32,6 +32,34 @@ export interface LocationCaptureResult {
 }
 
 const ANONYMOUS_VISIT_KEY = 'salesia.anonymous_visit_mode_v2'
+const ANONYMOUS_PAYLOAD_KEY = 'salesia.anonymous_visit_payload_v1'
+const AUTHENTICATED_PAYLOAD_KEY = 'salesia.authenticated_location_payload_v1'
+
+interface AnonymousVisitPayload {
+  ip_address?: string | null
+  latitude: number
+  longitude: number
+  city: string | null
+  region: string | null
+  country: string | null
+  country_code: string | null
+  isp: string | null
+  timezone: string | null
+  source: 'public_ip' | 'device_location'
+  accuracy_m: number | null
+  location_active: boolean
+  heartbeat?: boolean
+}
+
+async function locationPermissionActive(fallback = false) {
+  if (!navigator.permissions?.query) return fallback
+  try {
+    const permission = await navigator.permissions.query({ name: 'geolocation' })
+    return permission.state === 'granted'
+  } catch {
+    return fallback
+  }
+}
 
 async function getPublicIpLocation(): Promise<IpWhoResponse | null> {
   const controller = new AbortController()
@@ -55,10 +83,11 @@ export async function captureAnonymousVisit(
   retryPrecise = false,
 ): Promise<LocationCaptureResult> {
   const savedMode = sessionStorage.getItem(ANONYMOUS_VISIT_KEY)
-  if (savedMode === 'precise') {
+  const savedPayload = sessionStorage.getItem(ANONYMOUS_PAYLOAD_KEY)
+  if (savedMode === 'precise' && savedPayload) {
     return { mode: 'precise', message: 'La ubicación precisa ya fue registrada.' }
   }
-  if (savedMode === 'ip' && !retryPrecise) {
+  if (savedMode === 'ip' && savedPayload && !retryPrecise) {
     return { mode: 'ip', message: 'Se registró una estimación por IP.' }
   }
   const [location, deviceLocation] = await Promise.all([
@@ -79,7 +108,7 @@ export async function captureAnonymousVisit(
   }
 
   try {
-    await apiPost<void>('/public/visits', {
+    const payload: AnonymousVisitPayload = {
       latitude,
       longitude,
       city: location?.city || null,
@@ -90,7 +119,12 @@ export async function captureAnonymousVisit(
       timezone: location?.timezone?.id || null,
       source: precise ? 'device_location' : 'public_ip',
       accuracy_m: precise?.accuracy ?? null,
-    })
+      location_active: precise
+        ? await locationPermissionActive(true)
+        : false,
+    }
+    await apiPost<void>('/public/visits', payload)
+    sessionStorage.setItem(ANONYMOUS_PAYLOAD_KEY, JSON.stringify(payload))
     const mode = precise ? 'precise' : 'ip'
     sessionStorage.setItem(ANONYMOUS_VISIT_KEY, mode)
     return precise
@@ -111,7 +145,61 @@ export async function captureAnonymousVisit(
   }
 }
 
-function getDeviceLocation(): Promise<GeolocationPosition | null> {
+export async function heartbeatAnonymousVisit() {
+  const rawPayload = sessionStorage.getItem(ANONYMOUS_PAYLOAD_KEY)
+  if (!rawPayload) return
+  try {
+    const payload = JSON.parse(rawPayload) as AnonymousVisitPayload
+    payload.location_active = await locationPermissionActive(
+      payload.source === 'device_location',
+    )
+    if (payload.location_active) {
+      const current = await getDeviceLocation(10_000, 20_000)
+      if (current) {
+        payload.latitude = current.coords.latitude
+        payload.longitude = current.coords.longitude
+        payload.accuracy_m = current.coords.accuracy
+        payload.source = 'device_location'
+      }
+    }
+    payload.heartbeat = true
+    await apiPost<void>('/public/visits', payload)
+    sessionStorage.setItem(ANONYMOUS_PAYLOAD_KEY, JSON.stringify(payload))
+  } catch {
+    // Presence updates are best-effort and must not interrupt the login.
+  }
+}
+
+export async function heartbeatAuthenticatedSession() {
+  try {
+    const locationActive = await locationPermissionActive(false)
+    const rawPayload = sessionStorage.getItem(AUTHENTICATED_PAYLOAD_KEY)
+    if (locationActive && rawPayload) {
+      const payload = JSON.parse(rawPayload) as AnonymousVisitPayload
+      const current = await getDeviceLocation(10_000, 20_000)
+      if (current) {
+        payload.latitude = current.coords.latitude
+        payload.longitude = current.coords.longitude
+        payload.accuracy_m = current.coords.accuracy
+        payload.source = 'device_location'
+        payload.location_active = true
+        await apiPost<void>('/security/sessions/current/location', payload)
+        sessionStorage.setItem(AUTHENTICATED_PAYLOAD_KEY, JSON.stringify(payload))
+        return
+      }
+    }
+    await apiPost<void>('/security/sessions/current/heartbeat', {
+      location_active: locationActive,
+    })
+  } catch {
+    // Normal authorization handling will take care of expired sessions.
+  }
+}
+
+function getDeviceLocation(
+  timeout = 15000,
+  maximumAge = 0,
+): Promise<GeolocationPosition | null> {
   if (!navigator.geolocation || !window.isSecureContext) {
     return Promise.resolve(null)
   }
@@ -121,8 +209,8 @@ function getDeviceLocation(): Promise<GeolocationPosition | null> {
       () => resolve(null),
       {
         enableHighAccuracy: true,
-        timeout: 15000,
-        maximumAge: 0,
+        timeout,
+        maximumAge,
       },
     )
   })
@@ -147,7 +235,7 @@ export async function captureLoginLocation(): Promise<LocationCaptureResult> {
   }
 
   try {
-    await apiPost<void>('/security/sessions/current/location', {
+    const payload: AnonymousVisitPayload = {
       ip_address: ipLocation?.ip || null,
       latitude,
       longitude,
@@ -159,7 +247,12 @@ export async function captureLoginLocation(): Promise<LocationCaptureResult> {
       timezone: ipLocation?.timezone?.id || null,
       source: precise ? 'device_location' : 'public_ip',
       accuracy_m: precise?.accuracy ?? null,
-    })
+      location_active: precise
+        ? await locationPermissionActive(true)
+        : false,
+    }
+    await apiPost<void>('/security/sessions/current/location', payload)
+    sessionStorage.setItem(AUTHENTICATED_PAYLOAD_KEY, JSON.stringify(payload))
   } catch {
     return { mode: 'unavailable', message: 'No fue posible guardar la ubicación de esta sesión.' }
   }

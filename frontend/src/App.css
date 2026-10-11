@@ -1300,6 +1300,11 @@ td strong {
   box-shadow: 0 0 0 3px rgb(22 163 74 / 18%);
 }
 
+.legend-dot.inactive {
+  background: #94a3b8;
+  box-shadow: 0 0 0 3px rgb(148 163 184 / 18%);
+}
+
 .legend-radius {
   border: 1px solid #0ea5e9;
   background: rgb(14 165 233 / 12%);
@@ -1406,6 +1411,11 @@ td strong {
   background: rgb(14 165 233 / 7%);
 }
 
+.access-location-table .inactive-row:not(.selected-row) {
+  color: #64748b;
+  background: rgb(148 163 184 / 5%);
+}
+
 .access-status {
   display: inline-flex;
   padding: 4px 8px;
@@ -1427,6 +1437,11 @@ td strong {
 .access-status.revoked {
   background: rgb(239 68 68 / 10%);
   color: #dc2626;
+}
+
+.access-status.inactive {
+  background: rgb(148 163 184 / 16%);
+  color: #64748b;
 }
 
 :root[data-theme='dark'] .security-map-legend {

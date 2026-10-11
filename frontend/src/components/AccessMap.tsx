@@ -18,15 +18,30 @@ interface AccessMapProps {
   onSelect: (item: AccessLocation) => void
 }
 
-function FitAccesses({ items }: { items: AccessLocation[] }) {
+function MapViewport({
+  items,
+  selectedId,
+}: {
+  items: AccessLocation[]
+  selectedId: number | null
+}) {
   const map = useMap()
   useEffect(() => {
+    const selected = items.find((item) => item.id === selectedId)
+    if (selected?.latitude !== null && selected?.longitude !== null && selected) {
+      map.flyTo(
+        [selected.latitude!, selected.longitude!],
+        selected.location_source === 'device_location' ? 16 : 12,
+        { duration: 0.8 },
+      )
+      return
+    }
     const bounds = items
       .filter((item) => item.latitude !== null && item.longitude !== null)
       .map((item) => [item.latitude!, item.longitude!] as [number, number])
     if (bounds.length === 1) map.setView(bounds[0], 11)
     else if (bounds.length > 1) map.fitBounds(bounds as LatLngBoundsExpression, { padding: [32, 32] })
-  }, [items, map])
+  }, [items, map, selectedId])
   return null
 }
 
@@ -55,12 +70,15 @@ function AccessMap({ items, selectedId, onSelect }: AccessMapProps) {
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
-      <FitAccesses items={located} />
+      <MapViewport items={located} selectedId={selectedId} />
       {located.map((item) => {
         const center: [number, number] = [item.latitude!, item.longitude!]
         const selected = item.id === selectedId
         const precise = item.location_source === 'device_location'
-        const markerColor = accessColor(item)
+        const identityColor = accessColor(item)
+        const markerColor = item.online && item.location_active
+          ? identityColor
+          : '#94a3b8'
         return (
           <Fragment key={item.id}>
             <Circle
@@ -77,7 +95,7 @@ function AccessMap({ items, selectedId, onSelect }: AccessMapProps) {
               <Popup>
                 <strong>{accessDisplayName(item)}</strong><br />
                 {item.city || item.region || 'Zona no identificada'}<br />
-                <small>{precise ? `${item.is_anonymous ? 'Visita anónima precisa' : 'Ubicación del dispositivo'} · ± ${Math.round(item.accuracy_m ?? 0)} m` : item.is_anonymous ? 'Visita anónima · estimación por IP' : 'Estimación por IP pública'}</small>
+                <small>{!item.online ? 'Desconectado' : !item.location_active ? 'Ubicación desactivada' : precise ? `${item.is_anonymous ? 'Visita anónima precisa' : 'Ubicación del dispositivo'} · ± ${Math.round(item.accuracy_m ?? 0)} m` : item.is_anonymous ? 'Visita anónima · estimación por IP' : 'Estimación por IP pública'}</small>
               </Popup>
             </CircleMarker>
           </Fragment>

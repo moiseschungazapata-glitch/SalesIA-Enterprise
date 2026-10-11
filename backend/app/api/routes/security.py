@@ -1,5 +1,6 @@
 """Session control and administrator audit endpoints."""
 
+from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, Request
@@ -14,6 +15,7 @@ from app.schemas.security import (
     AccessLocationResponse,
     AuditLogListResponse,
     AuditLogResponse,
+    PresenceHeartbeat,
     SessionActionResponse,
     SessionListResponse,
     SessionLocationUpdate,
@@ -29,6 +31,15 @@ from app.services.security import (
 router = APIRouter(prefix="/security", tags=["security"])
 AdminUser = Annotated[Principal, Depends(require_roles(ADMIN_ROLE))]
 DatabaseSession = Annotated[Session, Depends(get_db)]
+
+
+def is_online(last_seen_at: datetime, *, revoked: bool = False) -> bool:
+    if revoked:
+        return False
+    value = last_seen_at
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=UTC)
+    return value >= datetime.now(UTC) - timedelta(seconds=75)
 
 
 @router.get("/sessions", response_model=SessionListResponse)
@@ -54,6 +65,21 @@ def update_current_session_location(
         return
     SessionService(session, current_user.company_id, current_user.id).update_location(
         current_user.session_id, payload.model_dump()
+    )
+    session.commit()
+
+
+@router.post("/sessions/current/heartbeat", status_code=204)
+def heartbeat_current_session(
+    payload: PresenceHeartbeat,
+    current_user: CurrentUser,
+    session: DatabaseSession,
+) -> None:
+    if current_user.session_id is None:
+        return
+    SessionService(session, current_user.company_id, current_user.id).heartbeat(
+        current_user.session_id,
+        location_active=payload.location_active,
     )
     session.commit()
 
@@ -93,6 +119,8 @@ def list_access_locations(
                     else None
                 ),
                 located_at=item.located_at,
+                online=is_online(item.last_seen_at, revoked=item.revoked_at is not None),
+                location_active=item.location_active,
             )
             for item, user in rows
         ]
@@ -125,6 +153,8 @@ def list_access_locations(
                 ),
                 located_at=visit.last_seen_at,
                 is_anonymous=True,
+                online=is_online(visit.last_seen_at),
+                location_active=visit.location_active,
             )
             for visit in AnonymousVisitService(session, current_user.company_id).list()
         )

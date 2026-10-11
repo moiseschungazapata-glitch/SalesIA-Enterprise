@@ -142,6 +142,7 @@ def test_current_session_records_and_lists_approximate_ip_location(
             "timezone": "America/Lima",
             "source": "device_location",
             "accuracy_m": 18.5,
+                "location_active": True,
         },
     )
     assert updated.status_code == 204
