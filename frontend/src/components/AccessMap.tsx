@@ -9,6 +9,7 @@ import {
 } from 'react-leaflet'
 import type { LatLngBoundsExpression } from 'leaflet'
 import type { AccessLocation } from '../types/api'
+import { accessColor, accessDisplayName } from '../utils/accessIdentity'
 import 'leaflet/dist/leaflet.css'
 
 interface AccessMapProps {
@@ -59,22 +60,22 @@ function AccessMap({ items, selectedId, onSelect }: AccessMapProps) {
         const center: [number, number] = [item.latitude!, item.longitude!]
         const selected = item.id === selectedId
         const precise = item.location_source === 'device_location'
-        const markerColor = precise ? '#16a34a' : '#087cf0'
+        const markerColor = accessColor(item)
         return (
           <Fragment key={item.id}>
             <Circle
               center={center}
               radius={precise ? Math.max(item.accuracy_m ?? 30, 15) : 12000}
-              pathOptions={{ color: selected ? '#f59e0b' : markerColor, fillOpacity: precise ? 0.18 : 0.08, weight: 1 }}
+              pathOptions={{ color: selected ? '#f59e0b' : markerColor, fillColor: markerColor, fillOpacity: precise ? 0.18 : 0.08, weight: selected ? 3 : 1 }}
             />
             <CircleMarker
               center={center}
               radius={selected ? 11 : 8}
               eventHandlers={{ click: () => onSelect(item) }}
-              pathOptions={{ color: '#fff', fillColor: selected ? '#f59e0b' : markerColor, fillOpacity: 1, weight: 3 }}
+              pathOptions={{ color: selected ? '#f59e0b' : '#fff', fillColor: markerColor, fillOpacity: 1, weight: selected ? 4 : 3 }}
             >
               <Popup>
-                <strong>{item.user_name}</strong><br />
+                <strong>{accessDisplayName(item)}</strong><br />
                 {item.city || item.region || 'Zona no identificada'}<br />
                 <small>{precise ? `${item.is_anonymous ? 'Visita anónima precisa' : 'Ubicación del dispositivo'} · ± ${Math.round(item.accuracy_m ?? 0)} m` : item.is_anonymous ? 'Visita anónima · estimación por IP' : 'Estimación por IP pública'}</small>
               </Popup>

@@ -15,6 +15,12 @@ import type {
   AuthUser,
   SecuritySession,
 } from '../../types/api'
+import {
+  accessColor,
+  accessDisplayName,
+  accessIdentityKey,
+  describeDevice,
+} from '../../utils/accessIdentity'
 
 interface SecurityProps {
   user: AuthUser
@@ -42,15 +48,6 @@ const actionLabels: Record<string, string> = {
 }
 
 const AccessMap = lazy(() => import('../../components/AccessMap'))
-
-function deviceLabel(userAgent: string | null) {
-  if (!userAgent) return 'Dispositivo no identificado'
-  if (/mobile|android|iphone/i.test(userAgent)) return 'Dispositivo móvil'
-  if (/windows/i.test(userAgent)) return 'Equipo Windows'
-  if (/macintosh|mac os/i.test(userAgent)) return 'Equipo Mac'
-  if (/linux/i.test(userAgent)) return 'Equipo Linux'
-  return 'Navegador web'
-}
 
 function Security({ user, onLogout }: SecurityProps) {
   const [sessions, setSessions] = useState<SecuritySession[]>([])
@@ -148,6 +145,11 @@ function Security({ user, onLogout }: SecurityProps) {
       .map((item) => item.user_id),
   ).size
   const anonymousVisits = locatedAccesses.filter((item) => item.is_anonymous).length
+  const mapIdentities = Array.from(
+    new Map(
+      locatedAccesses.map((item) => [accessIdentityKey(item), item]),
+    ).values(),
+  )
 
   return (
     <div className="page security-page">
@@ -190,8 +192,10 @@ function Security({ user, onLogout }: SecurityProps) {
                 />
               </Suspense>
               <div className="security-map-legend">
-                <span><i className="legend-dot precise" /> Ubicación del dispositivo</span>
-                <span><i className="legend-dot known" /> Estimación por IP</span>
+                {mapIdentities.slice(0, 6).map((item) => (
+                  <span key={accessIdentityKey(item)}><i className="legend-dot" style={{ background: accessColor(item) }} /> {accessDisplayName(item)}</span>
+                ))}
+                {mapIdentities.length > 6 && <span>+ {mapIdentities.length - 6} identidades adicionales</span>}
                 <span><i className="legend-radius" /> Radio orientativo</span>
               </div>
             </div>
@@ -206,14 +210,14 @@ function Security({ user, onLogout }: SecurityProps) {
                 <div className="selected-access-card">
                   <span className="eyebrow">ACCESO SELECCIONADO</span>
                   <div className="selected-access-user">
-                    <div className="profile-avatar">{selectedAccess.user_name.charAt(0).toUpperCase()}</div>
-                    <div><strong>{selectedAccess.user_name}</strong><span>{selectedAccess.user_email}</span></div>
+                    <div className="profile-avatar" style={{ background: accessColor(selectedAccess) }}>{accessDisplayName(selectedAccess).charAt(0).toUpperCase()}</div>
+                    <div><strong>{accessDisplayName(selectedAccess)}</strong><span>{selectedAccess.is_anonymous ? 'Visitante sin iniciar sesión' : selectedAccess.user_email}</span></div>
                   </div>
                   <dl>
                     <div><dt>Tipo de ubicación</dt><dd>{selectedAccess.is_anonymous && selectedAccess.location_source !== 'device_location' ? 'Visita anónima · estimación por IP' : selectedAccess.location_source === 'device_location' ? selectedAccess.is_anonymous ? 'Visita anónima · ubicación precisa' : 'Ubicación precisa del dispositivo' : 'Estimación por IP pública'}</dd></div>
                     <div><dt>Zona de referencia</dt><dd>{[selectedAccess.city, selectedAccess.region, selectedAccess.country].filter(Boolean).join(', ') || 'Consulta el punto en el mapa'}</dd></div>
                     <div><dt>Inicio</dt><dd>{new Date(selectedAccess.created_at).toLocaleString('es-PE')}</dd></div>
-                    <div><dt>Dispositivo</dt><dd>{deviceLabel(selectedAccess.user_agent)}</dd></div>
+                    <div><dt>Dispositivo</dt><dd>{describeDevice(selectedAccess.user_agent)}</dd></div>
                     <div><dt>IP pública</dt><dd>{selectedAccess.ip_address || 'No disponible'}</dd></div>
                     <div><dt>Proveedor</dt><dd>{selectedAccess.isp || 'No disponible'}</dd></div>
                     <div><dt>Precisión</dt><dd>{selectedAccess.location_source === 'device_location' && selectedAccess.accuracy_m !== null ? `Margen informado por el dispositivo: ± ${Math.round(selectedAccess.accuracy_m)} m` : 'Orientativa · nivel ciudad/región'}</dd></div>
@@ -231,11 +235,11 @@ function Security({ user, onLogout }: SecurityProps) {
                 <thead><tr><th>Usuario</th><th>Fecha</th><th>Zona aproximada</th><th>IP</th><th>Dispositivo</th><th>Estado</th></tr></thead>
                 <tbody>{accesses.map((item) => (
                   <tr key={item.id} className={item.id === selectedAccessId ? 'selected-row' : ''} onClick={() => setSelectedAccessId(item.id)}>
-                    <td><strong>{item.user_name}</strong><small>{item.user_email}</small></td>
+                    <td><strong>{accessDisplayName(item)}</strong><small>{item.is_anonymous ? 'Visitante sin iniciar sesión' : item.user_email}</small></td>
                     <td>{new Date(item.created_at).toLocaleString('es-PE')}</td>
                     <td>{[item.city, item.region, item.country].filter(Boolean).join(', ') || 'Sin estimación'}</td>
                     <td>{item.ip_address || '—'}</td>
-                    <td>{deviceLabel(item.user_agent)}</td>
+                    <td>{describeDevice(item.user_agent)}</td>
                     <td><span className={`access-status ${item.revoked_at ? 'revoked' : item.location_source === 'device_location' ? 'precise' : 'known'}`}>{item.revoked_at ? 'Revocada' : item.latitude === null ? 'Sin ubicar' : item.is_anonymous && item.location_source === 'device_location' ? 'Visita precisa' : item.is_anonymous ? 'Visita web' : item.location_source === 'device_location' ? 'Precisa' : 'Por IP'}</span></td>
                   </tr>
                 ))}</tbody>
@@ -253,9 +257,9 @@ function Security({ user, onLogout }: SecurityProps) {
           <div className="security-session-grid">
             {sessions.map((item) => (
               <article className={`security-session-card ${item.current ? 'current' : ''}`} key={item.id}>
-                <div className="security-session-icon">{item.current ? '✓' : '•'}</div>
+                  <div className="security-session-icon">{item.current ? '✓' : '•'}</div>
                 <div>
-                  <div className="security-session-title"><strong>{deviceLabel(item.user_agent)}</strong>{item.current && <span>Esta sesión</span>}</div>
+                  <div className="security-session-title"><strong>{describeDevice(item.user_agent)}</strong>{item.current && <span>Esta sesión</span>}</div>
                   <p>IP: {item.ip_address || 'No disponible'}</p>
                   <small>Inició {new Date(item.created_at).toLocaleString('es-PE')} · vence {new Date(item.expires_at).toLocaleString('es-PE')}</small>
                 </div>
