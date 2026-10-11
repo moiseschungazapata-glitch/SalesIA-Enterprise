@@ -210,7 +210,7 @@ function Security({ user, onLogout }: SecurityProps) {
                     <div><strong>{selectedAccess.user_name}</strong><span>{selectedAccess.user_email}</span></div>
                   </div>
                   <dl>
-                    <div><dt>Tipo de ubicación</dt><dd>{selectedAccess.is_anonymous ? 'Visita anónima · estimación por IP' : selectedAccess.location_source === 'device_location' ? 'Ubicación precisa del dispositivo' : 'Estimación por IP pública'}</dd></div>
+                    <div><dt>Tipo de ubicación</dt><dd>{selectedAccess.is_anonymous && selectedAccess.location_source !== 'device_location' ? 'Visita anónima · estimación por IP' : selectedAccess.location_source === 'device_location' ? selectedAccess.is_anonymous ? 'Visita anónima · ubicación precisa' : 'Ubicación precisa del dispositivo' : 'Estimación por IP pública'}</dd></div>
                     <div><dt>Zona de referencia</dt><dd>{[selectedAccess.city, selectedAccess.region, selectedAccess.country].filter(Boolean).join(', ') || 'Consulta el punto en el mapa'}</dd></div>
                     <div><dt>Inicio</dt><dd>{new Date(selectedAccess.created_at).toLocaleString('es-PE')}</dd></div>
                     <div><dt>Dispositivo</dt><dd>{deviceLabel(selectedAccess.user_agent)}</dd></div>
@@ -236,7 +236,7 @@ function Security({ user, onLogout }: SecurityProps) {
                     <td>{[item.city, item.region, item.country].filter(Boolean).join(', ') || 'Sin estimación'}</td>
                     <td>{item.ip_address || '—'}</td>
                     <td>{deviceLabel(item.user_agent)}</td>
-                    <td><span className={`access-status ${item.revoked_at ? 'revoked' : item.location_source === 'device_location' ? 'precise' : 'known'}`}>{item.revoked_at ? 'Revocada' : item.latitude === null ? 'Sin ubicar' : item.is_anonymous ? 'Visita web' : item.location_source === 'device_location' ? 'Precisa' : 'Por IP'}</span></td>
+                    <td><span className={`access-status ${item.revoked_at ? 'revoked' : item.location_source === 'device_location' ? 'precise' : 'known'}`}>{item.revoked_at ? 'Revocada' : item.latitude === null ? 'Sin ubicar' : item.is_anonymous && item.location_source === 'device_location' ? 'Visita precisa' : item.is_anonymous ? 'Visita web' : item.location_source === 'device_location' ? 'Precisa' : 'Por IP'}</span></td>
                   </tr>
                 ))}</tbody>
               </table>

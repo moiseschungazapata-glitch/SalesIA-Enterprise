@@ -53,23 +53,30 @@ async function getPublicIpLocation(): Promise<IpWhoResponse | null> {
 
 export async function captureAnonymousVisit(): Promise<void> {
   if (sessionStorage.getItem(ANONYMOUS_VISIT_KEY)) return
-  const location = await getPublicIpLocation()
+  const [location, deviceLocation] = await Promise.all([
+    getPublicIpLocation(),
+    getDeviceLocation(),
+  ])
+  const precise = deviceLocation?.coords
+  const latitude = precise?.latitude ?? location?.latitude
+  const longitude = precise?.longitude ?? location?.longitude
   if (
-    !location ||
-    typeof location.latitude !== 'number' ||
-    typeof location.longitude !== 'number'
+    typeof latitude !== 'number' ||
+    typeof longitude !== 'number'
   ) return
 
   try {
     await apiPost<void>('/public/visits', {
-      latitude: location.latitude,
-      longitude: location.longitude,
-      city: location.city || null,
-      region: location.region || null,
-      country: location.country || null,
-      country_code: location.country_code || null,
-      isp: location.connection?.isp || null,
-      timezone: location.timezone?.id || null,
+      latitude,
+      longitude,
+      city: location?.city || null,
+      region: location?.region || null,
+      country: location?.country || null,
+      country_code: location?.country_code || null,
+      isp: location?.connection?.isp || null,
+      timezone: location?.timezone?.id || null,
+      source: precise ? 'device_location' : 'public_ip',
+      accuracy_m: precise?.accuracy ?? null,
     })
     sessionStorage.setItem(ANONYMOUS_VISIT_KEY, '1')
   } catch {

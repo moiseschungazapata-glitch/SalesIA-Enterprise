@@ -117,6 +117,10 @@ class AnonymousVisit(Base):
     country_code: Mapped[str | None] = mapped_column(String(2))
     isp: Mapped[str | None] = mapped_column(String(160))
     location_timezone: Mapped[str | None] = mapped_column(String(64))
+    location_source: Mapped[str] = mapped_column(
+        String(40), nullable=False, default="public_ip"
+    )
+    location_accuracy_m: Mapped[float | None] = mapped_column(Numeric(10, 2))
     visit_count: Mapped[int] = mapped_column(nullable=False, default=1)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()

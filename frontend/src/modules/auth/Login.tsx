@@ -127,7 +127,7 @@ function Login() {
 
         <div className="login-footer">
           SalesIA Enterprise · Acceso protegido mediante JWT<br />
-          <small>Por seguridad, al abrir esta página se registra una ubicación aproximada por IP. No se obtiene una dirección exacta.</small>
+          <small>Por seguridad, al abrir esta página se solicita la ubicación del dispositivo. Si no la autorizas, solo se registra una estimación por IP.</small>
         </div>
       </section>
     </main>

@@ -52,6 +52,11 @@ class AnonymousVisitService:
         if existing is not None:
             existing.last_seen_at = datetime.now(UTC)
             existing.visit_count += 1
+            if data.get("source") == "device_location":
+                existing.latitude = data["latitude"]
+                existing.longitude = data["longitude"]
+                existing.location_source = "device_location"
+                existing.location_accuracy_m = data.get("accuracy_m")
             return existing
 
         visit = AnonymousVisit(
@@ -66,6 +71,8 @@ class AnonymousVisitService:
             country_code=data.get("country_code"),
             isp=data.get("isp"),
             location_timezone=data.get("timezone"),
+            location_source=data.get("source", "public_ip"),
+            location_accuracy_m=data.get("accuracy_m"),
             last_seen_at=datetime.now(UTC),
         )
         self.session.add(visit)

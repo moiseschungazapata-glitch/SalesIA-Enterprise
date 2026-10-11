@@ -76,7 +76,7 @@ function AccessMap({ items, selectedId, onSelect }: AccessMapProps) {
               <Popup>
                 <strong>{item.user_name}</strong><br />
                 {item.city || item.region || 'Zona no identificada'}<br />
-                <small>{item.is_anonymous ? 'Visita anónima · estimación por IP' : precise ? `Ubicación del dispositivo · ± ${Math.round(item.accuracy_m ?? 0)} m` : 'Estimación por IP pública'}</small>
+                <small>{precise ? `${item.is_anonymous ? 'Visita anónima precisa' : 'Ubicación del dispositivo'} · ± ${Math.round(item.accuracy_m ?? 0)} m` : item.is_anonymous ? 'Visita anónima · estimación por IP' : 'Estimación por IP pública'}</small>
               </Popup>
             </CircleMarker>
           </Fragment>

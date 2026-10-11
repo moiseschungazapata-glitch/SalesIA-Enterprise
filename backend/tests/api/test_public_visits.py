@@ -47,6 +47,8 @@ def test_anonymous_visit_is_recorded_and_deduplicated() -> None:
         "country_code": "PE",
         "isp": "Test ISP",
         "timezone": "America/Lima",
+        "source": "device_location",
+        "accuracy_m": 24.5,
     }
 
     with Session(engine, expire_on_commit=False) as session:
@@ -63,6 +65,8 @@ def test_anonymous_visit_is_recorded_and_deduplicated() -> None:
         assert len(visits) == 1
         assert visits[0].ip_address == "190.1.2.3"
         assert visits[0].visit_count == 2
+        assert visits[0].location_source == "device_location"
+        assert float(visits[0].location_accuracy_m or 0) == pytest.approx(24.5)
         assert float(visits[0].latitude or 0) == pytest.approx(-12.0464)
 
     engine.dispose()

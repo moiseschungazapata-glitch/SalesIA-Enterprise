@@ -53,6 +53,8 @@ class AnonymousVisitCreate(BaseModel):
     country_code: str | None = Field(default=None, min_length=2, max_length=2)
     isp: str | None = Field(default=None, max_length=160)
     timezone: str | None = Field(default=None, max_length=64)
+    source: str = Field(default="public_ip", pattern="^(public_ip|device_location)$")
+    accuracy_m: float | None = Field(default=None, ge=0, le=100000)
 
     @field_validator("city", "region", "country", "isp", "timezone", mode="before")
     @classmethod

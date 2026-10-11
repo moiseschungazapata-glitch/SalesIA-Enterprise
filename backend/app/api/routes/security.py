@@ -117,8 +117,12 @@ def list_access_locations(
                 country_code=visit.country_code,
                 isp=visit.isp,
                 timezone=visit.location_timezone,
-                location_source="public_ip",
-                accuracy_m=None,
+                location_source=visit.location_source,
+                accuracy_m=(
+                    float(visit.location_accuracy_m)
+                    if visit.location_accuracy_m is not None
+                    else None
+                ),
                 located_at=visit.last_seen_at,
                 is_anonymous=True,
             )
