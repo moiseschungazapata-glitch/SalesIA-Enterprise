@@ -31,7 +31,7 @@ export interface LocationCaptureResult {
   message: string
 }
 
-const ANONYMOUS_VISIT_KEY = 'salesia.anonymous_visit_recorded'
+const ANONYMOUS_VISIT_KEY = 'salesia.anonymous_visit_mode_v2'
 
 async function getPublicIpLocation(): Promise<IpWhoResponse | null> {
   const controller = new AbortController()
@@ -51,8 +51,16 @@ async function getPublicIpLocation(): Promise<IpWhoResponse | null> {
   }
 }
 
-export async function captureAnonymousVisit(): Promise<void> {
-  if (sessionStorage.getItem(ANONYMOUS_VISIT_KEY)) return
+export async function captureAnonymousVisit(
+  retryPrecise = false,
+): Promise<LocationCaptureResult> {
+  const savedMode = sessionStorage.getItem(ANONYMOUS_VISIT_KEY)
+  if (savedMode === 'precise') {
+    return { mode: 'precise', message: 'La ubicación precisa ya fue registrada.' }
+  }
+  if (savedMode === 'ip' && !retryPrecise) {
+    return { mode: 'ip', message: 'Se registró una estimación por IP.' }
+  }
   const [location, deviceLocation] = await Promise.all([
     getPublicIpLocation(),
     getDeviceLocation(),
@@ -63,7 +71,12 @@ export async function captureAnonymousVisit(): Promise<void> {
   if (
     typeof latitude !== 'number' ||
     typeof longitude !== 'number'
-  ) return
+  ) {
+    return {
+      mode: 'unavailable',
+      message: 'No fue posible obtener la ubicación de este dispositivo.',
+    }
+  }
 
   try {
     await apiPost<void>('/public/visits', {
@@ -78,9 +91,23 @@ export async function captureAnonymousVisit(): Promise<void> {
       source: precise ? 'device_location' : 'public_ip',
       accuracy_m: precise?.accuracy ?? null,
     })
-    sessionStorage.setItem(ANONYMOUS_VISIT_KEY, '1')
+    const mode = precise ? 'precise' : 'ip'
+    sessionStorage.setItem(ANONYMOUS_VISIT_KEY, mode)
+    return precise
+      ? {
+          mode: 'precise',
+          message: `Ubicación precisa compartida (margen aproximado: ${Math.round(precise.accuracy)} m).`,
+        }
+      : {
+          mode: 'ip',
+          message: 'El navegador no autorizó la ubicación precisa; se registró una estimación por IP.',
+        }
   } catch {
     // Tracking must never prevent the public login page from working.
+    return {
+      mode: 'unavailable',
+      message: 'No fue posible guardar la ubicación en este momento.',
+    }
   }
 }
 

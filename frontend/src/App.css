@@ -1206,6 +1206,13 @@ td strong {
   background: #dceaf4;
 }
 
+.security-map-column {
+  display: grid;
+  min-width: 0;
+  align-content: start;
+  gap: 10px;
+}
+
 .access-map-canvas,
 .access-map-empty {
   width: 100%;
@@ -1231,11 +1238,8 @@ td strong {
 }
 
 .security-map-legend {
-  position: absolute;
-  z-index: 500;
-  bottom: 14px;
-  left: 14px;
-  display: grid;
+  display: flex;
+  flex-wrap: wrap;
   gap: 6px;
   padding: 10px 12px;
   border: 1px solid rgb(148 163 184 / 30%);
@@ -1251,6 +1255,31 @@ td strong {
   display: flex;
   align-items: center;
   gap: 7px;
+}
+
+.login-location-consent {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgb(14 165 233 / 25%);
+  border-radius: 12px;
+  background: rgb(14 165 233 / 7%);
+}
+
+.login-location-consent > div {
+  display: grid;
+  gap: 3px;
+}
+
+.login-location-consent span,
+.login-location-consent small {
+  color: var(--muted-color, #64748b);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.login-location-consent .secondary-button {
+  width: 100%;
 }
 
 .legend-dot,

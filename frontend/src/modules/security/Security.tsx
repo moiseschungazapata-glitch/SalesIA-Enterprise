@@ -183,20 +183,22 @@ function Security({ user, onLogout }: SecurityProps) {
           </div>
 
           <div className="security-location-layout">
-            <div className="security-map-shell">
-              <Suspense fallback={<div className="access-map-empty"><strong>Cargando mapa…</strong></div>}>
-                <AccessMap
-                  items={accesses}
-                  selectedId={selectedAccessId}
-                  onSelect={(item) => setSelectedAccessId(item.id)}
-                />
-              </Suspense>
+            <div className="security-map-column">
+              <div className="security-map-shell">
+                <Suspense fallback={<div className="access-map-empty"><strong>Cargando mapa…</strong></div>}>
+                  <AccessMap
+                    items={accesses}
+                    selectedId={selectedAccessId}
+                    onSelect={(item) => setSelectedAccessId(item.id)}
+                  />
+                </Suspense>
+              </div>
               <div className="security-map-legend">
                 {mapIdentities.slice(0, 6).map((item) => (
                   <span key={accessIdentityKey(item)}><i className="legend-dot" style={{ background: accessColor(item) }} /> {accessDisplayName(item)}</span>
                 ))}
                 {mapIdentities.length > 6 && <span>+ {mapIdentities.length - 6} identidades adicionales</span>}
-                <span><i className="legend-radius" /> Radio orientativo</span>
+                <span><i className="legend-radius" /> Radio estimado por IP</span>
               </div>
             </div>
 

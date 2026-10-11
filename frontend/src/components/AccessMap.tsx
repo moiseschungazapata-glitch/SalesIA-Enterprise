@@ -65,8 +65,8 @@ function AccessMap({ items, selectedId, onSelect }: AccessMapProps) {
           <Fragment key={item.id}>
             <Circle
               center={center}
-              radius={precise ? Math.max(item.accuracy_m ?? 30, 15) : 12000}
-              pathOptions={{ color: selected ? '#f59e0b' : markerColor, fillColor: markerColor, fillOpacity: precise ? 0.18 : 0.08, weight: selected ? 3 : 1 }}
+              radius={precise ? Math.max(item.accuracy_m ?? 30, 15) : 5000}
+              pathOptions={{ color: selected ? '#f59e0b' : markerColor, fillColor: markerColor, fillOpacity: precise ? 0.16 : 0.025, weight: selected ? 3 : 1, dashArray: precise ? undefined : '6 7' }}
             />
             <CircleMarker
               center={center}
