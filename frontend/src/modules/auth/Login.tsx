@@ -1,7 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import ThemeToggle from '../../components/ThemeToggle'
 import { useAuth } from '../../hooks/useAuth'
-import { captureAnonymousVisit } from '../../services/security'
 
 function Login() {
   const { login } = useAuth()
@@ -10,15 +9,6 @@ function Login() {
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [passwordVisible, setPasswordVisible] = useState(false)
-  const [locationMessage, setLocationMessage] = useState('')
-  const [requestingLocation, setRequestingLocation] = useState(false)
-
-  const requestPreciseLocation = async () => {
-    setRequestingLocation(true)
-    const result = await captureAnonymousVisit(true)
-    setLocationMessage(result.message)
-    setRequestingLocation(false)
-  }
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -67,22 +57,6 @@ function Login() {
           <p>
             Ingresa con el usuario registrado en SalesIA Enterprise.
           </p>
-        </div>
-
-        <div className="login-location-consent">
-          <div>
-            <strong>Ubicación de seguridad</strong>
-            <span>Permite registrar este acceso con mayor precisión antes de iniciar sesión.</span>
-          </div>
-          <button
-            type="button"
-            className="secondary-button"
-            onClick={() => void requestPreciseLocation()}
-            disabled={requestingLocation}
-          >
-            {requestingLocation ? 'Solicitando…' : 'Permitir ubicación precisa'}
-          </button>
-          {locationMessage && <small role="status">{locationMessage}</small>}
         </div>
 
         <form className="login-form" onSubmit={handleSubmit}>

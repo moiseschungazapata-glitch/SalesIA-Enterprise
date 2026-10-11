@@ -1257,31 +1257,6 @@ td strong {
   gap: 7px;
 }
 
-.login-location-consent {
-  display: grid;
-  gap: 10px;
-  padding: 12px;
-  border: 1px solid rgb(14 165 233 / 25%);
-  border-radius: 12px;
-  background: rgb(14 165 233 / 7%);
-}
-
-.login-location-consent > div {
-  display: grid;
-  gap: 3px;
-}
-
-.login-location-consent span,
-.login-location-consent small {
-  color: var(--muted-color, #64748b);
-  font-size: 11px;
-  line-height: 1.45;
-}
-
-.login-location-consent .secondary-button {
-  width: 100%;
-}
-
 .legend-dot,
 .legend-radius {
   display: inline-block;
