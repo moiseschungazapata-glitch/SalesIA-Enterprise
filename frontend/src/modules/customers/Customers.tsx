@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from 'react'
+import { useMemo, useState, type FormEvent, type ReactNode } from 'react'
 import type { UserRole } from '../../app/navigation'
 import FormModal from '../../components/FormModal'
 import PageHeader from '../../components/PageHeader'
@@ -6,9 +6,12 @@ import StateMessage from '../../components/StateMessage'
 import { useCustomers } from '../../hooks/useCustomers'
 import {
   createCustomer,
+  getCustomerHistory,
   updateCustomer,
 } from '../../services/customers'
 import type {
+  CustomerHistoryResponse,
+  CustomerRecord,
   CustomerType,
   DocumentType,
 } from '../../types/api'
@@ -18,6 +21,51 @@ interface CustomersProps {
 }
 
 const pageSize = 10
+
+const money = (value: string) => Number(value).toLocaleString('es-PE', {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+})
+
+const dateTime = (value: string | null) => value
+  ? new Date(value).toLocaleString('es-PE')
+  : 'Sin compras'
+
+const paymentLabels = {
+  pending: 'Pendiente',
+  partial: 'Parcial',
+  paid: 'Pagada',
+  refunded: 'Devuelta',
+}
+
+const methodLabels = {
+  cash: 'Efectivo',
+  card: 'Tarjeta',
+  bank_transfer: 'Transferencia',
+}
+
+function HistoryTable({
+  title,
+  empty,
+  hasItems,
+  children,
+}: {
+  title: string
+  empty: string
+  hasItems: boolean
+  children: ReactNode
+}) {
+  return (
+    <section className="customer-history-section">
+      <h3>{title}</h3>
+      {hasItems ? (
+        <div className="table-wrapper"><table>{children}</table></div>
+      ) : (
+        <p className="customer-history-empty">{empty}</p>
+      )}
+    </section>
+  )
+}
 
 const emptyForm = {
   customerType: 'person' as CustomerType,
@@ -38,6 +86,11 @@ function Customers({ role }: CustomersProps) {
   >('')
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(emptyForm)
+  const [history, setHistory] = useState<CustomerHistoryResponse | null>(null)
+  const [historyLoading, setHistoryLoading] = useState(false)
+  const [historyError, setHistoryError] = useState('')
+  const [editingCustomer, setEditingCustomer] = useState(false)
+  const [editForm, setEditForm] = useState({ name: '', email: '', phone: '', address: '' })
   const [formError, setFormError] = useState('')
   const [feedback, setFeedback] = useState('')
   const [feedbackIsError, setFeedbackIsError] = useState(false)
@@ -139,6 +192,57 @@ function Customers({ role }: CustomersProps) {
       )
     } finally {
       setUpdatingId(null)
+    }
+  }
+
+  const openHistory = async (customer: CustomerRecord) => {
+    setHistory(null)
+    setHistoryError('')
+    setHistoryLoading(true)
+    setEditingCustomer(false)
+    setEditForm({
+      name: customer.name,
+      email: customer.email || '',
+      phone: customer.phone || '',
+      address: customer.address || '',
+    })
+    try {
+      setHistory(await getCustomerHistory(customer.id))
+    } catch (requestError) {
+      setHistoryError(
+        requestError instanceof Error
+          ? requestError.message
+          : 'No fue posible consultar el historial.',
+      )
+    } finally {
+      setHistoryLoading(false)
+    }
+  }
+
+  const saveCustomerChanges = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!history || !editForm.name.trim()) return
+    setSubmitting(true)
+    setHistoryError('')
+    try {
+      await updateCustomer(history.customer.id, {
+        name: editForm.name.trim(),
+        email: editForm.email.trim() || null,
+        phone: editForm.phone.trim() || null,
+        address: editForm.address.trim() || null,
+      })
+      setHistory(await getCustomerHistory(history.customer.id))
+      setEditingCustomer(false)
+      showFeedback('Datos del cliente actualizados correctamente.')
+      reload()
+    } catch (requestError) {
+      setHistoryError(
+        requestError instanceof Error
+          ? requestError.message
+          : 'No fue posible actualizar el cliente.',
+      )
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -304,6 +408,85 @@ function Customers({ role }: CustomersProps) {
         </FormModal>
       )}
 
+      {(historyLoading || history || historyError) && (
+        <FormModal
+          eyebrow="EXPEDIENTE COMERCIAL"
+          title={history?.customer.name || 'Historial del cliente'}
+          description="Información de contacto y actividad comercial consolidada."
+          size="wide"
+          onClose={() => {
+            setHistory(null)
+            setHistoryError('')
+            setHistoryLoading(false)
+          }}
+          closeDisabled={submitting}
+        >
+          {historyLoading ? (
+            <StateMessage type="loading" title="Cargando historial" />
+          ) : historyError && !history ? (
+            <StateMessage type="error" title="No se pudo abrir el cliente" description={historyError} />
+          ) : history ? (
+            <div className="customer-history">
+              <section className="customer-profile-strip">
+                <div><span>Documento</span><strong>{history.customer.document_type} {history.customer.document_number}</strong></div>
+                <div><span>Correo</span><strong>{history.customer.email || 'Sin correo'}</strong></div>
+                <div><span>Teléfono</span><strong>{history.customer.phone || 'Sin teléfono'}</strong></div>
+                <div><span>Estado</span><strong>{history.customer.active ? 'Activo' : 'Inactivo'}</strong></div>
+              </section>
+
+              {canManage && (
+                <div className="customer-history-actions">
+                  <button type="button" className="secondary-button compact" onClick={() => setEditingCustomer((value) => !value)}>
+                    {editingCustomer ? 'Cancelar edición' : 'Editar cliente'}
+                  </button>
+                </div>
+              )}
+
+              {editingCustomer && (
+                <form className="entity-form customer-edit-form" onSubmit={saveCustomerChanges}>
+                  <label>Nombre o razón social<input value={editForm.name} minLength={2} maxLength={200} required onChange={(event) => setEditForm({ ...editForm, name: event.target.value })} /></label>
+                  <label>Correo<input type="email" value={editForm.email} onChange={(event) => setEditForm({ ...editForm, email: event.target.value })} /></label>
+                  <label>Teléfono<input value={editForm.phone} maxLength={30} onChange={(event) => setEditForm({ ...editForm, phone: event.target.value })} /></label>
+                  <label>Dirección<input value={editForm.address} maxLength={500} onChange={(event) => setEditForm({ ...editForm, address: event.target.value })} /></label>
+                  <div className="form-actions"><button type="submit" className="primary-button" disabled={submitting}>{submitting ? 'Guardando…' : 'Guardar cambios'}</button></div>
+                </form>
+              )}
+
+              {historyError && <div className="form-error" role="alert">{historyError}</div>}
+
+              <section className="customer-summary-grid">
+                <article><span>Total comprado</span><strong>S/ {money(history.summary.total_purchased)}</strong></article>
+                <article><span>Total pagado</span><strong>S/ {money(history.summary.total_paid)}</strong></article>
+                <article><span>Saldo pendiente</span><strong>S/ {money(history.summary.balance_due)}</strong></article>
+                <article><span>Compras</span><strong>{history.summary.sales_count}</strong></article>
+                <article><span>Ticket promedio</span><strong>S/ {money(history.summary.average_ticket)}</strong></article>
+                <article><span>Última compra</span><strong>{dateTime(history.summary.last_purchase_at)}</strong></article>
+              </section>
+
+              <HistoryTable title="Ventas" empty="Este cliente todavía no tiene ventas." hasItems={history.sales.length > 0}>
+                <thead><tr><th>Venta</th><th>Fecha</th><th>Vendedor</th><th>Unidades</th><th>Pago</th><th>Total</th><th>Saldo</th></tr></thead>
+                <tbody>{history.sales.map((sale) => <tr key={sale.id}><td><strong>{sale.number}</strong></td><td>{dateTime(sale.created_at)}</td><td>{sale.seller_name}</td><td>{sale.units}</td><td><span className="status-pill neutral">{paymentLabels[sale.payment_status]}</span></td><td>S/ {money(sale.total)}</td><td>S/ {money(sale.balance_due)}</td></tr>)}</tbody>
+              </HistoryTable>
+
+              <HistoryTable title="Pedidos" empty="Este cliente todavía no tiene pedidos." hasItems={history.orders.length > 0}>
+                <thead><tr><th>Pedido</th><th>Fecha</th><th>Vendedor</th><th>Estado</th><th>Venta</th><th>Total</th></tr></thead>
+                <tbody>{history.orders.map((order) => <tr key={order.id}><td><strong>{order.number}</strong></td><td>{dateTime(order.created_at)}</td><td>{order.seller_name}</td><td>{order.status}</td><td>{order.sale_id ? `V-${String(order.sale_id).padStart(6, '0')}` : '—'}</td><td>S/ {money(order.total)}</td></tr>)}</tbody>
+              </HistoryTable>
+
+              <HistoryTable title="Pagos y devoluciones" empty="No existen pagos registrados." hasItems={history.payments.length > 0}>
+                <thead><tr><th>Venta</th><th>Fecha</th><th>Método</th><th>Referencia</th><th>Estado</th><th>Importe</th></tr></thead>
+                <tbody>{history.payments.map((payment) => <tr key={payment.id}><td><strong>{payment.sale_number}</strong></td><td>{dateTime(payment.paid_at)}</td><td>{methodLabels[payment.method]}</td><td>{payment.reference || '—'}</td><td>{payment.status}</td><td>S/ {money(payment.amount)}</td></tr>)}</tbody>
+              </HistoryTable>
+
+              <HistoryTable title="Productos comprados" empty="No existen productos comprados." hasItems={history.products.length > 0}>
+                <thead><tr><th>Producto</th><th>SKU</th><th>Unidades</th><th>Compras</th><th>Última compra</th><th>Total</th></tr></thead>
+                <tbody>{history.products.map((product) => <tr key={`${product.product_id}-${product.sku}`}><td><strong>{product.name}</strong></td><td>{product.sku}</td><td>{product.units}</td><td>{product.purchase_count}</td><td>{dateTime(product.last_purchase_at)}</td><td>S/ {money(product.total)}</td></tr>)}</tbody>
+              </HistoryTable>
+            </div>
+          ) : null}
+        </FormModal>
+      )}
+
       <section className="panel">
         <div className="panel-toolbar customers-toolbar">
           <input
@@ -366,7 +549,7 @@ function Customers({ role }: CustomersProps) {
                     <th>Contacto</th>
                     <th>Dirección</th>
                     <th>Estado</th>
-                    {canManage && <th>Acción</th>}
+                    <th>Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -397,8 +580,10 @@ function Customers({ role }: CustomersProps) {
                           {customer.active ? 'Activo' : 'Inactivo'}
                         </span>
                       </td>
-                      {canManage && (
-                        <td>
+                      <td>
+                        <div className="table-actions">
+                          <button type="button" className="text-button" onClick={() => void openHistory(customer)}>Ver historial</button>
+                          {canManage && (
                           <button
                             type="button"
                             className="secondary-button compact"
@@ -413,8 +598,9 @@ function Customers({ role }: CustomersProps) {
                                 ? 'Desactivar'
                                 : 'Activar'}
                           </button>
-                        </td>
-                      )}
+                          )}
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>

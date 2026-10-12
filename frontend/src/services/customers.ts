@@ -1,5 +1,6 @@
 import type {
   CustomerCreateRequest,
+  CustomerHistoryResponse,
   CustomerListResponse,
   CustomerRecord,
   CustomerUpdateRequest,
@@ -32,6 +33,10 @@ export function listCustomers(
 
 export function createCustomer(payload: CustomerCreateRequest) {
   return apiPost<CustomerRecord>('/customers', payload)
+}
+
+export function getCustomerHistory(customerId: number, signal?: AbortSignal) {
+  return apiGet<CustomerHistoryResponse>(`/customers/${customerId}/history`, signal)
 }
 
 export function updateCustomer(

@@ -153,6 +153,71 @@ export interface CustomerUpdateRequest {
   active?: boolean
 }
 
+export interface CustomerHistorySummary {
+  sales_count: number
+  orders_count: number
+  units_purchased: number
+  total_purchased: string
+  total_paid: string
+  balance_due: string
+  average_ticket: string
+  last_purchase_at: string | null
+}
+
+export interface CustomerSaleHistoryItem {
+  id: number
+  number: string
+  seller_name: string
+  status: string
+  payment_status: 'pending' | 'partial' | 'paid' | 'refunded'
+  items_count: number
+  units: number
+  total: string
+  paid_amount: string
+  balance_due: string
+  created_at: string
+}
+
+export interface CustomerOrderHistoryItem {
+  id: number
+  number: string
+  seller_name: string
+  status: OrderStatus
+  total: string
+  sale_id: number | null
+  created_at: string
+}
+
+export interface CustomerPaymentHistoryItem {
+  id: number
+  sale_id: number
+  sale_number: string
+  method: PaymentMethod
+  status: PaymentStatus
+  amount: string
+  reference: string | null
+  paid_at: string
+}
+
+export interface CustomerProductHistoryItem {
+  product_id: number
+  sku: string
+  name: string
+  units: number
+  purchase_count: number
+  total: string
+  last_purchase_at: string
+}
+
+export interface CustomerHistoryResponse {
+  customer: CustomerRecord
+  summary: CustomerHistorySummary
+  sales: CustomerSaleHistoryItem[]
+  orders: CustomerOrderHistoryItem[]
+  payments: CustomerPaymentHistoryItem[]
+  products: CustomerProductHistoryItem[]
+}
+
 export interface CategoryRecord {
   id: number
   name: string

@@ -366,6 +366,7 @@ def test_openapi_publishes_phase_seven_routes(client: TestClient) -> None:
 
     assert "/api/v1/customers" in paths
     assert "/api/v1/customers/{customer_id}" in paths
+    assert "/api/v1/customers/{customer_id}/history" in paths
     assert "/api/v1/categories" in paths
     assert "/api/v1/categories/{category_id}" in paths
     assert "/api/v1/products" in paths

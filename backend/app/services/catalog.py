@@ -11,7 +11,10 @@ from sqlalchemy.orm import Session
 from app.core.exceptions import AppError
 from app.models.catalog import Category, Product
 from app.models.customer import Customer
+from app.models.identity import User
 from app.models.inventory import Inventory, InventoryMovement
+from app.models.orders import Order
+from app.models.sales import Payment, Sale, SaleDetail
 from app.schemas.catalog import CategoryCreate, CategoryUpdate, ProductCreate, ProductUpdate
 from app.schemas.customers import CustomerCreate, CustomerUpdate
 
@@ -146,6 +149,151 @@ class CustomerService:
 
         self.session.flush()
         return customer
+
+    def history(self, customer_id: int, *, user_id: int, role: str) -> dict:
+        customer = self.get(customer_id)
+        sale_filters = [
+            Sale.company_id == self.company_id,
+            Sale.customer_id == customer_id,
+        ]
+        order_filters = [
+            Order.company_id == self.company_id,
+            Order.customer_id == customer_id,
+        ]
+        if role == "seller":
+            sale_filters.append(Sale.seller_id == user_id)
+            order_filters.append(Order.seller_id == user_id)
+
+        sales_rows = self.session.execute(
+            select(
+                Sale,
+                User.name,
+                func.count(SaleDetail.id),
+                func.coalesce(func.sum(SaleDetail.quantity), 0),
+            )
+            .join(User, User.id == Sale.seller_id)
+            .outerjoin(SaleDetail, SaleDetail.sale_id == Sale.id)
+            .where(*sale_filters)
+            .group_by(Sale.id, User.name)
+            .order_by(Sale.created_at.desc(), Sale.id.desc())
+        ).all()
+        sales = [
+            {
+                "id": sale.id,
+                "number": sale.number,
+                "seller_name": seller_name,
+                "status": sale.status,
+                "payment_status": sale.payment_status,
+                "items_count": int(items_count or 0),
+                "units": int(units or 0),
+                "total": sale.total,
+                "paid_amount": sale.paid_amount,
+                "balance_due": max(Decimal("0"), sale.total - sale.paid_amount),
+                "created_at": sale.created_at,
+            }
+            for sale, seller_name, items_count, units in sales_rows
+        ]
+
+        orders = [
+            {
+                "id": order.id,
+                "number": order.number,
+                "seller_name": seller_name,
+                "status": order.status,
+                "total": order.total,
+                "sale_id": order.sale_id,
+                "created_at": order.created_at,
+            }
+            for order, seller_name in self.session.execute(
+                select(Order, User.name)
+                .join(User, User.id == Order.seller_id)
+                .where(*order_filters)
+                .order_by(Order.created_at.desc(), Order.id.desc())
+            ).all()
+        ]
+
+        payment_filters = [
+            Sale.company_id == self.company_id,
+            Sale.customer_id == customer_id,
+        ]
+        if role == "seller":
+            payment_filters.append(Sale.seller_id == user_id)
+        payments = [
+            {
+                "id": payment.id,
+                "sale_id": sale.id,
+                "sale_number": sale.number,
+                "method": payment.method,
+                "status": payment.status,
+                "amount": payment.amount,
+                "reference": payment.reference,
+                "paid_at": payment.paid_at,
+            }
+            for payment, sale in self.session.execute(
+                select(Payment, Sale)
+                .join(Sale, Sale.id == Payment.sale_id)
+                .where(*payment_filters)
+                .order_by(Payment.paid_at.desc(), Payment.id.desc())
+            ).all()
+        ]
+
+        product_rows = self.session.execute(
+            select(
+                SaleDetail.product_id,
+                SaleDetail.sku_snapshot,
+                SaleDetail.product_name_snapshot,
+                func.sum(SaleDetail.quantity),
+                func.count(func.distinct(SaleDetail.sale_id)),
+                func.sum(SaleDetail.subtotal),
+                func.max(Sale.created_at),
+            )
+            .join(Sale, Sale.id == SaleDetail.sale_id)
+            .where(*sale_filters)
+            .group_by(
+                SaleDetail.product_id,
+                SaleDetail.sku_snapshot,
+                SaleDetail.product_name_snapshot,
+            )
+            .order_by(func.sum(SaleDetail.quantity).desc())
+        ).all()
+        products = [
+            {
+                "product_id": product_id,
+                "sku": sku,
+                "name": name,
+                "units": int(units or 0),
+                "purchase_count": int(purchase_count or 0),
+                "total": total or Decimal("0"),
+                "last_purchase_at": last_purchase_at,
+            }
+            for product_id, sku, name, units, purchase_count, total, last_purchase_at
+            in product_rows
+        ]
+
+        total_purchased = sum((row[0].total for row in sales_rows), Decimal("0"))
+        total_paid = sum((row[0].paid_amount for row in sales_rows), Decimal("0"))
+        sales_count = len(sales)
+        return {
+            "customer": customer,
+            "summary": {
+                "sales_count": sales_count,
+                "orders_count": len(orders),
+                "units_purchased": sum(item["units"] for item in sales),
+                "total_purchased": total_purchased,
+                "total_paid": total_paid,
+                "balance_due": max(Decimal("0"), total_purchased - total_paid),
+                "average_ticket": (
+                    total_purchased / Decimal(sales_count)
+                    if sales_count
+                    else Decimal("0")
+                ),
+                "last_purchase_at": sales[0]["created_at"] if sales else None,
+            },
+            "sales": sales,
+            "orders": orders,
+            "payments": payments,
+            "products": products,
+        }
 
     @staticmethod
     def _validate_document(customer_type: str, document_type: str, number: str) -> None:

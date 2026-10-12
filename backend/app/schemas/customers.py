@@ -1,6 +1,7 @@
 """Customer request and response schemas."""
 
 from datetime import datetime
+from decimal import Decimal
 from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
@@ -95,3 +96,68 @@ class CustomerListResponse(BaseModel):
     total: int = Field(ge=0)
     page: int = Field(ge=1)
     page_size: int = Field(ge=1, le=100)
+
+
+class CustomerHistorySummary(BaseModel):
+    sales_count: int = Field(ge=0)
+    orders_count: int = Field(ge=0)
+    units_purchased: int = Field(ge=0)
+    total_purchased: Decimal = Field(ge=0)
+    total_paid: Decimal = Field(ge=0)
+    balance_due: Decimal = Field(ge=0)
+    average_ticket: Decimal = Field(ge=0)
+    last_purchase_at: datetime | None
+
+
+class CustomerSaleHistoryItem(BaseModel):
+    id: int
+    number: str
+    seller_name: str
+    status: str
+    payment_status: str
+    items_count: int = Field(ge=0)
+    units: int = Field(ge=0)
+    total: Decimal
+    paid_amount: Decimal
+    balance_due: Decimal
+    created_at: datetime
+
+
+class CustomerOrderHistoryItem(BaseModel):
+    id: int
+    number: str
+    seller_name: str
+    status: str
+    total: Decimal
+    sale_id: int | None
+    created_at: datetime
+
+
+class CustomerPaymentHistoryItem(BaseModel):
+    id: int
+    sale_id: int
+    sale_number: str
+    method: str
+    status: str
+    amount: Decimal
+    reference: str | None
+    paid_at: datetime
+
+
+class CustomerProductHistoryItem(BaseModel):
+    product_id: int
+    sku: str
+    name: str
+    units: int = Field(ge=0)
+    purchase_count: int = Field(ge=0)
+    total: Decimal
+    last_purchase_at: datetime
+
+
+class CustomerHistoryResponse(BaseModel):
+    customer: CustomerResponse
+    summary: CustomerHistorySummary
+    sales: list[CustomerSaleHistoryItem]
+    orders: list[CustomerOrderHistoryItem]
+    payments: list[CustomerPaymentHistoryItem]
+    products: list[CustomerProductHistoryItem]

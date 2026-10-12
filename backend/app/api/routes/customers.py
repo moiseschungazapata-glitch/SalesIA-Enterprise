@@ -11,6 +11,7 @@ from app.db.session import get_db
 from app.schemas.common import ErrorResponse
 from app.schemas.customers import (
     CustomerCreate,
+    CustomerHistoryResponse,
     CustomerListResponse,
     CustomerResponse,
     CustomerUpdate,
@@ -102,6 +103,28 @@ def get_customer(
 ) -> CustomerResponse:
     customer = CustomerService(session, current_user.company_id).get(customer_id)
     return CustomerResponse.model_validate(customer)
+
+
+@router.get(
+    "/{customer_id}/history",
+    response_model=CustomerHistoryResponse,
+    responses={
+        401: {"model": ErrorResponse},
+        403: {"model": ErrorResponse},
+        404: {"model": ErrorResponse},
+    },
+)
+def get_customer_history(
+    customer_id: int,
+    current_user: CustomerReader,
+    session: DatabaseSession,
+) -> CustomerHistoryResponse:
+    history = CustomerService(session, current_user.company_id).history(
+        customer_id,
+        user_id=current_user.id,
+        role=current_user.role,
+    )
+    return CustomerHistoryResponse.model_validate(history)
 
 
 @router.patch(

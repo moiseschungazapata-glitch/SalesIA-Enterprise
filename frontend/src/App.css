@@ -3530,6 +3530,103 @@ body {
   grid-template-columns: minmax(260px, 1fr) auto;
 }
 
+.customer-history {
+  display: grid;
+  gap: 20px;
+}
+
+.customer-profile-strip,
+.customer-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.customer-profile-strip > div,
+.customer-summary-grid article {
+  min-width: 0;
+  padding: 13px 14px;
+  border: 1px solid #E4EAF4;
+  border-radius: 12px;
+  background: #F8FAFD;
+}
+
+.customer-profile-strip span,
+.customer-summary-grid span {
+  display: block;
+  margin-bottom: 6px;
+  color: #64748B;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.customer-profile-strip strong,
+.customer-summary-grid strong {
+  display: block;
+  overflow-wrap: anywhere;
+  color: #172033;
+  font-size: 13px;
+}
+
+.customer-summary-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.customer-summary-grid strong {
+  font-size: 18px;
+}
+
+.customer-history-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.customer-edit-form {
+  padding: 16px;
+  border: 1px solid #DCE6F5;
+  border-radius: 14px;
+  background: #F8FBFF;
+}
+
+.customer-history-section {
+  display: grid;
+  gap: 10px;
+}
+
+.customer-history-section h3 {
+  margin: 0;
+  color: #172033;
+  font-size: 15px;
+}
+
+.customer-history-section table {
+  min-width: 720px;
+}
+
+.customer-history-empty {
+  margin: 0;
+  padding: 18px;
+  border: 1px dashed #CBD5E1;
+  border-radius: 12px;
+  color: #64748B;
+  text-align: center;
+}
+
+:root[data-theme='dark'] .customer-profile-strip > div,
+:root[data-theme='dark'] .customer-summary-grid article,
+:root[data-theme='dark'] .customer-edit-form {
+  border-color: #334155;
+  background: #111C2E;
+}
+
+:root[data-theme='dark'] .customer-profile-strip strong,
+:root[data-theme='dark'] .customer-summary-grid strong,
+:root[data-theme='dark'] .customer-history-section h3 {
+  color: #F1F5F9;
+}
+
 .products-toolbar {
   grid-template-columns: minmax(220px, 1fr) auto auto;
 }
@@ -4928,6 +5025,18 @@ body {
 
   .login-theme-control .theme-toggle span {
     display: inline;
+  }
+}
+
+@media (max-width: 760px) {
+  .customer-profile-strip,
+  .customer-summary-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .customer-history-actions,
+  .customer-history-actions button {
+    width: 100%;
   }
 }
 
