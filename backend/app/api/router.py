@@ -10,6 +10,7 @@ from app.api.routes import (
     insights,
     inventory,
     orders,
+    payments,
     probability,
     products,
     public,
@@ -31,6 +32,7 @@ api_router.include_router(categories.router)
 api_router.include_router(products.router)
 api_router.include_router(inventory.router)
 api_router.include_router(orders.router)
+api_router.include_router(payments.router)
 api_router.include_router(sales.router)
 api_router.include_router(dashboard.router)
 api_router.include_router(insights.router)

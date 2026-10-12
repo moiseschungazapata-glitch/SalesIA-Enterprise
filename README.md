@@ -34,6 +34,7 @@ Desarrollo basado en las 16 fases del Plan Integral de Desarrollo.
 - [Fase 08 - Ventas e inventario](docs/operations/fase-08-ventas-inventario.md)
 - [Parte 01 - Pedidos y conversión a venta](docs/operations/parte-01-pedidos.md)
 - [Parte 02 - Impuestos, descuentos y configuración](docs/operations/parte-02-impuestos-descuentos.md)
+- [Parte 03 - Gestión completa de pagos](docs/operations/parte-03-gestion-pagos.md)
 - [Fase 09 - Motor estadistico](docs/analytics/fase-09-motor-estadistico.md)
 - [Fase 10 - Dashboard Analytics](docs/analytics/fase-10-dashboard-analytics.md)
 - [Fase 11 - Insights empresariales](docs/analytics/fase-11-insights-empresariales.md)

@@ -44,8 +44,12 @@ POST_INITIAL_TABLES = {"anonymous_visits", "auth_sessions", "order_details", "or
 POST_INITIAL_COLUMNS = {
     "companies": {"tax_rate", "prices_include_tax", "max_discount_percent"},
     "reports": {"content"},
-    "sales": {"subtotal", "discount_total", "tax_total", "tax_rate", "general_discount_percent"},
+    "sales": {
+        "subtotal", "discount_total", "tax_total", "tax_rate",
+        "general_discount_percent", "payment_status", "paid_amount",
+    },
     "sale_details": {"gross_subtotal", "discount_percent", "discount_amount"},
+    "payments": {"registered_by_id", "cancelled_at", "refunded_at"},
     "users": {"failed_login_attempts", "locked_until"},
 }
 
@@ -92,7 +96,9 @@ def test_migration_snapshot_matches_model_tables_and_columns() -> None:
             set(model_table.columns.keys()) - POST_INITIAL_COLUMNS.get(name, set())
         )
         assert {(fk.parent.name, fk.target_fullname) for fk in migration_table.foreign_keys} == {
-            (fk.parent.name, fk.target_fullname) for fk in model_table.foreign_keys
+            (fk.parent.name, fk.target_fullname)
+            for fk in model_table.foreign_keys
+            if fk.parent.name not in POST_INITIAL_COLUMNS.get(name, set())
         }
 
 

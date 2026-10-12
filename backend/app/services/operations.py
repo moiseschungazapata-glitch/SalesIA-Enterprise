@@ -76,9 +76,11 @@ class SaleItemRecord:
 
 @dataclass(frozen=True)
 class PaymentRecord:
+    id: int
     method: str
     amount: Decimal
     status: str
+    reference: str | None
     paid_at: datetime
 
 
@@ -91,7 +93,10 @@ class SaleRecord:
     customer: PartyRecord
     seller: PartyRecord
     items: list[SaleItemRecord]
-    payment: PaymentRecord
+    payment: PaymentRecord | None
+    payment_status: str
+    paid_amount: Decimal
+    balance_due: Decimal
     currency: str
     subtotal: Decimal
     discount_total: Decimal
@@ -110,7 +115,10 @@ class SaleListRecord:
     customer: PartyRecord
     seller: PartyRecord
     items_count: int
-    payment_method: str
+    payment_method: str | None
+    payment_status: str
+    paid_amount: Decimal
+    balance_due: Decimal
     currency: str
     subtotal: Decimal
     discount_total: Decimal
@@ -343,14 +351,21 @@ class SalesService:
             filters.append(Sale.created_at < upper_bound)
 
         item_count = func.sum(SaleDetail.quantity)
+        latest_payment_method = (
+            select(Payment.method)
+            .where(Payment.sale_id == Sale.id, Payment.status == "completed")
+            .order_by(Payment.paid_at.desc(), Payment.id.desc())
+            .limit(1)
+            .correlate(Sale)
+            .scalar_subquery()
+        )
         rows = self.session.execute(
-            select(Sale, Customer.name, User.name, item_count, Payment.method)
+            select(Sale, Customer.name, User.name, item_count, latest_payment_method)
             .join(Customer, Customer.id == Sale.customer_id)
             .join(User, User.id == Sale.seller_id)
             .join(SaleDetail, SaleDetail.sale_id == Sale.id)
-            .join(Payment, Payment.sale_id == Sale.id)
             .where(*filters)
-            .group_by(Sale.id, Customer.name, User.name, Payment.method)
+            .group_by(Sale.id, Customer.name, User.name)
             .order_by(Sale.created_at.desc(), Sale.id.desc())
             .offset((page - 1) * page_size)
             .limit(page_size)
@@ -366,6 +381,9 @@ class SalesService:
                 seller=PartyRecord(sale.seller_id, seller_name),
                 items_count=int(items_count),
                 payment_method=payment_method,
+                payment_status=sale.payment_status,
+                paid_amount=sale.paid_amount,
+                balance_due=(sale.total - sale.paid_amount).quantize(Decimal("0.01")),
                 currency=sale.currency,
                 subtotal=sale.subtotal,
                 discount_total=sale.discount_total,
@@ -493,6 +511,8 @@ class SalesService:
             tax_rate=company.tax_rate,
             general_discount_percent=payload.discount_percent,
             total=pricing.total,
+            payment_status="pending",
+            paid_amount=Decimal("0"),
         )
         self.session.add(sale)
         self.session.flush()
@@ -534,14 +554,26 @@ class SalesService:
                 ]
             )
 
-        self.session.add(
-            Payment(
-                sale_id=sale.id,
-                method=payload.payment_method.value,
-                amount=pricing.total,
-                status="completed",
+        payment_amount = pricing.total if payload.payment_amount is None else payload.payment_amount
+        if payment_amount > pricing.total:
+            raise AppError(
+                "PAYMENT_EXCEEDS_BALANCE",
+                "El pago no puede superar el total de la venta",
+                status_code=422,
             )
-        )
+        if payment_amount > 0:
+            self.session.add(
+                Payment(
+                    sale_id=sale.id,
+                    method=payload.payment_method.value,
+                    amount=payment_amount,
+                    status="completed",
+                    reference=payload.payment_reference,
+                    registered_by_id=self.user_id,
+                )
+            )
+            sale.paid_amount = payment_amount
+            sale.payment_status = "paid" if payment_amount == pricing.total else "partial"
         self.session.flush()
         return self._sale_record(sale)
 
@@ -551,6 +583,10 @@ class SalesService:
             "customer_id": payload.customer_id,
             "payment_method": payload.payment_method.value,
             "discount_percent": str(payload.discount_percent),
+            "payment_amount": None
+            if payload.payment_amount is None
+            else str(payload.payment_amount),
+            "payment_reference": payload.payment_reference,
             "items": sorted(
                 (
                     {
@@ -574,9 +610,11 @@ class SalesService:
         details = self.session.scalars(
             select(SaleDetail).where(SaleDetail.sale_id == sale.id).order_by(SaleDetail.id)
         ).all()
-        payment = self.session.scalar(select(Payment).where(Payment.sale_id == sale.id))
-        if payment is None:
-            raise AppError("INTERNAL_ERROR", "La venta no tiene un pago asociado", status_code=500)
+        payment = self.session.scalar(
+            select(Payment)
+            .where(Payment.sale_id == sale.id, Payment.status == "completed")
+            .order_by(Payment.paid_at.desc(), Payment.id.desc())
+        )
         return SaleRecord(
             id=sale.id,
             number=sale.number,
@@ -600,11 +638,18 @@ class SalesService:
                 for detail in details
             ],
             payment=PaymentRecord(
+                id=payment.id,
                 method=payment.method,
                 amount=payment.amount,
                 status=payment.status,
+                reference=payment.reference,
                 paid_at=payment.paid_at,
-            ),
+            )
+            if payment
+            else None,
+            payment_status=sale.payment_status,
+            paid_amount=sale.paid_amount,
+            balance_due=(sale.total - sale.paid_amount).quantize(Decimal("0.01")),
             currency=sale.currency,
             subtotal=sale.subtotal,
             discount_total=sale.discount_total,

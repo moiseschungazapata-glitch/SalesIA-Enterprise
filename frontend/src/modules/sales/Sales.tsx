@@ -59,6 +59,9 @@ function Sales({ role }: SalesProps) {
   const [itemDiscount, setItemDiscount] = useState('0')
   const [generalDiscount, setGeneralDiscount] = useState('0')
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash')
+  const [paymentMode, setPaymentMode] = useState<'full' | 'partial' | 'pending'>('full')
+  const [paymentAmount, setPaymentAmount] = useState('')
+  const [paymentReference, setPaymentReference] = useState('')
   const [cart, setCart] = useState<CartItem[]>([])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -123,6 +126,8 @@ function Sales({ role }: SalesProps) {
       const created = await createSale({
         customer_id: Number(selectedCustomer),
         payment_method: paymentMethod,
+        payment_amount: paymentMode === 'full' ? undefined : paymentMode === 'pending' ? '0' : paymentAmount,
+        payment_reference: paymentReference || null,
         discount_percent: generalDiscount,
         items: cart.map((item) => ({
           product_id: item.product.id,
@@ -135,6 +140,9 @@ function Sales({ role }: SalesProps) {
       setCart([])
       setSelectedCustomer('')
       setPaymentMethod('cash')
+      setPaymentMode('full')
+      setPaymentAmount('')
+      setPaymentReference('')
       setGeneralDiscount('0')
       setIdempotencyKey(crypto.randomUUID())
       sales.reload()
@@ -255,6 +263,15 @@ function Sales({ role }: SalesProps) {
               <label>Descuento general (%)<input type="number" min="0" max="100" step="0.01" value={generalDiscount} onChange={(event) => { setGeneralDiscount(event.target.value); changeRequest() }} /></label>
               <div><span>Total estimado</span><strong>S/ {money(total)}</strong></div>
               <label>
+                Cobro inicial
+                <select value={paymentMode} onChange={(event) => { setPaymentMode(event.target.value as 'full' | 'partial' | 'pending'); changeRequest() }}>
+                  <option value="full">Cobrar el total ahora</option>
+                  <option value="partial">Registrar abono parcial</option>
+                  <option value="pending">Dejar pendiente</option>
+                </select>
+              </label>
+              {paymentMode === 'partial' && <label>Importe del abono<input type="number" min="0.01" max={total} step="0.01" value={paymentAmount} onChange={(event) => { setPaymentAmount(event.target.value); changeRequest() }} /></label>}
+              <label>
                 Método de pago
                 <select
                   value={paymentMethod}
@@ -268,6 +285,7 @@ function Sales({ role }: SalesProps) {
                   <option value="bank_transfer">Transferencia bancaria</option>
                 </select>
               </label>
+              {paymentMode !== 'pending' && <label>Referencia o comprobante<input value={paymentReference} maxLength={120} onChange={(event) => { setPaymentReference(event.target.value); changeRequest() }} placeholder="Opcional" /></label>}
               <div className="sale-modal-actions">
                 <button type="button" className="secondary-button" disabled={saving} onClick={() => setShowForm(false)}>Cancelar</button>
                 <button type="button" className="primary-button" disabled={saving || !selectedCustomer || cart.length === 0} onClick={() => void registerSale()}>{saving ? 'Confirmando...' : 'Registrar venta'}</button>
@@ -302,8 +320,8 @@ function Sales({ role }: SalesProps) {
                     <td>S/ {money(sale.discount_total)}</td>
                     <td>S/ {money(sale.tax_total)}</td>
                     <td>S/ {money(sale.total)}</td>
-                    <td>{paymentLabels[sale.payment_method]}</td>
-                    <td><span className="status-pill success">Confirmada</span></td>
+                    <td>{sale.payment_method ? paymentLabels[sale.payment_method] : 'Sin pago'}<small>S/ {money(sale.paid_amount)} pagado · S/ {money(sale.balance_due)} pendiente</small></td>
+                    <td><span className={`status-pill ${sale.payment_status === 'paid' ? 'success' : sale.payment_status === 'refunded' ? 'danger' : ''}`}>{sale.payment_status === 'paid' ? 'Pagada' : sale.payment_status === 'partial' ? 'Pago parcial' : sale.payment_status === 'refunded' ? 'Devuelta' : 'Pendiente'}</span></td>
                   </tr>
                 ))}
               </tbody>

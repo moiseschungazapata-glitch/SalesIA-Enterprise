@@ -18,6 +18,7 @@ describe('reglas de navegación por rol', () => {
     expect(getNavigationItems('seller').map((item) => item.key)).toEqual([
       'orders',
       'sales',
+      'payments',
       'customers',
       'products',
       'inventory',

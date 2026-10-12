@@ -32,6 +32,8 @@ class SaleCreate(BaseModel):
     payment_method: PaymentMethod
     items: list[SaleItemCreate] = Field(min_length=1, max_length=100)
     discount_percent: Decimal = Field(default=Decimal("0"), ge=0, le=100)
+    payment_amount: Decimal | None = Field(default=None, ge=0)
+    payment_reference: str | None = Field(default=None, max_length=120)
 
     @field_validator("payment_method", mode="before")
     @classmethod
@@ -80,9 +82,11 @@ class SaleItemResponse(BaseModel):
 class SalePaymentResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
+    id: int
     method: PaymentMethod
     amount: Decimal
     status: str
+    reference: str | None
     paid_at: datetime
 
 
@@ -96,7 +100,10 @@ class SaleResponse(BaseModel):
     customer: SalePartyResponse
     seller: SalePartyResponse
     items: list[SaleItemResponse]
-    payment: SalePaymentResponse
+    payment: SalePaymentResponse | None
+    payment_status: str
+    paid_amount: Decimal
+    balance_due: Decimal
     currency: str
     subtotal: Decimal
     discount_total: Decimal
@@ -116,7 +123,10 @@ class SaleListItemResponse(BaseModel):
     customer: SalePartyResponse
     seller: SalePartyResponse
     items_count: int = Field(ge=1)
-    payment_method: PaymentMethod
+    payment_method: PaymentMethod | None
+    payment_status: str
+    paid_amount: Decimal
+    balance_due: Decimal
     currency: str
     subtotal: Decimal
     discount_total: Decimal

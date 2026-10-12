@@ -300,9 +300,11 @@ export interface SaleItemRecord {
 }
 
 export interface SalePaymentRecord {
+  id: number
   method: PaymentMethod
   amount: string
   status: 'completed'
+  reference: string | null
   paid_at: string
 }
 
@@ -314,7 +316,10 @@ export interface SaleRecord {
   customer: SaleParty
   seller: SaleParty
   items: SaleItemRecord[]
-  payment: SalePaymentRecord
+  payment: SalePaymentRecord | null
+  payment_status: 'pending' | 'partial' | 'paid' | 'refunded'
+  paid_amount: string
+  balance_due: string
   currency: 'PEN'
   subtotal: string
   discount_total: string
@@ -332,7 +337,10 @@ export interface SaleListItem {
   customer: SaleParty
   seller: SaleParty
   items_count: number
-  payment_method: PaymentMethod
+  payment_method: PaymentMethod | null
+  payment_status: 'pending' | 'partial' | 'paid' | 'refunded'
+  paid_amount: string
+  balance_due: string
   currency: 'PEN'
   subtotal: string
   discount_total: string
@@ -353,6 +361,8 @@ export interface SaleCreateRequest {
   customer_id: number
   payment_method: PaymentMethod
   discount_percent?: string
+  payment_amount?: string
+  payment_reference?: string | null
   items: Array<{
     product_id: number
     quantity: number
@@ -400,6 +410,31 @@ export interface CommercialSettings {
   tax_rate: string
   prices_include_tax: boolean
   max_discount_percent: string
+}
+
+export type PaymentStatus = 'completed' | 'cancelled' | 'refunded'
+
+export interface PaymentRecord {
+  id: number
+  sale_id: number
+  sale_number: string
+  customer_name: string
+  method: PaymentMethod
+  amount: string
+  status: PaymentStatus
+  reference: string | null
+  paid_at: string
+  sale_total: string
+  paid_amount: string
+  balance_due: string
+  payment_status: 'pending' | 'partial' | 'paid' | 'refunded'
+}
+
+export interface PaymentListResponse {
+  items: PaymentRecord[]
+  total: number
+  page: number
+  page_size: number
 }
 
 export interface OrderConversionResponse {

@@ -400,6 +400,54 @@ def test_sale_idempotency_prevents_duplicates(client: TestClient, session: Sessi
     assert inventory is not None and inventory.quantity == 9
 
 
+def test_pending_sale_accepts_partial_payments_and_refund(
+    client: TestClient, session: Session
+) -> None:
+    admin = login(client, ADMIN_EMAIL, ADMIN_PASSWORD)
+    customer_id = entity_id(session, Customer, "Ana Torres")
+    product_id = entity_id(session, Product, "Teclado")
+    sale_response = client.post(
+        "/api/v1/sales",
+        headers={**admin, "Idempotency-Key": str(uuid4())},
+        json={
+            "customer_id": customer_id,
+            "payment_method": "cash",
+            "payment_amount": "0",
+            "items": [{"product_id": product_id, "quantity": 1}],
+        },
+    )
+    assert sale_response.status_code == 201, sale_response.text
+    sale = sale_response.json()
+    assert sale["payment_status"] == "pending"
+    assert Decimal(sale["paid_amount"]) == Decimal("0.00")
+    assert sale["balance_due"] == "150.00"
+
+    payment_response = client.post(
+        "/api/v1/payments",
+        headers=admin,
+        json={
+            "sale_id": sale["id"],
+            "method": "bank_transfer",
+            "amount": "60.00",
+            "reference": "OP-TEST-001",
+        },
+    )
+    assert payment_response.status_code == 201, payment_response.text
+    payment = payment_response.json()
+    assert payment["payment_status"] == "partial"
+    assert payment["balance_due"] == "90.00"
+
+    refund_response = client.post(
+        f"/api/v1/payments/{payment['id']}/refund",
+        headers=admin,
+        json={"reason": "Prueba de devolución"},
+    )
+    assert refund_response.status_code == 200, refund_response.text
+    assert refund_response.json()["status"] == "refunded"
+    assert refund_response.json()["payment_status"] == "refunded"
+    assert refund_response.json()["balance_due"] == "150.00"
+
+
 def test_failed_sale_does_not_change_any_stock(client: TestClient, session: Session) -> None:
     admin = login(client, ADMIN_EMAIL, ADMIN_PASSWORD)
     customer_id = entity_id(session, Customer, "Ana Torres")

@@ -29,6 +29,11 @@ class Sale(TimestampMixin, Base):
         CheckConstraint("subtotal >= 0", name="subtotal_non_negative"),
         CheckConstraint("discount_total >= 0", name="discount_non_negative"),
         CheckConstraint("tax_total >= 0", name="tax_non_negative"),
+        CheckConstraint(
+            "payment_status IN ('pending', 'partial', 'paid', 'refunded')",
+            name="payment_status_allowed",
+        ),
+        CheckConstraint("paid_amount >= 0 AND paid_amount <= total", name="paid_amount_range"),
         UniqueConstraint("company_id", "number", name="uq_sales_company_number"),
         UniqueConstraint(
             "company_id",
@@ -64,6 +69,8 @@ class Sale(TimestampMixin, Base):
     general_discount_percent: Mapped[Decimal] = mapped_column(
         Numeric(5, 2), nullable=False, default=0
     )
+    payment_status: Mapped[str] = mapped_column(String(20), nullable=False, default="paid")
+    paid_amount: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False, default=0)
     confirmed_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
@@ -107,19 +114,24 @@ class Payment(Base):
     __tablename__ = "payments"
     __table_args__ = (
         CheckConstraint("method IN ('cash', 'card', 'bank_transfer')", name="method_allowed"),
-        CheckConstraint("status = 'completed'", name="status_completed"),
+        CheckConstraint("status IN ('completed', 'cancelled', 'refunded')", name="status_allowed"),
         CheckConstraint("amount > 0", name="amount_positive"),
         Index("ix_payments_paid_at", "paid_at"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     sale_id: Mapped[int] = mapped_column(
-        ForeignKey("sales.id", ondelete="RESTRICT"), nullable=False, unique=True
+        ForeignKey("sales.id", ondelete="RESTRICT"), nullable=False
     )
     method: Mapped[str] = mapped_column(String(30), nullable=False)
     amount: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="completed")
     reference: Mapped[str | None] = mapped_column(String(120))
+    registered_by_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="RESTRICT")
+    )
+    cancelled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    refunded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     paid_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
