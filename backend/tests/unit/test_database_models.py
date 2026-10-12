@@ -50,6 +50,10 @@ POST_INITIAL_COLUMNS = {
     },
     "sale_details": {"gross_subtotal", "discount_percent", "discount_amount"},
     "payments": {"registered_by_id", "cancelled_at", "refunded_at"},
+    "employees": {
+        "document_number", "hire_date", "zone", "monthly_target",
+        "commission_percent", "employment_status",
+    },
     "users": {"failed_login_attempts", "locked_until"},
 }
 

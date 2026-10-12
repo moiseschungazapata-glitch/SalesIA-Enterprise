@@ -20,6 +20,7 @@ from app.models import (
     Category,
     Company,
     Customer,
+    Employee,
     Inventory,
     InventoryMovement,
     Order,
@@ -56,6 +57,7 @@ def session() -> Generator[Session, None, None]:
             AuthSession.__table__,
             AuditLog.__table__,
             Customer.__table__,
+            Employee.__table__,
             Category.__table__,
             Product.__table__,
             Inventory.__table__,
@@ -446,6 +448,38 @@ def test_pending_sale_accepts_partial_payments_and_refund(
     assert refund_response.json()["status"] == "refunded"
     assert refund_response.json()["payment_status"] == "refunded"
     assert refund_response.json()["balance_due"] == "150.00"
+
+
+def test_administrator_configures_seller_profile_and_manager_can_read(
+    client: TestClient, session: Session
+) -> None:
+    admin = login(client, ADMIN_EMAIL, ADMIN_PASSWORD)
+    manager = login(client, MANAGER_EMAIL, MANAGER_PASSWORD)
+    seller_id = session.scalar(select(User.id).where(User.email == SELLER_EMAIL))
+    assert seller_id is not None
+
+    updated = client.put(
+        f"/api/v1/sellers/{seller_id}",
+        headers=admin,
+        json={
+            "employee_code": "VEN-LIM-01",
+            "phone": "999111222",
+            "document_number": "76543210",
+            "hire_date": "2026-10-01",
+            "zone": "Lima Centro",
+            "monthly_target": "10000.00",
+            "commission_percent": "5.00",
+            "employment_status": "active",
+        },
+    )
+    assert updated.status_code == 200, updated.text
+    assert updated.json()["employee_code"] == "VEN-LIM-01"
+    assert updated.json()["zone"] == "Lima Centro"
+
+    listing = client.get("/api/v1/sellers", headers=manager)
+    assert listing.status_code == 200, listing.text
+    assert listing.json()["total"] == 1
+    assert listing.json()["items"][0]["commission_percent"] == "5.00"
 
 
 def test_failed_sale_does_not_change_any_stock(client: TestClient, session: Session) -> None:

@@ -412,6 +412,45 @@ export interface CommercialSettings {
   max_discount_percent: string
 }
 
+export type EmploymentStatus = 'active' | 'leave' | 'terminated'
+
+export interface SellerRecord {
+  user_id: number
+  employee_id: number | null
+  employee_code: string | null
+  name: string
+  email: string
+  phone: string | null
+  document_number: string | null
+  hire_date: string | null
+  zone: string | null
+  monthly_target: string
+  commission_percent: string
+  employment_status: EmploymentStatus
+  active: boolean
+  sales_count: number
+  sales_total: string
+  commission_estimate: string
+  target_progress_percent: string
+  created_at: string
+}
+
+export interface SellerListResponse {
+  items: SellerRecord[]
+  total: number
+}
+
+export interface SellerUpdateRequest {
+  employee_code: string
+  phone?: string | null
+  document_number?: string | null
+  hire_date?: string | null
+  zone?: string | null
+  monthly_target: string
+  commission_percent: string
+  employment_status: EmploymentStatus
+}
+
 export type PaymentStatus = 'completed' | 'cancelled' | 'refunded'
 
 export interface PaymentRecord {

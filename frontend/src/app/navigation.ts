@@ -7,6 +7,7 @@ export type PageKey =
   | 'dashboard'
   | 'sales'
   | 'payments'
+  | 'sellers'
   | 'orders'
   | 'customers'
   | 'products'
@@ -56,6 +57,12 @@ export const navigationItems: NavigationItem[] = [
     label: 'Pagos',
     description: 'Cobros, saldos y devoluciones',
     roles: allRoles,
+  },
+  {
+    key: 'sellers',
+    label: 'Vendedores',
+    description: 'Metas, zonas y comisiones',
+    roles: ['administrator', 'manager'],
   },
   {
     key: 'customers',
@@ -129,6 +136,7 @@ export const pagePaths: Record<PageKey, string> = {
   dashboard: '/dashboard',
   sales: '/ventas',
   payments: '/pagos',
+  sellers: '/vendedores',
   orders: '/pedidos',
   customers: '/clientes',
   products: '/productos',

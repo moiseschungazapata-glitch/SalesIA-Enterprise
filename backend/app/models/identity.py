@@ -1,9 +1,11 @@
 """Roles, application users and employees."""
 
-from datetime import datetime
+from datetime import date, datetime
+from decimal import Decimal
 
 from sqlalchemy import (
     Boolean,
+    CheckConstraint,
     DateTime,
     ForeignKey,
     Index,
@@ -133,6 +135,15 @@ class Employee(TimestampMixin, Base):
     __table_args__ = (
         UniqueConstraint("company_id", "employee_code"),
         Index("ix_employees_company_active", "company_id", "active"),
+        CheckConstraint("monthly_target >= 0", name="monthly_target_non_negative"),
+        CheckConstraint(
+            "commission_percent >= 0 AND commission_percent <= 100",
+            name="commission_percent_range",
+        ),
+        CheckConstraint(
+            "employment_status IN ('active', 'leave', 'terminated')",
+            name="employment_status_allowed",
+        ),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -147,4 +158,10 @@ class Employee(TimestampMixin, Base):
     email: Mapped[str | None] = mapped_column(String(254))
     phone: Mapped[str | None] = mapped_column(String(30))
     position: Mapped[str | None] = mapped_column(String(100))
+    document_number: Mapped[str | None] = mapped_column(String(30))
+    hire_date: Mapped[date | None] = mapped_column()
+    zone: Mapped[str | None] = mapped_column(String(120))
+    monthly_target: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False, default=0)
+    commission_percent: Mapped[Decimal] = mapped_column(Numeric(5, 2), nullable=False, default=0)
+    employment_status: Mapped[str] = mapped_column(String(20), nullable=False, default="active")
     active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)

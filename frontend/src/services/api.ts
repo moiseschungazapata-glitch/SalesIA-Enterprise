@@ -130,6 +130,13 @@ export function apiPatch<T>(path: string, body: unknown) {
   })
 }
 
+export function apiPut<T>(path: string, body: unknown) {
+  return apiRequest<T>(path, {
+    method: 'PUT',
+    body: JSON.stringify(body),
+  })
+}
+
 export async function apiDownload(path: string) {
   const token = getAccessToken()
   let response: Response

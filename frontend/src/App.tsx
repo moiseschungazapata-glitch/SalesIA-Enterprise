@@ -25,6 +25,7 @@ import Insights from './modules/insights/Insights'
 import Products from './modules/products/Products'
 import Orders from './modules/orders/Orders'
 import Payments from './modules/payments/Payments'
+import Sellers from './modules/sellers/Sellers'
 import Probability from './modules/probability/Probability'
 import Reports from './modules/reports/Reports'
 import Sales from './modules/sales/Sales'
@@ -92,6 +93,7 @@ function AuthenticatedApplication({
           element={guarded('sales', <Sales role={user.role} />)}
         />
         <Route path={pagePaths.payments} element={guarded('payments', <Payments role={user.role} />)} />
+        <Route path={pagePaths.sellers} element={guarded('sellers', <Sellers role={user.role} />)} />
         <Route
           path={pagePaths.customers}
           element={guarded(
