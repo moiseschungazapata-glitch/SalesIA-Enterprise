@@ -229,6 +229,8 @@ function Users({ currentUserId }: UsersProps) {
                 <option value="administrator">Administrador</option>
                 <option value="seller">Vendedor</option>
                 <option value="manager">Gerente</option>
+                <option value="analyst">Analista</option>
+                <option value="warehouse">Almacén</option>
               </select>
             </label>
             <label>
@@ -317,6 +319,8 @@ function Users({ currentUserId }: UsersProps) {
             <option value="administrator">Administrador</option>
             <option value="seller">Vendedor</option>
             <option value="manager">Gerente</option>
+            <option value="analyst">Analista</option>
+            <option value="warehouse">Almacén</option>
           </select>
           <select
             className="select-input"

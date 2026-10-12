@@ -6,8 +6,8 @@ from typing import Annotated, Literal
 from fastapi import APIRouter, Depends, Query, Request, status
 from sqlalchemy.orm import Session
 
-from app.api.dependencies import CurrentUser, Principal, require_roles
-from app.core.security import ADMIN_ROLE, MANAGER_ROLE
+from app.api.dependencies import Principal, require_roles
+from app.core.security import ADMIN_ROLE, MANAGER_ROLE, SELLER_ROLE, WAREHOUSE_ROLE
 from app.db.session import get_db
 from app.schemas.common import ErrorResponse
 from app.schemas.inventory import (
@@ -22,10 +22,16 @@ from app.services.security import record_audit
 
 router = APIRouter(prefix="/inventory", tags=["inventory"])
 
-AdminUser = Annotated[Principal, Depends(require_roles(ADMIN_ROLE))]
+InventoryReader = Annotated[
+    Principal,
+    Depends(require_roles(ADMIN_ROLE, SELLER_ROLE, MANAGER_ROLE, WAREHOUSE_ROLE)),
+]
+InventoryManager = Annotated[
+    Principal, Depends(require_roles(ADMIN_ROLE, WAREHOUSE_ROLE))
+]
 InventoryAuditor = Annotated[
     Principal,
-    Depends(require_roles(ADMIN_ROLE, MANAGER_ROLE)),
+    Depends(require_roles(ADMIN_ROLE, MANAGER_ROLE, WAREHOUSE_ROLE)),
 ]
 DatabaseSession = Annotated[Session, Depends(get_db)]
 
@@ -36,7 +42,7 @@ DatabaseSession = Annotated[Session, Depends(get_db)]
     responses={401: {"model": ErrorResponse}, 403: {"model": ErrorResponse}},
 )
 def list_inventory(
-    current_user: CurrentUser,
+    current_user: InventoryReader,
     session: DatabaseSession,
     page: Annotated[int, Query(ge=1)] = 1,
     page_size: Annotated[int, Query(ge=1, le=100)] = 20,
@@ -108,7 +114,7 @@ def list_movements(
 def create_movement(
     payload: InventoryMovementCreate,
     request: Request,
-    current_user: AdminUser,
+    current_user: InventoryManager,
     session: DatabaseSession,
 ) -> InventoryMovementResponse:
     movement = InventoryService(session, current_user.company_id, current_user.id).create_movement(

@@ -5,8 +5,8 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query, Request, status
 from sqlalchemy.orm import Session
 
-from app.api.dependencies import CurrentUser, Principal, require_roles
-from app.core.security import ADMIN_ROLE
+from app.api.dependencies import Principal, require_roles
+from app.core.security import ADMIN_ROLE, MANAGER_ROLE, SELLER_ROLE, WAREHOUSE_ROLE
 from app.db.session import get_db
 from app.schemas.catalog import (
     ProductCreate,
@@ -20,7 +20,13 @@ from app.services.security import record_audit
 
 router = APIRouter(prefix="/products", tags=["products"])
 
-AdminUser = Annotated[Principal, Depends(require_roles(ADMIN_ROLE))]
+CatalogReader = Annotated[
+    Principal,
+    Depends(require_roles(ADMIN_ROLE, SELLER_ROLE, MANAGER_ROLE, WAREHOUSE_ROLE)),
+]
+CatalogManager = Annotated[
+    Principal, Depends(require_roles(ADMIN_ROLE, WAREHOUSE_ROLE))
+]
 DatabaseSession = Annotated[Session, Depends(get_db)]
 
 
@@ -34,7 +40,7 @@ def _response(product: ProductRecord) -> ProductResponse:
     responses={401: {"model": ErrorResponse}, 403: {"model": ErrorResponse}},
 )
 def list_products(
-    current_user: CurrentUser,
+    current_user: CatalogReader,
     session: DatabaseSession,
     page: Annotated[int, Query(ge=1)] = 1,
     page_size: Annotated[int, Query(ge=1, le=100)] = 20,
@@ -72,7 +78,7 @@ def list_products(
 def create_product(
     payload: ProductCreate,
     request: Request,
-    current_user: AdminUser,
+    current_user: CatalogManager,
     session: DatabaseSession,
 ) -> ProductResponse:
     product = ProductService(session, current_user.company_id, current_user.id).create(payload)
@@ -101,7 +107,7 @@ def create_product(
 )
 def get_product(
     product_id: int,
-    current_user: CurrentUser,
+    current_user: CatalogReader,
     session: DatabaseSession,
 ) -> ProductResponse:
     product = ProductService(session, current_user.company_id, current_user.id).get(product_id)
@@ -123,7 +129,7 @@ def update_product(
     product_id: int,
     payload: ProductUpdate,
     request: Request,
-    current_user: AdminUser,
+    current_user: CatalogManager,
     session: DatabaseSession,
 ) -> ProductResponse:
     product = ProductService(session, current_user.company_id, current_user.id).update(

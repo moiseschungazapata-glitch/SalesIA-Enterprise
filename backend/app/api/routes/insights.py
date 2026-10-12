@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, Query, Request, status
 from sqlalchemy.orm import Session
 
 from app.api.dependencies import Principal, require_roles
-from app.core.security import ADMIN_ROLE, MANAGER_ROLE
+from app.core.security import ADMIN_ROLE, ANALYST_ROLE, MANAGER_ROLE
 from app.db.session import get_db
 from app.schemas.common import ErrorResponse
 from app.schemas.insights import (
@@ -19,7 +19,9 @@ from app.services.security import record_audit
 
 router = APIRouter(prefix="/insights", tags=["insights"])
 
-InsightsUser = Annotated[Principal, Depends(require_roles(ADMIN_ROLE, MANAGER_ROLE))]
+InsightsUser = Annotated[
+    Principal, Depends(require_roles(ADMIN_ROLE, MANAGER_ROLE, ANALYST_ROLE))
+]
 DatabaseSession = Annotated[Session, Depends(get_db)]
 
 

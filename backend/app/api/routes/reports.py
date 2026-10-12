@@ -7,7 +7,7 @@ from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
 from app.api.dependencies import Principal, require_roles
-from app.core.security import ADMIN_ROLE, MANAGER_ROLE
+from app.core.security import ADMIN_ROLE, ANALYST_ROLE, MANAGER_ROLE
 from app.db.session import get_db
 from app.schemas.common import ErrorResponse
 from app.schemas.reports import (
@@ -20,7 +20,9 @@ from app.services.security import record_audit
 
 router = APIRouter(prefix="/reports", tags=["reports"])
 
-ReportsUser = Annotated[Principal, Depends(require_roles(ADMIN_ROLE, MANAGER_ROLE))]
+ReportsUser = Annotated[
+    Principal, Depends(require_roles(ADMIN_ROLE, MANAGER_ROLE, ANALYST_ROLE))
+]
 DatabaseSession = Annotated[Session, Depends(get_db)]
 
 

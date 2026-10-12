@@ -12,6 +12,30 @@ describe('reglas de navegación por rol', () => {
     expect(canAccessPage('administrator', 'users')).toBe(true)
     expect(canAccessPage('manager', 'users')).toBe(false)
     expect(canAccessPage('seller', 'users')).toBe(false)
+    expect(canAccessPage('analyst', 'users')).toBe(false)
+    expect(canAccessPage('warehouse', 'users')).toBe(false)
+  })
+
+  it('limita al analista a inteligencia, reportes y su seguridad', () => {
+    expect(getNavigationItems('analyst').map((item) => item.key)).toEqual([
+      'analytics',
+      'probability',
+      'insights',
+      'reports',
+      'security',
+    ])
+    expect(getDefaultPage('analyst')).toBe('analytics')
+    expect(canAccessPage('analyst', 'sales')).toBe(false)
+  })
+
+  it('limita almacén al catálogo, inventario y su seguridad', () => {
+    expect(getNavigationItems('warehouse').map((item) => item.key)).toEqual([
+      'products',
+      'inventory',
+      'security',
+    ])
+    expect(getDefaultPage('warehouse')).toBe('inventory')
+    expect(canAccessPage('warehouse', 'payments')).toBe(false)
   })
 
   it('limita al vendedor a la operación y seguridad', () => {

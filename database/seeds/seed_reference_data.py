@@ -27,6 +27,16 @@ ROLES = (
         "name": "Gerente",
         "description": "Consulta ventas, inventario e indicadores comerciales.",
     },
+    {
+        "code": "analyst",
+        "name": "Analista",
+        "description": "Consulta indicadores, probabilidad, insights y reportes.",
+    },
+    {
+        "code": "warehouse",
+        "name": "Almacén",
+        "description": "Gestiona el catálogo, existencias y movimientos de inventario.",
+    },
 )
 
 

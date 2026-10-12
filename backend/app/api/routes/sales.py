@@ -7,8 +7,8 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Header, Query, Request, status
 from sqlalchemy.orm import Session
 
-from app.api.dependencies import CurrentUser, Principal, require_roles
-from app.core.security import ADMIN_ROLE, SELLER_ROLE
+from app.api.dependencies import Principal, require_roles
+from app.core.security import ADMIN_ROLE, MANAGER_ROLE, SELLER_ROLE
 from app.db.session import get_db
 from app.schemas.common import ErrorResponse
 from app.schemas.sales import SaleCreate, SaleListItemResponse, SaleListResponse, SaleResponse
@@ -18,6 +18,9 @@ from app.services.security import record_audit
 router = APIRouter(prefix="/sales", tags=["sales"])
 
 SalesCreator = Annotated[Principal, Depends(require_roles(ADMIN_ROLE, SELLER_ROLE))]
+SalesReader = Annotated[
+    Principal, Depends(require_roles(ADMIN_ROLE, SELLER_ROLE, MANAGER_ROLE))
+]
 DatabaseSession = Annotated[Session, Depends(get_db)]
 
 
@@ -27,7 +30,7 @@ DatabaseSession = Annotated[Session, Depends(get_db)]
     responses={401: {"model": ErrorResponse}, 403: {"model": ErrorResponse}},
 )
 def list_sales(
-    current_user: CurrentUser,
+    current_user: SalesReader,
     session: DatabaseSession,
     page: Annotated[int, Query(ge=1)] = 1,
     page_size: Annotated[int, Query(ge=1, le=100)] = 20,
@@ -111,7 +114,7 @@ def create_sale(
 )
 def get_sale(
     sale_id: int,
-    current_user: CurrentUser,
+    current_user: SalesReader,
     session: DatabaseSession,
 ) -> SaleResponse:
     sale = SalesService(

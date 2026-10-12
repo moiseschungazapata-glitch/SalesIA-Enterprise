@@ -46,7 +46,11 @@ def session() -> Generator[Session, None, None]:
         admin_role = Role(code="administrator", name="Administrador")
         seller_role = Role(code="seller", name="Vendedor")
         manager_role = Role(code="manager", name="Gerente")
-        database_session.add_all([company, admin_role, seller_role, manager_role])
+        analyst_role = Role(code="analyst", name="Analista")
+        warehouse_role = Role(code="warehouse", name="Almacén")
+        database_session.add_all(
+            [company, admin_role, seller_role, manager_role, analyst_role, warehouse_role]
+        )
         database_session.flush()
         database_session.add_all(
             [
@@ -251,6 +255,26 @@ def test_administrator_can_create_read_and_update_user(
     assert update_response.status_code == 200
     assert update_response.json()["active"] is False
     assert update_response.json()["role"] == "seller"
+
+
+@pytest.mark.parametrize("role", ["analyst", "warehouse"])
+def test_administrator_can_create_new_operational_roles(
+    client: TestClient, role: str
+) -> None:
+    token = login(client, ADMIN_EMAIL, ADMIN_PASSWORD)
+    response = client.post(
+        "/api/v1/users",
+        headers=bearer(token),
+        json={
+            "name": f"Usuario {role}",
+            "email": f"{role}@salesia.example.com",
+            "password": f"{role}-password-2026",
+            "role": role,
+        },
+    )
+
+    assert response.status_code == 201, response.text
+    assert response.json()["role"] == role
 
 
 def test_duplicate_email_and_validation_errors_are_uniform(client: TestClient) -> None:

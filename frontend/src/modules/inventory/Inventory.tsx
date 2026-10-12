@@ -26,7 +26,7 @@ function formatDate(value: string) {
 }
 
 function Inventory({ role }: InventoryProps) {
-  const canManage = role === 'administrator'
+  const canManage = role === 'administrator' || role === 'warehouse'
   const canAudit = role !== 'seller'
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState<'active' | 'inactive' | ''>('')

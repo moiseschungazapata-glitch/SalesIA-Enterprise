@@ -18,6 +18,8 @@ class RoleCode(StrEnum):
     ADMINISTRATOR = "administrator"
     SELLER = "seller"
     MANAGER = "manager"
+    ANALYST = "analyst"
+    WAREHOUSE = "warehouse"
 
 
 def _validate_password(value: SecretStr | None) -> SecretStr | None:

@@ -2,6 +2,8 @@ export type UserRole =
   | 'administrator'
   | 'seller'
   | 'manager'
+  | 'analyst'
+  | 'warehouse'
 
 export type PageKey =
   | 'dashboard'
@@ -31,6 +33,8 @@ const allRoles: UserRole[] = [
   'administrator',
   'seller',
   'manager',
+  'analyst',
+  'warehouse',
 ]
 
 export const navigationItems: NavigationItem[] = [
@@ -44,19 +48,19 @@ export const navigationItems: NavigationItem[] = [
     key: 'orders',
     label: 'Pedidos',
     description: 'Preparación y conversión de pedidos',
-    roles: allRoles,
+    roles: ['administrator', 'seller', 'manager'],
   },
   {
     key: 'sales',
     label: 'Ventas',
     description: 'Historial y registro de ventas',
-    roles: allRoles,
+    roles: ['administrator', 'seller', 'manager'],
   },
   {
     key: 'payments',
     label: 'Pagos',
     description: 'Cobros, saldos y devoluciones',
-    roles: allRoles,
+    roles: ['administrator', 'seller', 'manager'],
   },
   {
     key: 'sellers',
@@ -68,43 +72,43 @@ export const navigationItems: NavigationItem[] = [
     key: 'customers',
     label: 'Clientes',
     description: 'Consulta y gestión de clientes',
-    roles: allRoles,
+    roles: ['administrator', 'seller', 'manager'],
   },
   {
     key: 'products',
     label: 'Productos',
     description: 'Catálogo de productos y categorías',
-    roles: allRoles,
+    roles: ['administrator', 'seller', 'manager', 'warehouse'],
   },
   {
     key: 'inventory',
     label: 'Inventario',
     description: 'Existencias y movimientos',
-    roles: allRoles,
+    roles: ['administrator', 'seller', 'manager', 'warehouse'],
   },
   {
     key: 'analytics',
     label: 'Analytics',
     description: 'Media, mediana y variables estadísticas',
-    roles: ['administrator', 'manager'],
+    roles: ['administrator', 'manager', 'analyst'],
   },
   {
     key: 'probability',
     label: 'Probabilidad',
     description: 'Eventos, variables aleatorias y Bayes',
-    roles: ['administrator', 'manager'],
+    roles: ['administrator', 'manager', 'analyst'],
   },
   {
     key: 'insights',
     label: 'Insights',
     description: 'Hallazgos explicables e historial',
-    roles: ['administrator', 'manager'],
+    roles: ['administrator', 'manager', 'analyst'],
   },
   {
     key: 'reports',
     label: 'Reportes',
     description: 'Reportes, exportación e impresión',
-    roles: ['administrator', 'manager'],
+    roles: ['administrator', 'manager', 'analyst'],
   },
   {
     key: 'security',
@@ -130,6 +134,8 @@ export const roleLabels: Record<UserRole, string> = {
   administrator: 'Administrador',
   seller: 'Vendedor',
   manager: 'Gerente',
+  analyst: 'Analista',
+  warehouse: 'Almacén',
 }
 
 export const pagePaths: Record<PageKey, string> = {
@@ -161,7 +167,10 @@ export function getNavigationItems(role: UserRole) {
 }
 
 export function getDefaultPage(role: UserRole): PageKey {
-  return role === 'seller' ? 'sales' : 'dashboard'
+  if (role === 'seller') return 'sales'
+  if (role === 'analyst') return 'analytics'
+  if (role === 'warehouse') return 'inventory'
+  return 'dashboard'
 }
 
 export function canAccessPage(

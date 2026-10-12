@@ -5,8 +5,8 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query, Request, status
 from sqlalchemy.orm import Session
 
-from app.api.dependencies import CurrentUser, Principal, require_roles
-from app.core.security import ADMIN_ROLE
+from app.api.dependencies import Principal, require_roles
+from app.core.security import ADMIN_ROLE, MANAGER_ROLE, SELLER_ROLE
 from app.db.session import get_db
 from app.schemas.common import ErrorResponse
 from app.schemas.customers import (
@@ -21,6 +21,9 @@ from app.services.security import record_audit
 router = APIRouter(prefix="/customers", tags=["customers"])
 
 AdminUser = Annotated[Principal, Depends(require_roles(ADMIN_ROLE))]
+CustomerReader = Annotated[
+    Principal, Depends(require_roles(ADMIN_ROLE, SELLER_ROLE, MANAGER_ROLE))
+]
 DatabaseSession = Annotated[Session, Depends(get_db)]
 
 
@@ -30,7 +33,7 @@ DatabaseSession = Annotated[Session, Depends(get_db)]
     responses={401: {"model": ErrorResponse}, 403: {"model": ErrorResponse}},
 )
 def list_customers(
-    current_user: CurrentUser,
+    current_user: CustomerReader,
     session: DatabaseSession,
     page: Annotated[int, Query(ge=1)] = 1,
     page_size: Annotated[int, Query(ge=1, le=100)] = 20,
@@ -94,7 +97,7 @@ def create_customer(
 )
 def get_customer(
     customer_id: int,
-    current_user: CurrentUser,
+    current_user: CustomerReader,
     session: DatabaseSession,
 ) -> CustomerResponse:
     customer = CustomerService(session, current_user.company_id).get(customer_id)

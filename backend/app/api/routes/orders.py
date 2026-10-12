@@ -6,8 +6,8 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Header, Query, Request, status
 from sqlalchemy.orm import Session
 
-from app.api.dependencies import CurrentUser, Principal, require_roles
-from app.core.security import ADMIN_ROLE, SELLER_ROLE
+from app.api.dependencies import Principal, require_roles
+from app.core.security import ADMIN_ROLE, MANAGER_ROLE, SELLER_ROLE
 from app.db.session import get_db
 from app.schemas.orders import (
     OrderConversionResponse,
@@ -24,6 +24,9 @@ from app.services.security import record_audit
 
 router = APIRouter(prefix="/orders", tags=["orders"])
 OrderCreator = Annotated[Principal, Depends(require_roles(ADMIN_ROLE, SELLER_ROLE))]
+OrderReader = Annotated[
+    Principal, Depends(require_roles(ADMIN_ROLE, SELLER_ROLE, MANAGER_ROLE))
+]
 DatabaseSession = Annotated[Session, Depends(get_db)]
 
 
@@ -33,7 +36,7 @@ def service(session: Session, user: Principal) -> OrderService:
 
 @router.get("", response_model=OrderListResponse)
 def list_orders(
-    current_user: CurrentUser,
+    current_user: OrderReader,
     session: DatabaseSession,
     page: Annotated[int, Query(ge=1)] = 1,
     page_size: Annotated[int, Query(ge=1, le=100)] = 20,
@@ -66,7 +69,7 @@ def create_order(
 
 
 @router.get("/{order_id}", response_model=OrderResponse)
-def get_order(order_id: int, current_user: CurrentUser, session: DatabaseSession) -> OrderResponse:
+def get_order(order_id: int, current_user: OrderReader, session: DatabaseSession) -> OrderResponse:
     return OrderResponse.model_validate(service(session, current_user).get(order_id))
 
 

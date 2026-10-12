@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
 from app.api.dependencies import Principal, require_roles
-from app.core.security import ADMIN_ROLE, MANAGER_ROLE
+from app.core.security import ADMIN_ROLE, ANALYST_ROLE, MANAGER_ROLE
 from app.db.session import get_db
 from app.schemas.common import ErrorResponse
 from app.schemas.statistics import AnalysisExecutionResponse, RandomVariableRequest
@@ -14,7 +14,9 @@ from app.services.analytics import AnalyticsService
 
 router = APIRouter(prefix="/random-variables", tags=["random-variables"])
 
-AnalyticsUser = Annotated[Principal, Depends(require_roles(ADMIN_ROLE, MANAGER_ROLE))]
+AnalyticsUser = Annotated[
+    Principal, Depends(require_roles(ADMIN_ROLE, MANAGER_ROLE, ANALYST_ROLE))
+]
 DatabaseSession = Annotated[Session, Depends(get_db)]
 
 

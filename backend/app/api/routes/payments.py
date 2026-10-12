@@ -5,8 +5,8 @@ from typing import Annotated, Literal
 from fastapi import APIRouter, Depends, Query, Request, status
 from sqlalchemy.orm import Session
 
-from app.api.dependencies import CurrentUser, Principal, require_roles
-from app.core.security import ADMIN_ROLE, SELLER_ROLE
+from app.api.dependencies import Principal, require_roles
+from app.core.security import ADMIN_ROLE, MANAGER_ROLE, SELLER_ROLE
 from app.db.session import get_db
 from app.schemas.payments import PaymentAction, PaymentCreate, PaymentListResponse, PaymentResponse
 from app.services.payments import PaymentService
@@ -15,6 +15,9 @@ from app.services.security import record_audit
 router = APIRouter(prefix="/payments", tags=["payments"])
 DatabaseSession = Annotated[Session, Depends(get_db)]
 PaymentOperator = Annotated[Principal, Depends(require_roles(ADMIN_ROLE, SELLER_ROLE))]
+PaymentReader = Annotated[
+    Principal, Depends(require_roles(ADMIN_ROLE, SELLER_ROLE, MANAGER_ROLE))
+]
 
 
 def service(session: Session, user: Principal) -> PaymentService:
@@ -23,7 +26,7 @@ def service(session: Session, user: Principal) -> PaymentService:
 
 @router.get("", response_model=PaymentListResponse)
 def list_payments(
-    current_user: CurrentUser,
+    current_user: PaymentReader,
     session: DatabaseSession,
     page: Annotated[int, Query(ge=1)] = 1,
     page_size: Annotated[int, Query(ge=1, le=100)] = 100,

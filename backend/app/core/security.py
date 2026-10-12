@@ -15,7 +15,11 @@ from app.core.exceptions import AppError
 ADMIN_ROLE = "administrator"
 SELLER_ROLE = "seller"
 MANAGER_ROLE = "manager"
-ALLOWED_ROLES = frozenset({ADMIN_ROLE, SELLER_ROLE, MANAGER_ROLE})
+ANALYST_ROLE = "analyst"
+WAREHOUSE_ROLE = "warehouse"
+ALLOWED_ROLES = frozenset(
+    {ADMIN_ROLE, SELLER_ROLE, MANAGER_ROLE, ANALYST_ROLE, WAREHOUSE_ROLE}
+)
 
 password_hash = PasswordHash.recommended()
 DUMMY_PASSWORD_HASH = password_hash.hash("salesia-invalid-password-placeholder")

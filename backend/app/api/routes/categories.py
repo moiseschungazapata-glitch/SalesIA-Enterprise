@@ -5,8 +5,8 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query, Request, status
 from sqlalchemy.orm import Session
 
-from app.api.dependencies import CurrentUser, Principal, require_roles
-from app.core.security import ADMIN_ROLE
+from app.api.dependencies import Principal, require_roles
+from app.core.security import ADMIN_ROLE, MANAGER_ROLE, SELLER_ROLE, WAREHOUSE_ROLE
 from app.db.session import get_db
 from app.schemas.catalog import (
     CategoryCreate,
@@ -20,7 +20,13 @@ from app.services.security import record_audit
 
 router = APIRouter(prefix="/categories", tags=["categories"])
 
-AdminUser = Annotated[Principal, Depends(require_roles(ADMIN_ROLE))]
+CatalogReader = Annotated[
+    Principal,
+    Depends(require_roles(ADMIN_ROLE, SELLER_ROLE, MANAGER_ROLE, WAREHOUSE_ROLE)),
+]
+CatalogManager = Annotated[
+    Principal, Depends(require_roles(ADMIN_ROLE, WAREHOUSE_ROLE))
+]
 DatabaseSession = Annotated[Session, Depends(get_db)]
 
 
@@ -30,7 +36,7 @@ DatabaseSession = Annotated[Session, Depends(get_db)]
     responses={401: {"model": ErrorResponse}, 403: {"model": ErrorResponse}},
 )
 def list_categories(
-    current_user: CurrentUser,
+    current_user: CatalogReader,
     session: DatabaseSession,
     page: Annotated[int, Query(ge=1)] = 1,
     page_size: Annotated[int, Query(ge=1, le=100)] = 20,
@@ -64,7 +70,7 @@ def list_categories(
 def create_category(
     payload: CategoryCreate,
     request: Request,
-    current_user: AdminUser,
+    current_user: CatalogManager,
     session: DatabaseSession,
 ) -> CategoryResponse:
     category = CategoryService(session, current_user.company_id).create(payload)
@@ -96,7 +102,7 @@ def update_category(
     category_id: int,
     payload: CategoryUpdate,
     request: Request,
-    current_user: AdminUser,
+    current_user: CatalogManager,
     session: DatabaseSession,
 ) -> CategoryResponse:
     category = CategoryService(session, current_user.company_id).update(category_id, payload)

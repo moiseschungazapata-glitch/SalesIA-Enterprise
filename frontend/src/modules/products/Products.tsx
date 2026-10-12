@@ -28,7 +28,7 @@ const emptyProductForm = {
 }
 
 function Products({ role }: ProductsProps) {
-  const canManage = role === 'administrator'
+  const canManage = role === 'administrator' || role === 'warehouse'
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState<number | null>(null)
