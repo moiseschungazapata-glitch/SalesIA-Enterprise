@@ -42,40 +42,65 @@ function Login() {
         <ThemeToggle />
       </div>
 
-      <section className="login-panel">
-        <div className="login-brand">
-          <div className="brand-mark large">S</div>
-          <div>
-            <strong>SalesIA</strong>
-            <span>Enterprise</span>
+      <section className="login-panel auth-login-panel">
+        <aside className="login-showcase" aria-label="Beneficios de SalesIA Enterprise">
+          <div className="login-brand login-showcase-brand">
+            <div className="brand-mark large">S</div>
+            <div><strong>SalesIA</strong><span>Enterprise</span></div>
           </div>
-        </div>
 
-        <div className="login-copy">
-          <span className="eyebrow">PLATAFORMA EMPRESARIAL</span>
-          <h1>Bienvenido de nuevo.</h1>
-          <p>
-            Ingresa con el usuario registrado en SalesIA Enterprise.
-          </p>
-        </div>
+          <div className="login-showcase-copy">
+            <h2>Convierte datos en mejores decisiones.</h2>
+            <p>Todo el control comercial que necesitas, en un solo lugar.</p>
+          </div>
 
-        <form className="login-form" onSubmit={handleSubmit}>
-          <label>
-            Correo electrónico
-            <input
-              type="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="usuario@empresa.com"
-              autoComplete="email"
-              required
-              disabled={submitting}
-            />
-          </label>
+          <div className="login-benefits">
+            <div><span aria-hidden="true">▥</span><strong>Gestión comercial centralizada</strong></div>
+            <div><span aria-hidden="true">◇</span><strong>Información protegida</strong></div>
+            <div><span aria-hidden="true">↗</span><strong>Análisis para crecer</strong></div>
+          </div>
 
-          <label>
-            Contraseña
-            <span className="password-field">
+          <div className="login-showcase-chart" aria-hidden="true">
+            <i /><i /><i /><i /><i /><i /><i /><i />
+            <svg viewBox="0 0 500 120" preserveAspectRatio="none">
+              <path d="M0 95 C75 35 120 110 190 70 S300 100 365 42 S445 48 500 8" />
+            </svg>
+          </div>
+        </aside>
+
+        <div className="login-form-side">
+          <div className="login-mobile-brand login-brand">
+            <div className="brand-mark large">S</div>
+            <div><strong>SalesIA</strong><span>Enterprise</span></div>
+          </div>
+
+          <div className="login-copy">
+            <span className="eyebrow">ACCESO SEGURO</span>
+            <h1>Bienvenido de nuevo.</h1>
+            <p>Ingresa con tu cuenta de SalesIA Enterprise.</p>
+          </div>
+
+          <form className="login-form" onSubmit={handleSubmit}>
+            <label>
+              Correo electrónico
+              <span className="login-input-field">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5h18v12H3zM3.5 7l8.5 6 8.5-6" /></svg>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  placeholder="usuario@empresa.com"
+                  autoComplete="email"
+                  required
+                  disabled={submitting}
+                />
+              </span>
+            </label>
+
+            <label>
+              Contraseña
+              <span className="password-field login-input-field">
+                <svg className="login-input-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /></svg>
               <input
                 type={passwordVisible ? 'text' : 'password'}
                 value={password}
@@ -110,24 +135,21 @@ function Login() {
             </span>
           </label>
 
-          {error && (
-            <div className="form-error" role="alert" aria-live="polite">
-              {error}
-            </div>
-          )}
+            {error && <div className="form-error" role="alert" aria-live="polite">{error}</div>}
 
-          <button
-            type="submit"
-            className="primary-button"
-            disabled={submitting}
-          >
-            {submitting ? 'Verificando acceso…' : 'Ingresar al sistema'}
-          </button>
-        </form>
+            <button type="submit" className="primary-button login-submit" disabled={submitting}>
+              {submitting ? 'Verificando acceso…' : 'Ingresar al sistema'}
+            </button>
+          </form>
 
-        <div className="login-footer">
-          SalesIA Enterprise · Acceso protegido mediante JWT<br />
-          <small>Por seguridad, al abrir esta página se solicita la ubicación del dispositivo. Si no la autorizas, solo se registra una estimación por IP.</small>
+          <div className="login-security-note">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 20 6v5c0 5-3.4 8.4-8 10-4.6-1.6-8-5-8-10V6z" /><path d="M9 12l2 2 4-4" /></svg>
+            <div><strong>Acceso protegido</strong><span>La ubicación ayuda a proteger y registrar el acceso.</span></div>
+          </div>
+
+          <div className="login-footer">
+            SalesIA Enterprise · Acceso protegido mediante JWT
+          </div>
         </div>
       </section>
     </main>
