@@ -37,7 +37,6 @@ from app.schemas.statistics import (
     AnalysisHistoryItemResponse,
     AutomaticEventProbabilityRequest,
     BayesRequest,
-    EventProbabilityRequest,
     NumericSeriesRequest,
     RandomVariableRequest,
     SalesComparisonRequest,
@@ -188,7 +187,7 @@ def test_sales_comparison_uses_real_sales_and_persists_results(session: Session)
     assert session.scalar(select(func.count(StatisticalResult.id))) == 5
 
 
-def test_manual_probability_random_variable_bayes_and_history(session: Session) -> None:
+def test_manual_series_random_variable_bayes_and_history(session: Session) -> None:
     analytics = service(session)
     manual = analytics.analyze_series(
         NumericSeriesRequest(
@@ -199,11 +198,6 @@ def test_manual_probability_random_variable_bayes_and_history(session: Session) 
             values=[Decimal("1"), Decimal("2"), Decimal("100")],
         ),
         "comparison",
-    )
-    event = analytics.analyze_event_probability(
-        EventProbabilityRequest(
-            event_name="Compra completada", favorable_cases=7, total_observations=10
-        )
     )
     random = analytics.analyze_random_variable(
         RandomVariableRequest(
@@ -228,15 +222,13 @@ def test_manual_probability_random_variable_bayes_and_history(session: Session) 
 
     assert metric(manual, "mean") == Decimal("34.333333")
     assert metric(manual, "median") == Decimal("2.000000")
-    assert metric(event, "probability") == Decimal("0.7000000")
     assert metric(random, "mean") == Decimal("2.000000")
     assert metric(bayes, "posterior") == Decimal("0.6000000")
 
     history, total = analytics.history(1, 20)
-    assert total == 4
+    assert total == 3
     assert {AnalysisHistoryItemResponse.model_validate(item).analysis_type for item in history} == {
         "comparison",
-        "frequency",
         "random_variable",
         "bayes",
     }
@@ -339,6 +331,5 @@ def test_openapi_publishes_phase_nine_routes() -> None:
     assert "/api/v1/statistics/compare" in paths
     assert "/api/v1/statistics/sales/compare" in paths
     assert "/api/v1/probability/events" in paths
-    assert "/api/v1/probability/events/automatic" in paths
     assert "/api/v1/probability/bayes" in paths
     assert "/api/v1/random-variables/analyze" in paths

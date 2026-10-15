@@ -2696,17 +2696,6 @@ td strong {
   background: #ffffff;
 }
 
-.probability-source-toggle {
-  display: flex;
-  gap: 6px;
-  width: fit-content;
-  margin: -8px 0 14px;
-  padding: 5px;
-  border: 1px solid var(--salesia-gray-300);
-  border-radius: 10px;
-  background: var(--salesia-white);
-}
-
 .probability-form {
   display: grid;
   grid-template-columns: 1fr 1fr;

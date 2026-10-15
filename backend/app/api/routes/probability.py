@@ -13,7 +13,6 @@ from app.schemas.statistics import (
     AnalysisExecutionResponse,
     AutomaticEventProbabilityRequest,
     BayesRequest,
-    EventProbabilityRequest,
 )
 from app.services.analytics import AnalyticsService
 
@@ -27,24 +26,6 @@ DatabaseSession = Annotated[Session, Depends(get_db)]
 
 @router.post(
     "/events",
-    response_model=AnalysisExecutionResponse,
-    status_code=status.HTTP_201_CREATED,
-    responses={401: {"model": ErrorResponse}, 403: {"model": ErrorResponse}},
-)
-def calculate_event_probability(
-    payload: EventProbabilityRequest,
-    current_user: AnalyticsUser,
-    session: DatabaseSession,
-) -> AnalysisExecutionResponse:
-    result = AnalyticsService(
-        session, current_user.company_id, current_user.id
-    ).analyze_event_probability(payload)
-    session.commit()
-    return AnalysisExecutionResponse.model_validate(result)
-
-
-@router.post(
-    "/events/automatic",
     response_model=AnalysisExecutionResponse,
     status_code=status.HTTP_201_CREATED,
     responses={

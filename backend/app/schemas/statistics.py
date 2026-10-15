@@ -54,18 +54,6 @@ class SalesComparisonRequest(BaseModel):
         return self
 
 
-class EventProbabilityRequest(BaseModel):
-    event_name: str = Field(min_length=2, max_length=160)
-    favorable_cases: int = Field(ge=0, le=1000000)
-    total_observations: int = Field(gt=0, le=1000000)
-
-    @model_validator(mode="after")
-    def validate_cases(self) -> "EventProbabilityRequest":
-        if self.favorable_cases > self.total_observations:
-            raise ValueError("Los casos favorables no pueden superar el total")
-        return self
-
-
 class AutomaticEventProbabilityRequest(BaseModel):
     event_type: Literal["order_conversion", "fully_paid_sale", "card_payment"]
     date_from: date | None = None

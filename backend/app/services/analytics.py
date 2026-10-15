@@ -22,7 +22,6 @@ from app.models.sales import Payment, Sale, SaleDetail
 from app.schemas.statistics import (
     AutomaticEventProbabilityRequest,
     BayesRequest,
-    EventProbabilityRequest,
     NumericSeriesRequest,
     RandomVariableRequest,
     SalesComparisonRequest,
@@ -161,43 +160,6 @@ class AnalyticsService:
             "comparison",
             {"source": "sales", "metric": payload.metric},
         )
-
-    def analyze_event_probability(self, payload: EventProbabilityRequest) -> dict[str, Any]:
-        dataset = self._create_dataset(
-            f"Probabilidad - {payload.event_name.strip()}",
-            "manual",
-            {"event_name": payload.event_name.strip()},
-        )
-        variable = DatasetVariable(
-            dataset_id=dataset.id,
-            name="event_outcome",
-            label=payload.event_name.strip(),
-            variable_type="quantitative_discrete",
-            data_type="integer",
-            source_field=None,
-            unit="casos",
-        )
-        self.session.add(variable)
-        self.session.flush()
-        probability = event_probability(payload.favorable_cases, payload.total_observations)
-        analysis = self._create_analysis(
-            dataset.id,
-            "frequency",
-            {
-                "event_name": payload.event_name.strip(),
-                "favorable_cases": payload.favorable_cases,
-                "total_observations": payload.total_observations,
-            },
-        )
-        results = [
-            self._result(analysis.id, variable.id, "favorable_cases", payload.favorable_cases),
-            self._result(
-                analysis.id, variable.id, "total_observations", payload.total_observations
-            ),
-            self._result(analysis.id, variable.id, "probability", probability),
-        ]
-        self._finish(analysis)
-        return self._execution(dataset, variable, analysis, payload.total_observations, results)
 
     def analyze_automatic_event_probability(
         self, payload: AutomaticEventProbabilityRequest

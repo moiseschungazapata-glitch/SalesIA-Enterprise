@@ -608,12 +608,6 @@ export interface SalesComparisonRequest {
   date_to?: string | null
 }
 
-export interface EventProbabilityRequest {
-  event_name: string
-  favorable_cases: number
-  total_observations: number
-}
-
 export type AutomaticEventType =
   | 'order_conversion'
   | 'fully_paid_sale'

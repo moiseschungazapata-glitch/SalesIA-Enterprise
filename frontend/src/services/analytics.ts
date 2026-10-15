@@ -3,7 +3,6 @@ import type {
   AnalysisHistoryResponse,
   AutomaticEventProbabilityRequest,
   BayesAnalysisRequest,
-  EventProbabilityRequest,
   RandomVariableAnalysisRequest,
   SalesComparisonRequest,
   StatisticalVariableDefinition,
@@ -31,20 +30,11 @@ export function compareSalesStatistics(payload: SalesComparisonRequest) {
   )
 }
 
-export function calculateEventProbability(
-  payload: EventProbabilityRequest,
-) {
-  return apiPost<AnalysisExecutionRecord>(
-    '/probability/events',
-    payload,
-  )
-}
-
 export function calculateAutomaticEventProbability(
   payload: AutomaticEventProbabilityRequest,
 ) {
   return apiPost<AnalysisExecutionRecord>(
-    '/probability/events/automatic',
+    '/probability/events',
     payload,
   )
 }
