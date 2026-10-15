@@ -66,6 +66,18 @@ class EventProbabilityRequest(BaseModel):
         return self
 
 
+class AutomaticEventProbabilityRequest(BaseModel):
+    event_type: Literal["order_conversion", "fully_paid_sale", "card_payment"]
+    date_from: date | None = None
+    date_to: date | None = None
+
+    @model_validator(mode="after")
+    def validate_period(self) -> "AutomaticEventProbabilityRequest":
+        if self.date_from and self.date_to and self.date_to < self.date_from:
+            raise ValueError("La fecha final no puede ser anterior a la fecha inicial")
+        return self
+
+
 class BayesRequest(BaseModel):
     event_a: str = Field(min_length=2, max_length=200)
     event_b: str = Field(min_length=2, max_length=200)

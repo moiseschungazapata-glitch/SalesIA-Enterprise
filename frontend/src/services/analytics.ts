@@ -1,6 +1,7 @@
 import type {
   AnalysisExecutionRecord,
   AnalysisHistoryResponse,
+  AutomaticEventProbabilityRequest,
   BayesAnalysisRequest,
   EventProbabilityRequest,
   RandomVariableAnalysisRequest,
@@ -35,6 +36,15 @@ export function calculateEventProbability(
 ) {
   return apiPost<AnalysisExecutionRecord>(
     '/probability/events',
+    payload,
+  )
+}
+
+export function calculateAutomaticEventProbability(
+  payload: AutomaticEventProbabilityRequest,
+) {
+  return apiPost<AnalysisExecutionRecord>(
+    '/probability/events/automatic',
     payload,
   )
 }

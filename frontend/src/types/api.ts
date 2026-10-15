@@ -614,6 +614,17 @@ export interface EventProbabilityRequest {
   total_observations: number
 }
 
+export type AutomaticEventType =
+  | 'order_conversion'
+  | 'fully_paid_sale'
+  | 'card_payment'
+
+export interface AutomaticEventProbabilityRequest {
+  event_type: AutomaticEventType
+  date_from?: string | null
+  date_to?: string | null
+}
+
 export interface RandomVariableAnalysisRequest {
   name: string
   variable_name: string

@@ -21,6 +21,8 @@ from app.models import (
     Dataset,
     DatasetVariable,
     Observation,
+    Order,
+    Payment,
     Product,
     RandomVariable,
     Role,
@@ -33,6 +35,7 @@ from app.models import (
 from app.schemas.statistics import (
     AnalysisExecutionResponse,
     AnalysisHistoryItemResponse,
+    AutomaticEventProbabilityRequest,
     BayesRequest,
     EventProbabilityRequest,
     NumericSeriesRequest,
@@ -62,6 +65,8 @@ def session() -> Generator[Session, None, None]:
             Product.__table__,
             Sale.__table__,
             SaleDetail.__table__,
+            Order.__table__,
+            Payment.__table__,
             Dataset.__table__,
             DatasetVariable.__table__,
             Observation.__table__,
@@ -237,6 +242,79 @@ def test_manual_probability_random_variable_bayes_and_history(session: Session) 
     }
 
 
+def test_automatic_probability_uses_salesia_orders_sales_and_payments(session: Session) -> None:
+    company = session.scalars(select(Company)).one()
+    customer = session.scalars(select(Customer)).one()
+    seller = session.scalar(select(User).where(User.email != ADMIN_EMAIL))
+    sales = session.scalars(select(Sale).order_by(Sale.id)).all()
+    assert seller is not None
+    assert len(sales) == 2
+
+    session.add_all(
+        [
+            Order(
+                company_id=company.id,
+                customer_id=customer.id,
+                seller_id=seller.id,
+                sale_id=sales[0].id,
+                number="P-000001",
+                status="converted",
+                total=Decimal("100.00"),
+            ),
+            Order(
+                company_id=company.id,
+                customer_id=customer.id,
+                seller_id=seller.id,
+                number="P-000002",
+                status="cancelled",
+                total=Decimal("100.00"),
+            ),
+            Order(
+                company_id=company.id,
+                customer_id=customer.id,
+                seller_id=seller.id,
+                number="P-000003",
+                status="pending",
+                total=Decimal("100.00"),
+            ),
+            Payment(
+                sale_id=sales[0].id,
+                method="card",
+                amount=Decimal("100.00"),
+                status="completed",
+                registered_by_id=seller.id,
+            ),
+            Payment(
+                sale_id=sales[1].id,
+                method="cash",
+                amount=Decimal("300.00"),
+                status="completed",
+                registered_by_id=seller.id,
+            ),
+        ]
+    )
+    session.commit()
+
+    analytics = service(session)
+    conversion = analytics.analyze_automatic_event_probability(
+        AutomaticEventProbabilityRequest(event_type="order_conversion")
+    )
+    paid = analytics.analyze_automatic_event_probability(
+        AutomaticEventProbabilityRequest(event_type="fully_paid_sale")
+    )
+    card = analytics.analyze_automatic_event_probability(
+        AutomaticEventProbabilityRequest(event_type="card_payment")
+    )
+    session.commit()
+
+    assert metric(conversion, "favorable_cases") == Decimal("1")
+    assert metric(conversion, "total_observations") == Decimal("3")
+    assert metric(conversion, "probability") == Decimal("0.3333333")
+    assert metric(paid, "probability") == Decimal("1.0000000")
+    assert metric(card, "probability") == Decimal("0.5000000")
+    assert session.scalar(select(func.count(Observation.id))) == 7
+
+
 def test_invalid_bayes_is_rejected_without_persistence(session: Session) -> None:
     with pytest.raises(AppError) as error:
         service(session).analyze_bayes(
@@ -261,5 +339,6 @@ def test_openapi_publishes_phase_nine_routes() -> None:
     assert "/api/v1/statistics/compare" in paths
     assert "/api/v1/statistics/sales/compare" in paths
     assert "/api/v1/probability/events" in paths
+    assert "/api/v1/probability/events/automatic" in paths
     assert "/api/v1/probability/bayes" in paths
     assert "/api/v1/random-variables/analyze" in paths

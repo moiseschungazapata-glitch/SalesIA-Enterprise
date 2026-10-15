@@ -11,6 +11,7 @@ from app.db.session import get_db
 from app.schemas.common import ErrorResponse
 from app.schemas.statistics import (
     AnalysisExecutionResponse,
+    AutomaticEventProbabilityRequest,
     BayesRequest,
     EventProbabilityRequest,
 )
@@ -38,6 +39,28 @@ def calculate_event_probability(
     result = AnalyticsService(
         session, current_user.company_id, current_user.id
     ).analyze_event_probability(payload)
+    session.commit()
+    return AnalysisExecutionResponse.model_validate(result)
+
+
+@router.post(
+    "/events/automatic",
+    response_model=AnalysisExecutionResponse,
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        401: {"model": ErrorResponse},
+        403: {"model": ErrorResponse},
+        409: {"model": ErrorResponse},
+    },
+)
+def calculate_automatic_event_probability(
+    payload: AutomaticEventProbabilityRequest,
+    current_user: AnalyticsUser,
+    session: DatabaseSession,
+) -> AnalysisExecutionResponse:
+    result = AnalyticsService(
+        session, current_user.company_id, current_user.id
+    ).analyze_automatic_event_probability(payload)
     session.commit()
     return AnalysisExecutionResponse.model_validate(result)
 

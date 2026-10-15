@@ -17,8 +17,10 @@ from app.models.analytics import (
     StatisticalAnalysis,
     StatisticalResult,
 )
-from app.models.sales import Sale, SaleDetail
+from app.models.orders import Order
+from app.models.sales import Payment, Sale, SaleDetail
 from app.schemas.statistics import (
+    AutomaticEventProbabilityRequest,
     BayesRequest,
     EventProbabilityRequest,
     NumericSeriesRequest,
@@ -196,6 +198,135 @@ class AnalyticsService:
         ]
         self._finish(analysis)
         return self._execution(dataset, variable, analysis, payload.total_observations, results)
+
+    def analyze_automatic_event_probability(
+        self, payload: AutomaticEventProbabilityRequest
+    ) -> dict[str, Any]:
+        period_filters: list[Any] = []
+        event_name: str
+        variable_name: str
+        source_field: str
+
+        if payload.event_type == "order_conversion":
+            event_name = "Pedido convertido en venta"
+            variable_name = "order_converted"
+            source_field = "orders.status"
+            period_filters = [Order.company_id == self.company_id, Order.status != "draft"]
+            if payload.date_from:
+                period_filters.append(
+                    Order.created_at >= datetime.combine(payload.date_from, time.min)
+                )
+            if payload.date_to:
+                period_filters.append(
+                    Order.created_at
+                    < datetime.combine(payload.date_to + timedelta(days=1), time.min)
+                )
+            rows = self.session.execute(
+                select(Order.id, Order.created_at, Order.status)
+                .where(*period_filters)
+                .order_by(Order.created_at, Order.id)
+            ).all()
+            favorable = [row.status == "converted" for row in rows]
+        elif payload.event_type == "fully_paid_sale":
+            event_name = "Venta pagada completamente"
+            variable_name = "sale_fully_paid"
+            source_field = "sales.payment_status"
+            period_filters = [Sale.company_id == self.company_id, Sale.status == "confirmed"]
+            if payload.date_from:
+                period_filters.append(
+                    Sale.created_at >= datetime.combine(payload.date_from, time.min)
+                )
+            if payload.date_to:
+                period_filters.append(
+                    Sale.created_at
+                    < datetime.combine(payload.date_to + timedelta(days=1), time.min)
+                )
+            rows = self.session.execute(
+                select(Sale.id, Sale.created_at, Sale.payment_status)
+                .where(*period_filters)
+                .order_by(Sale.created_at, Sale.id)
+            ).all()
+            favorable = [row.payment_status == "paid" for row in rows]
+        else:
+            event_name = "Pago realizado con tarjeta"
+            variable_name = "card_payment"
+            source_field = "payments.method"
+            period_filters = [
+                Sale.company_id == self.company_id,
+                Payment.status == "completed",
+            ]
+            if payload.date_from:
+                period_filters.append(
+                    Payment.paid_at >= datetime.combine(payload.date_from, time.min)
+                )
+            if payload.date_to:
+                period_filters.append(
+                    Payment.paid_at
+                    < datetime.combine(payload.date_to + timedelta(days=1), time.min)
+                )
+            rows = self.session.execute(
+                select(Payment.id, Payment.paid_at.label("created_at"), Payment.method)
+                .join(Sale, Sale.id == Payment.sale_id)
+                .where(*period_filters)
+                .order_by(Payment.paid_at, Payment.id)
+            ).all()
+            favorable = [row.method == "card" for row in rows]
+
+        if not rows:
+            raise AppError(
+                "ANALYTICS_NO_OBSERVATIONS",
+                "No hay observaciones reales en el periodo seleccionado",
+                status_code=409,
+            )
+
+        values = [Decimal(1 if matches else 0) for matches in favorable]
+        total_observations = len(values)
+        favorable_cases = sum(favorable)
+        probability = event_probability(favorable_cases, total_observations)
+        date_label = datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC")
+        filters = {
+            "event_type": payload.event_type,
+            "event_name": event_name,
+            "date_from": payload.date_from.isoformat() if payload.date_from else None,
+            "date_to": payload.date_to.isoformat() if payload.date_to else None,
+        }
+        dataset, variable = self._create_series_dataset(
+            name=f"Probabilidad automatica - {event_name} - {date_label}",
+            source_type="sales_snapshot",
+            variable_name=variable_name,
+            variable_label=event_name,
+            variable_type="quantitative_discrete",
+            unit="casos",
+            values=values,
+            source_ids=[str(row.id) for row in rows],
+            observed_at=[row.created_at for row in rows],
+            filters=filters,
+        )
+        dataset.period_start = payload.date_from
+        dataset.period_end = payload.date_to
+        variable.source_field = source_field
+        analysis = self._create_analysis(
+            dataset.id,
+            "frequency",
+            {**filters, "source": "salesia"},
+        )
+        results = [
+            self._result(analysis.id, variable.id, "favorable_cases", favorable_cases),
+            self._result(analysis.id, variable.id, "total_observations", total_observations),
+            self._result(analysis.id, variable.id, "probability", probability),
+            self._result(
+                analysis.id,
+                variable.id,
+                "interpretation",
+                None,
+                text_value=(
+                    f"{favorable_cases} de {total_observations} observaciones cumplieron "
+                    f"el evento {event_name.lower()}."
+                ),
+            ),
+        ]
+        self._finish(analysis)
+        return self._execution(dataset, variable, analysis, total_observations, results)
 
     def analyze_random_variable(self, payload: RandomVariableRequest) -> dict[str, Any]:
         variable_type = (

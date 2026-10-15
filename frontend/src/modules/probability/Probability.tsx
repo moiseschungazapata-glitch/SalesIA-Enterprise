@@ -3,12 +3,38 @@ import PageHeader from '../../components/PageHeader'
 import StateMessage from '../../components/StateMessage'
 import {
   analyzeRandomVariable,
+  calculateAutomaticEventProbability,
   calculateBayes,
   calculateEventProbability,
 } from '../../services/analytics'
-import type { AnalysisExecutionRecord } from '../../types/api'
+import type {
+  AnalysisExecutionRecord,
+  AutomaticEventType,
+} from '../../types/api'
 
 type ProbabilitySection = 'events' | 'random' | 'bayes'
+type EventMode = 'automatic' | 'manual'
+
+const automaticEvents: Record<
+  AutomaticEventType,
+  { label: string; numerator: string; denominator: string }
+> = {
+  order_conversion: {
+    label: 'Pedido convertido en venta',
+    numerator: 'Pedidos con estado convertido',
+    denominator: 'Pedidos registrados, excepto borradores',
+  },
+  fully_paid_sale: {
+    label: 'Venta pagada completamente',
+    numerator: 'Ventas con pago completo',
+    denominator: 'Ventas confirmadas',
+  },
+  card_payment: {
+    label: 'Pago realizado con tarjeta',
+    numerator: 'Pagos completados con tarjeta',
+    denominator: 'Todos los pagos completados',
+  },
+}
 
 function resultNumber(result: AnalysisExecutionRecord | null, metric: string) {
   const value = result?.results.find((item) => item.metric === metric)
@@ -26,6 +52,12 @@ function Probability() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
+  const [eventMode, setEventMode] = useState<EventMode>('automatic')
+  const [automaticEvent, setAutomaticEvent] = useState<AutomaticEventType>(
+    'order_conversion',
+  )
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
   const [eventName, setEventName] = useState('Compra completada')
   const [successes, setSuccesses] = useState('7')
   const [total, setTotal] = useState('10')
@@ -78,6 +110,17 @@ function Probability() {
     )
   }
 
+  const submitAutomaticEvent = (event: FormEvent) => {
+    event.preventDefault()
+    void runRequest(() =>
+      calculateAutomaticEventProbability({
+        event_type: automaticEvent,
+        date_from: dateFrom || null,
+        date_to: dateTo || null,
+      }),
+    )
+  }
+
   const submitRandom = (event: FormEvent) => {
     event.preventDefault()
     const values = randomValues
@@ -117,7 +160,10 @@ function Probability() {
   }
 
   const eventProbability = resultNumber(result, 'probability')
+  const favorableCases = resultNumber(result, 'favorable_cases')
+  const totalObservations = resultNumber(result, 'total_observations')
   const posterior = resultNumber(result, 'posterior')
+  const selectedAutomaticEvent = automaticEvents[automaticEvent]
 
   return (
     <div className="page">
@@ -152,43 +198,135 @@ function Probability() {
       </div>
 
       {section === 'events' && (
-        <section className="probability-layout">
-          <article className="panel">
-            <div className="panel-header">
-              <div>
-                <span className="eyebrow">EVENTOS</span>
-                <h2>Probabilidad básica</h2>
-                <p>P(A) = casos favorables / observaciones.</p>
-              </div>
-            </div>
-            <form className="probability-form probability-submit-form" onSubmit={submitEvent}>
-              <label>
-                Nombre del evento
-                <input value={eventName} onChange={(event) => setEventName(event.target.value)} required />
-              </label>
-              <label>
-                Casos favorables
-                <input type="number" min="0" value={successes} onChange={(event) => setSuccesses(event.target.value)} required />
-              </label>
-              <label>
-                Total de observaciones
-                <input type="number" min="1" value={total} onChange={(event) => setTotal(event.target.value)} required />
-              </label>
-              <button className="primary-button" type="submit" disabled={loading}>
-                {loading ? 'Calculando…' : 'Calcular y guardar'}
-              </button>
-            </form>
-          </article>
+        <>
+          <div className="probability-source-toggle" aria-label="Origen de los datos">
+            <button
+              type="button"
+              className={eventMode === 'automatic' ? 'analytics-tab active' : 'analytics-tab'}
+              onClick={() => {
+                setEventMode('automatic')
+                setResult(null)
+                setError('')
+              }}
+            >
+              Datos reales de SalesIA
+            </button>
+            <button
+              type="button"
+              className={eventMode === 'manual' ? 'analytics-tab active' : 'analytics-tab'}
+              onClick={() => {
+                setEventMode('manual')
+                setResult(null)
+                setError('')
+              }}
+            >
+              Simulación manual
+            </button>
+          </div>
 
-          <article className="probability-result">
-            <span className="eyebrow">RESULTADO</span>
-            <strong>{percentage(eventProbability)}</strong>
-            <p>Probabilidad estimada del evento.</p>
-            <div className="result-meter">
-              <div style={{ width: `${(eventProbability || 0) * 100}%` }} />
-            </div>
-          </article>
-        </section>
+          <section className="probability-layout">
+            <article className="panel">
+              <div className="panel-header">
+                <div>
+                  <span className="eyebrow">EVENTOS</span>
+                  <h2>
+                    {eventMode === 'automatic'
+                      ? 'Probabilidad con datos reales'
+                      : 'Probabilidad básica manual'}
+                  </h2>
+                  <p>P(A) = casos favorables / observaciones.</p>
+                </div>
+              </div>
+              {eventMode === 'automatic' ? (
+                <form
+                  className="probability-form probability-submit-form"
+                  onSubmit={submitAutomaticEvent}
+                >
+                  <label>
+                    Evento empresarial
+                    <select
+                      value={automaticEvent}
+                      onChange={(event) =>
+                        setAutomaticEvent(event.target.value as AutomaticEventType)
+                      }
+                    >
+                      {Object.entries(automaticEvents).map(([value, definition]) => (
+                        <option value={value} key={value}>
+                          {definition.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    Desde (opcional)
+                    <input
+                      type="date"
+                      value={dateFrom}
+                      max={dateTo || undefined}
+                      onChange={(event) => setDateFrom(event.target.value)}
+                    />
+                  </label>
+                  <label>
+                    Hasta (opcional)
+                    <input
+                      type="date"
+                      value={dateTo}
+                      min={dateFrom || undefined}
+                      onChange={(event) => setDateTo(event.target.value)}
+                    />
+                  </label>
+                  <button className="primary-button" type="submit" disabled={loading}>
+                    {loading ? 'Consultando…' : 'Calcular con datos reales'}
+                  </button>
+                </form>
+              ) : (
+                <form
+                  className="probability-form probability-submit-form"
+                  onSubmit={submitEvent}
+                >
+                  <label>
+                    Nombre del evento
+                    <input value={eventName} onChange={(event) => setEventName(event.target.value)} required />
+                  </label>
+                  <label>
+                    Casos favorables
+                    <input type="number" min="0" value={successes} onChange={(event) => setSuccesses(event.target.value)} required />
+                  </label>
+                  <label>
+                    Total de observaciones
+                    <input type="number" min="1" value={total} onChange={(event) => setTotal(event.target.value)} required />
+                  </label>
+                  <button className="primary-button" type="submit" disabled={loading}>
+                    {loading ? 'Calculando…' : 'Calcular y guardar'}
+                  </button>
+                </form>
+              )}
+              {eventMode === 'automatic' && (
+                <div className="probability-data-definition">
+                  <span><strong>Casos favorables:</strong> {selectedAutomaticEvent.numerator}</span>
+                  <span><strong>Total observado:</strong> {selectedAutomaticEvent.denominator}</span>
+                  <small>Sin fechas se utiliza todo el historial disponible.</small>
+                </div>
+              )}
+            </article>
+
+            <article className="probability-result">
+              <span className="eyebrow">RESULTADO</span>
+              <strong>{percentage(eventProbability)}</strong>
+              <p>Probabilidad estimada del evento.</p>
+              {favorableCases !== null && totalObservations !== null && (
+                <div className="probability-breakdown">
+                  <span>{favorableCases} casos favorables</span>
+                  <span>÷</span>
+                  <span>{totalObservations} observaciones</span>
+                </div>
+              )}
+              <div className="result-meter">
+                <div style={{ width: `${(eventProbability || 0) * 100}%` }} />
+              </div>
+            </article>
+          </section>
+        </>
       )}
 
       {section === 'random' && (

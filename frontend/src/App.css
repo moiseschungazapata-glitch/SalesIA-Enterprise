@@ -2696,6 +2696,17 @@ td strong {
   background: #ffffff;
 }
 
+.probability-source-toggle {
+  display: flex;
+  gap: 6px;
+  width: fit-content;
+  margin: -8px 0 14px;
+  padding: 5px;
+  border: 1px solid var(--salesia-gray-300);
+  border-radius: 10px;
+  background: var(--salesia-white);
+}
+
 .probability-form {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -2717,7 +2728,8 @@ td strong {
   font-weight: 700;
 }
 
-.probability-form input {
+.probability-form input,
+.probability-form select {
   min-height: 40px;
   padding: 0 11px;
   border: 1px solid #dddddd;
@@ -2725,6 +2737,30 @@ td strong {
   background: #ffffff;
   color: #222222;
   font-size: 11px;
+}
+
+.probability-data-definition {
+  display: grid;
+  gap: 6px;
+  margin: 0 18px 18px;
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--salesia-gray-100);
+  color: var(--salesia-text-soft);
+  font-size: 10px;
+}
+
+.probability-data-definition small {
+  margin-top: 2px;
+}
+
+.probability-breakdown {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 10px 0 14px;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 10px;
 }
 
 .probability-form input:focus,
