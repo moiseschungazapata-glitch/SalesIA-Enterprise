@@ -28,6 +28,7 @@ function formatDate(value: string) {
 function Inventory({ role }: InventoryProps) {
   const canManage = role === 'administrator' || role === 'warehouse'
   const canAudit = role !== 'seller'
+  const [section, setSection] = useState<'stock' | 'history'>('stock')
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState<'active' | 'inactive' | ''>('')
   const [showForm, setShowForm] = useState(false)
@@ -115,6 +116,29 @@ function Inventory({ role }: InventoryProps) {
         <StateMessage type="success" title="Inventario actualizado" description={feedback} />
       )}
 
+      {canAudit && (
+        <nav className="analytics-navigation inventory-navigation" aria-label="Secciones del inventario">
+          <button
+            type="button"
+            className={section === 'stock' ? 'analytics-tab active' : 'analytics-tab'}
+            onClick={() => setSection('stock')}
+            aria-pressed={section === 'stock'}
+          >
+            Existencias
+            <span>{inventory.data.total}</span>
+          </button>
+          <button
+            type="button"
+            className={section === 'history' ? 'analytics-tab active' : 'analytics-tab'}
+            onClick={() => setSection('history')}
+            aria-pressed={section === 'history'}
+          >
+            Historial de movimientos
+            <span>{movements.data.total}</span>
+          </button>
+        </nav>
+      )}
+
       {canManage && showForm && (
         <FormModal
           eyebrow="MOVIMIENTO AUTORIZADO"
@@ -168,7 +192,7 @@ function Inventory({ role }: InventoryProps) {
         </FormModal>
       )}
 
-      <section className="panel">
+      {section === 'stock' && <section className="panel inventory-section-panel">
         <div className="panel-toolbar">
           <input className="search-input" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar por SKU, producto o categoría..." />
           <select className="select-input" value={status} onChange={(event) => setStatus(event.target.value as typeof status)}>
@@ -200,10 +224,10 @@ function Inventory({ role }: InventoryProps) {
             {items.length === 0 && <div className="empty-state">No hay productos para mostrar.</div>}
           </div>
         )}
-      </section>
+      </section>}
 
-      {canAudit && (
-        <section className="panel">
+      {canAudit && section === 'history' && (
+        <section className="panel inventory-section-panel">
           <div className="panel-header"><div><span className="eyebrow">TRAZABILIDAD</span><h2>Historial de movimientos</h2><p>Incluye ajustes manuales y salidas automáticas por venta.</p></div></div>
           {movements.loading ? (
             <StateMessage type="loading" title="Cargando movimientos" />
