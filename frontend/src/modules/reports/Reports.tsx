@@ -186,7 +186,7 @@ function Reports() {
   return (
     <div className="page reports-page">
       <PageHeader
-        eyebrow="FASE 12 · DOCUMENTACIÓN EMPRESARIAL"
+        eyebrow="DOCUMENTACIÓN EMPRESARIAL"
         title="Reportes"
         description="Genera, consulta, exporta e imprime reportes basados en los datos reales de SalesIA."
       />

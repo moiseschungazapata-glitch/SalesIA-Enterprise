@@ -187,7 +187,7 @@ function Probability() {
   return (
     <div className="page">
       <PageHeader
-        eyebrow="MOTOR ESTADÍSTICO · FASE 09"
+        eyebrow="MOTOR ESTADÍSTICO"
         title="Probabilidad y Bayes"
         description="Cálculos reproducibles ejecutados por Python y registrados en Supabase."
       />
@@ -264,7 +264,7 @@ function Probability() {
                 />
               </label>
               <button className="primary-button" type="submit" disabled={loading}>
-                {loading ? 'Consultando…' : 'Calcular con datos reales'}
+                {loading ? 'Consultando…' : 'Calcular'}
               </button>
             </form>
             <div className="probability-data-definition">
@@ -402,7 +402,7 @@ function Probability() {
                 />
               </label>
               <button className="primary-button" type="submit" disabled={loading}>
-                {loading ? 'Consultando…' : 'Calcular con datos reales'}
+                {loading ? 'Consultando…' : 'Calcular'}
               </button>
             </form>
             <div className="probability-data-definition">

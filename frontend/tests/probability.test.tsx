@@ -95,7 +95,7 @@ describe('Bayes automático', () => {
       target: { value: '2026-10-15' },
     })
     await user.click(
-      screen.getByRole('button', { name: 'Calcular con datos reales' }),
+      screen.getByRole('button', { name: 'Calcular' }),
     )
 
     await waitFor(() => {
@@ -134,7 +134,7 @@ describe('Bayes automático', () => {
 
     await user.click(screen.getByRole('button', { name: 'Bayes' }))
     await user.click(
-      screen.getByRole('button', { name: 'Calcular con datos reales' }),
+      screen.getByRole('button', { name: 'Calcular' }),
     )
 
     await waitFor(() => {

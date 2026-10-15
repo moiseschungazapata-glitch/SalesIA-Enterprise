@@ -100,7 +100,7 @@ function Analytics() {
   return (
     <div className="page">
       <PageHeader
-        eyebrow="MOTOR ESTADÍSTICO · FASE 09"
+        eyebrow="MOTOR ESTADÍSTICO"
         title="Analytics"
         description="Media, mediana y clasificación calculadas por la API sobre tus ventas reales."
       />

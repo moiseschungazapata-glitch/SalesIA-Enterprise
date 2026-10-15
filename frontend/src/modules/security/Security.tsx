@@ -168,7 +168,7 @@ function Security({ user, onLogout }: SecurityProps) {
   return (
     <div className="page security-page">
       <PageHeader
-        eyebrow="FASE 13 · PROTECCIÓN Y TRAZABILIDAD"
+        eyebrow="PROTECCIÓN Y TRAZABILIDAD"
         title="Seguridad y auditoría"
         description="Controla tus accesos y consulta las acciones críticas registradas por el sistema."
         action={(<div className="security-header-actions">

@@ -118,7 +118,7 @@ function Insights() {
   return (
     <div className="page">
       <PageHeader
-        eyebrow="FASE 11 · INTELIGENCIA EMPRESARIAL"
+        eyebrow="INTELIGENCIA EMPRESARIAL"
         title="Insights explicables"
         description="Reglas determinísticas que convierten tus ventas en observaciones con evidencia numérica e historial verificable."
       />
