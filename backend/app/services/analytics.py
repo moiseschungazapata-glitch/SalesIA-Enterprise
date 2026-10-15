@@ -5,7 +5,7 @@ from decimal import Decimal
 from typing import Any
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from sqlalchemy import exists, func, select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.exceptions import AppError
@@ -399,27 +399,37 @@ class AnalyticsService:
             end_date + timedelta(days=1), time.min, tzinfo=timezone
         ).astimezone(UTC)
 
-        prior_purchase = exists().where(
-            Sale.company_id == self.company_id,
-            Sale.customer_id == Customer.id,
-            Sale.status == "confirmed",
-            Sale.payment_status != "refunded",
-            Sale.created_at < start_at,
+        sales_through_period_count = (
+            select(func.count(Sale.id))
+            .where(
+                Sale.company_id == self.company_id,
+                Sale.customer_id == Customer.id,
+                Sale.status == "confirmed",
+                Sale.payment_status != "refunded",
+                Sale.created_at < end_at,
+            )
+            .correlate(Customer)
+            .scalar_subquery()
         )
-        period_purchase = exists().where(
-            Sale.company_id == self.company_id,
-            Sale.customer_id == Customer.id,
-            Sale.status == "confirmed",
-            Sale.payment_status != "refunded",
-            Sale.created_at >= start_at,
-            Sale.created_at < end_at,
+        period_sales_count = (
+            select(func.count(Sale.id))
+            .where(
+                Sale.company_id == self.company_id,
+                Sale.customer_id == Customer.id,
+                Sale.status == "confirmed",
+                Sale.payment_status != "refunded",
+                Sale.created_at >= start_at,
+                Sale.created_at < end_at,
+            )
+            .correlate(Customer)
+            .scalar_subquery()
         )
         customer_rows = self.session.execute(
             select(
                 Customer.id,
                 Customer.created_at,
-                prior_purchase.label("event_a"),
-                period_purchase.label("event_b"),
+                (sales_through_period_count >= 2).label("event_a"),
+                (period_sales_count >= 1).label("event_b"),
             )
             .where(
                 Customer.company_id == self.company_id,
@@ -434,11 +444,14 @@ class AnalyticsService:
                 status_code=409,
             )
 
-        prior_customer_ids = {row.id for row in customer_rows if row.event_a}
-        if not prior_customer_ids:
+        recurrent_customer_ids = {row.id for row in customer_rows if row.event_a}
+        if not recurrent_customer_ids:
             raise AppError(
-                "BAYES_NO_PRIOR_CUSTOMERS",
-                "No hay clientes con compras anteriores al periodo seleccionado",
+                "BAYES_NO_RECURRENT_CUSTOMERS",
+                (
+                    "No hay clientes recurrentes con al menos dos compras "
+                    "hasta el cierre del periodo seleccionado"
+                ),
                 status_code=409,
             )
 
@@ -450,9 +463,9 @@ class AnalyticsService:
                 status_code=409,
             )
 
-        intersection_ids = prior_customer_ids & period_customer_ids
+        intersection_ids = recurrent_customer_ids & period_customer_ids
         universe_size = len(customer_rows)
-        event_a_cases = len(prior_customer_ids)
+        event_a_cases = len(recurrent_customer_ids)
         event_b_cases = len(period_customer_ids)
         intersection_cases = len(intersection_ids)
         probability_a = event_probability(event_a_cases, universe_size)
@@ -463,7 +476,7 @@ class AnalyticsService:
         # result slightly above 1 (for example, 2/3 × 1/2 ÷ 1/3).
         posterior = event_probability(intersection_cases, event_b_cases)
 
-        event_a = "Cliente con compra anterior al periodo"
+        event_a = "Cliente recurrente al cierre del periodo"
         event_b = "Cliente con compra en el periodo"
         timezone_name = timezone.key
         filters = {
@@ -479,6 +492,10 @@ class AnalyticsService:
                 "Clientes de la empresa registrados antes del cierre del periodo"
             ),
             "sale_definition": "Ventas confirmadas y no reembolsadas",
+            "event_a_definition": (
+                "Cliente con al menos dos ventas hasta el cierre del periodo"
+            ),
+            "event_b_definition": "Cliente con al menos una venta dentro del periodo",
             "universe_size": universe_size,
             "event_a_cases": event_a_cases,
             "event_b_cases": event_b_cases,
@@ -512,7 +529,7 @@ class AnalyticsService:
                     ordinal=index,
                     value_numeric=None,
                     value_text=(
-                        f"A={int(row.id in prior_customer_ids)};"
+                        f"A={int(row.id in recurrent_customer_ids)};"
                         f"B={int(row.id in period_customer_ids)}"
                     ),
                     observed_at=row.created_at,
@@ -544,8 +561,9 @@ class AnalyticsService:
         )
         interpretation = (
             f"De {event_b_cases} clientes que compraron entre {start_date.isoformat()} "
-            f"y {end_date.isoformat()}, {intersection_cases} ya habían comprado antes; "
-            f"la probabilidad de que un comprador del periodo sea recurrente es "
+            f"y {end_date.isoformat()}, {intersection_cases} fueron recurrentes al "
+            f"cierre del periodo al acumular al menos dos compras; la probabilidad "
+            f"de que un comprador del periodo sea recurrente es "
             f"{(posterior * Decimal('100')).quantize(Decimal('0.01'))}%."
         )
         results = [

@@ -46,15 +46,15 @@ const automaticBayesScenarios: Record<
   }
 > = {
   repeat_customer_given_purchase: {
-    label: 'Cliente recurrente dado que compró en el periodo',
+    label: 'Cliente recurrente al cierre dado que compró en el periodo',
     eventA:
-      'Cliente con al menos una venta confirmada y no reembolsada antes del periodo.',
+      'Cliente con al menos dos ventas confirmadas y no reembolsadas acumuladas hasta el cierre del periodo.',
     eventB:
       'Cliente con al menos una venta confirmada y no reembolsada dentro del periodo.',
     universe:
       'Todos los clientes de la empresa registrados hasta el cierre del periodo.',
     resultDescription:
-      'De quienes compraron en el periodo, qué proporción ya había comprado antes.',
+      'De quienes compraron en el periodo, qué proporción acumuló al menos dos compras válidas hasta su cierre.',
   },
 }
 
@@ -407,7 +407,7 @@ function Probability() {
             </form>
             <div className="probability-data-definition">
               <span>
-                <strong>Evento A · Cliente recurrente:</strong>{' '}
+                <strong>Evento A · Cliente recurrente al cierre:</strong>{' '}
                 {selectedBayesScenario.eventA}
               </span>
               <span>
@@ -419,7 +419,8 @@ function Probability() {
               </span>
               <small>
                 Sin fechas se analiza desde el primer día del mes actual hasta
-                hoy, según la zona horaria de la empresa.
+                hoy, según la zona horaria de la empresa. Las compras realizadas
+                dentro del periodo también forman parte del acumulado del evento A.
               </small>
             </div>
           </article>
@@ -435,15 +436,15 @@ function Probability() {
                   aria-label="Probabilidades utilizadas"
                 >
                   <div>
-                    <span>P(A) · Probabilidad previa</span>
+                    <span>P(A) · Cliente recurrente al cierre</span>
                     <strong>{percentage(probabilityA)}</strong>
                   </div>
                   <div>
-                    <span>P(B|A) · Verosimilitud</span>
+                    <span>P(B|A) · Compra si es recurrente</span>
                     <strong>{percentage(probabilityBGivenA)}</strong>
                   </div>
                   <div>
-                    <span>P(B) · Evidencia</span>
+                    <span>P(B) · Compra en el periodo</span>
                     <strong>{percentage(probabilityB)}</strong>
                   </div>
                 </div>
@@ -455,14 +456,15 @@ function Probability() {
                     <strong>{universeSize ?? '—'}</strong> clientes en el universo
                   </span>
                   <span>
-                    <strong>{eventACases ?? '—'}</strong> clientes recurrentes
+                    <strong>{eventACases ?? '—'}</strong> recurrentes al cierre
                   </span>
                   <span>
-                    <strong>{eventBCases ?? '—'}</strong> compradores del periodo
+                    <strong>{eventBCases ?? '—'}</strong> clientes que compraron en
+                    el periodo
                   </span>
                   <span>
-                    <strong>{intersectionCases ?? '—'}</strong> recurrentes que
-                    compraron
+                    <strong>{intersectionCases ?? '—'}</strong> recurrentes al cierre
+                    que compraron en el periodo
                   </span>
                 </div>
               </>

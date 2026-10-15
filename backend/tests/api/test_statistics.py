@@ -415,7 +415,7 @@ def test_automatic_bayes_uses_unique_customers_real_sales_and_company_scope(
         customer=recurring,
         company_id=company.id,
         number="BAYES-001",
-        created_at=datetime(2026, 9, 15, 12, tzinfo=UTC),
+        created_at=datetime(2026, 10, 4, 12, tzinfo=UTC),
     )
     add_sale(
         customer=recurring,
@@ -434,6 +434,12 @@ def test_automatic_bayes_uses_unique_customers_real_sales_and_company_scope(
         company_id=company.id,
         number="BAYES-004",
         created_at=datetime(2026, 9, 20, 12, tzinfo=UTC),
+    )
+    add_sale(
+        customer=prior_only,
+        company_id=company.id,
+        number="BAYES-004-B",
+        created_at=datetime(2026, 9, 21, 12, tzinfo=UTC),
     )
     add_sale(
         customer=new_buyer,
@@ -474,6 +480,13 @@ def test_automatic_bayes_uses_unique_customers_real_sales_and_company_scope(
     assert metric(result, "probability_b_given_a") == Decimal("0.5000000")
     assert metric(result, "probability_b") == Decimal("0.5000000")
     assert metric(result, "posterior") == Decimal("0.5000000")
+    interpretation = next(
+        item["text_value"]
+        for item in result["results"]
+        if item["metric"] == "interpretation"
+    )
+    assert "recurrentes al cierre del periodo" in interpretation
+    assert "ya habían comprado antes" not in interpretation
 
     dataset = session.get(Dataset, result["dataset_id"])
     assert dataset is not None
@@ -534,15 +547,16 @@ def test_automatic_bayes_reports_undefined_population_conditions(session: Sessio
         sale.payment_status = "paid"
     session.commit()
 
-    with pytest.raises(AppError) as no_prior:
+    with pytest.raises(AppError) as no_recurrent:
         service(session).analyze_automatic_bayes(
             AutomaticBayesRequest(
                 date_from=date(2026, 8, 1),
                 date_to=date(2026, 8, 31),
             )
         )
-    assert no_prior.value.code == "BAYES_NO_PRIOR_CUSTOMERS"
-    assert no_prior.value.status_code == 409
+    assert no_recurrent.value.code == "BAYES_NO_RECURRENT_CUSTOMERS"
+    assert no_recurrent.value.status_code == 409
+    assert "al menos dos compras" in no_recurrent.value.message
 
     with pytest.raises(AppError) as no_period:
         service(session).analyze_automatic_bayes(

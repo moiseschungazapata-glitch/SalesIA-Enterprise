@@ -50,7 +50,7 @@ const automaticBayesResult = {
       metric: 'interpretation',
       numeric_value: null,
       text_value:
-        'El 60.00% de los clientes que compraron en el periodo ya había comprado antes.',
+        'El 60.00% de los clientes que compraron en el periodo acumuló al menos dos compras válidas hasta su cierre.',
       details: {},
     },
   ],
@@ -77,7 +77,15 @@ describe('Bayes automático', () => {
     ).toHaveValue('repeat_customer_given_purchase')
     expect(screen.queryByLabelText('P(A) · Previa')).not.toBeInTheDocument()
     expect(
-      screen.getByText('Evento A · Cliente recurrente:'),
+      screen.getByText('Evento A · Cliente recurrente al cierre:'),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        /Cliente con al menos dos ventas confirmadas y no reembolsadas acumuladas/,
+      ),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(/Las compras realizadas dentro del periodo también forman parte/),
     ).toBeInTheDocument()
 
     fireEvent.change(screen.getByLabelText('Desde (opcional)'), {
@@ -106,9 +114,11 @@ describe('Bayes automático', () => {
 
     const counts = screen.getByLabelText('Conteos utilizados')
     expect(counts).toHaveTextContent('10 clientes en el universo')
-    expect(counts).toHaveTextContent('4 clientes recurrentes')
-    expect(counts).toHaveTextContent('5 compradores del periodo')
-    expect(counts).toHaveTextContent('3 recurrentes que compraron')
+    expect(counts).toHaveTextContent('4 recurrentes al cierre')
+    expect(counts).toHaveTextContent('5 clientes que compraron en el periodo')
+    expect(counts).toHaveTextContent(
+      '3 recurrentes al cierre que compraron en el periodo',
+    )
     expect(
       screen.getByText(/El 60.00% de los clientes que compraron/),
     ).toBeInTheDocument()
