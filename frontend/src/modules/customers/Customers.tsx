@@ -323,7 +323,7 @@ function Customers({ role }: CustomersProps) {
               </select>
             </label>
             <label>
-              {form.documentType}
+              DNI o RUC
               <input
                 inputMode="numeric"
                 value={form.documentNumber}
