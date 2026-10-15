@@ -4396,6 +4396,22 @@ body {
   margin-bottom: 18px;
 }
 
+.analytics-history-panel {
+  overflow: hidden;
+}
+
+.analytics-history-panel .table-wrapper {
+  max-height: min(640px, 65vh);
+  overflow: auto;
+}
+
+.analytics-history-panel thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--salesia-white);
+}
+
 .analytics-filter-form {
   display: grid;
   grid-template-columns: minmax(220px, 1.5fr) repeat(2, minmax(150px, 1fr)) auto;
@@ -4755,6 +4771,10 @@ body {
   border-color: var(--salesia-gray-200);
   background: #111827;
   color: var(--salesia-text);
+}
+
+:root[data-theme='dark'] .analytics-history-panel thead th {
+  background: #111827;
 }
 
 :root[data-theme='dark'] .primary-button,
