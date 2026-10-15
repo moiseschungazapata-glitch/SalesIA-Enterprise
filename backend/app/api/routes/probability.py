@@ -11,6 +11,7 @@ from app.db.session import get_db
 from app.schemas.common import ErrorResponse
 from app.schemas.statistics import (
     AnalysisExecutionResponse,
+    AutomaticBayesRequest,
     AutomaticEventProbabilityRequest,
     BayesRequest,
 )
@@ -64,5 +65,28 @@ def calculate_bayes(
     result = AnalyticsService(session, current_user.company_id, current_user.id).analyze_bayes(
         payload
     )
+    session.commit()
+    return AnalysisExecutionResponse.model_validate(result)
+
+
+@router.post(
+    "/bayes/automatic",
+    response_model=AnalysisExecutionResponse,
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        401: {"model": ErrorResponse},
+        403: {"model": ErrorResponse},
+        409: {"model": ErrorResponse},
+        422: {"model": ErrorResponse},
+    },
+)
+def calculate_automatic_bayes(
+    payload: AutomaticBayesRequest,
+    current_user: AnalyticsUser,
+    session: DatabaseSession,
+) -> AnalysisExecutionResponse:
+    result = AnalyticsService(
+        session, current_user.company_id, current_user.id
+    ).analyze_automatic_bayes(payload)
     session.commit()
     return AnalysisExecutionResponse.model_validate(result)

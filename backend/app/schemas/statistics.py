@@ -81,6 +81,22 @@ class BayesRequest(BaseModel):
         return value
 
 
+class AutomaticBayesRequest(BaseModel):
+    scenario_type: Literal["repeat_customer_given_purchase"] = (
+        "repeat_customer_given_purchase"
+    )
+    date_from: date | None = None
+    date_to: date | None = None
+
+    @model_validator(mode="after")
+    def validate_period(self) -> "AutomaticBayesRequest":
+        if self.date_to == date.max:
+            raise ValueError("La fecha final debe ser anterior al 31/12/9999")
+        if self.date_from and self.date_to and self.date_to < self.date_from:
+            raise ValueError("La fecha final no puede ser anterior a la fecha inicial")
+        return self
+
+
 class RandomVariableRequest(NumericSeriesRequest):
     random_variable_type: RandomVariableType = RandomVariableType.CONTINUOUS
 

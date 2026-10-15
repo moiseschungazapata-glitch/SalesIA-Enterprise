@@ -619,6 +619,14 @@ export interface AutomaticEventProbabilityRequest {
   date_to?: string | null
 }
 
+export type AutomaticBayesScenarioType = 'repeat_customer_given_purchase'
+
+export interface AutomaticBayesRequest {
+  scenario_type: AutomaticBayesScenarioType
+  date_from?: string | null
+  date_to?: string | null
+}
+
 export interface RandomVariableAnalysisRequest {
   name: string
   variable_name: string
@@ -630,14 +638,6 @@ export interface RandomVariableAnalysisRequest {
   random_variable_type: 'discrete' | 'continuous'
   unit?: string | null
   values: number[]
-}
-
-export interface BayesAnalysisRequest {
-  event_a: string
-  event_b: string
-  probability_a: string
-  probability_b_given_a: string
-  probability_b: string
 }
 
 export type DashboardGranularity = 'day' | 'week' | 'month'

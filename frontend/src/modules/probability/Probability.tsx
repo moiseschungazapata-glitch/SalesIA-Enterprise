@@ -3,11 +3,12 @@ import PageHeader from '../../components/PageHeader'
 import StateMessage from '../../components/StateMessage'
 import {
   analyzeRandomVariable,
+  calculateAutomaticBayes,
   calculateAutomaticEventProbability,
-  calculateBayes,
 } from '../../services/analytics'
 import type {
   AnalysisExecutionRecord,
+  AutomaticBayesScenarioType,
   AutomaticEventType,
 } from '../../types/api'
 
@@ -34,10 +35,39 @@ const automaticEvents: Record<
   },
 }
 
+const automaticBayesScenarios: Record<
+  AutomaticBayesScenarioType,
+  {
+    label: string
+    eventA: string
+    eventB: string
+    universe: string
+    resultDescription: string
+  }
+> = {
+  repeat_customer_given_purchase: {
+    label: 'Cliente recurrente dado que compró en el periodo',
+    eventA:
+      'Cliente con al menos una venta confirmada y no reembolsada antes del periodo.',
+    eventB:
+      'Cliente con al menos una venta confirmada y no reembolsada dentro del periodo.',
+    universe:
+      'Todos los clientes de la empresa registrados hasta el cierre del periodo.',
+    resultDescription:
+      'De quienes compraron en el periodo, qué proporción ya había comprado antes.',
+  },
+}
+
 function resultNumber(result: AnalysisExecutionRecord | null, metric: string) {
   const value = result?.results.find((item) => item.metric === metric)
     ?.numeric_value
   return value === null || value === undefined ? null : Number(value)
+}
+
+function resultText(result: AnalysisExecutionRecord | null, metric: string) {
+  return (
+    result?.results.find((item) => item.metric === metric)?.text_value ?? null
+  )
 }
 
 function percentage(value: number | null) {
@@ -64,11 +94,10 @@ function Probability() {
     '120, 150, 180, 200, 240, 260, 300',
   )
 
-  const [eventA, setEventA] = useState('Cliente recurrente')
-  const [eventB, setEventB] = useState('Realiza una compra este mes')
-  const [prior, setPrior] = useState('0.40')
-  const [likelihood, setLikelihood] = useState('0.70')
-  const [evidence, setEvidence] = useState('0.50')
+  const [bayesScenario, setBayesScenario] =
+    useState<AutomaticBayesScenarioType>('repeat_customer_given_purchase')
+  const [bayesDateFrom, setBayesDateFrom] = useState('')
+  const [bayesDateTo, setBayesDateTo] = useState('')
 
   const changeSection = (nextSection: ProbabilitySection) => {
     setSection(nextSection)
@@ -132,12 +161,10 @@ function Probability() {
   const submitBayes = (event: FormEvent) => {
     event.preventDefault()
     void runRequest(() =>
-      calculateBayes({
-        event_a: eventA,
-        event_b: eventB,
-        probability_a: prior,
-        probability_b_given_a: likelihood,
-        probability_b: evidence,
+      calculateAutomaticBayes({
+        scenario_type: bayesScenario,
+        date_from: bayesDateFrom || null,
+        date_to: bayesDateTo || null,
       }),
     )
   }
@@ -146,7 +173,16 @@ function Probability() {
   const favorableCases = resultNumber(result, 'favorable_cases')
   const totalObservations = resultNumber(result, 'total_observations')
   const posterior = resultNumber(result, 'posterior')
+  const probabilityA = resultNumber(result, 'probability_a')
+  const probabilityBGivenA = resultNumber(result, 'probability_b_given_a')
+  const probabilityB = resultNumber(result, 'probability_b')
+  const universeSize = resultNumber(result, 'universe_size')
+  const eventACases = resultNumber(result, 'event_a_cases')
+  const eventBCases = resultNumber(result, 'event_b_cases')
+  const intersectionCases = resultNumber(result, 'intersection_cases')
+  const bayesInterpretation = resultText(result, 'interpretation')
   const selectedAutomaticEvent = automaticEvents[automaticEvent]
+  const selectedBayesScenario = automaticBayesScenarios[bayesScenario]
 
   return (
     <div className="page">
@@ -320,41 +356,117 @@ function Probability() {
             <div className="panel-header">
               <div>
                 <span className="eyebrow">TEOREMA DE BAYES</span>
-                <h2>Probabilidad posterior</h2>
+                <h2>Probabilidad posterior con datos reales</h2>
                 <p>P(A|B) = P(B|A) × P(A) / P(B).</p>
               </div>
             </div>
-            <form className="probability-form probability-submit-form" onSubmit={submitBayes}>
+            <form
+              className="probability-form probability-submit-form"
+              onSubmit={submitBayes}
+            >
               <label>
-                Evento A
-                <input value={eventA} onChange={(event) => setEventA(event.target.value)} required />
+                Escenario bayesiano
+                <select
+                  value={bayesScenario}
+                  onChange={(event) =>
+                    setBayesScenario(
+                      event.target.value as AutomaticBayesScenarioType,
+                    )
+                  }
+                >
+                  {Object.entries(automaticBayesScenarios).map(
+                    ([value, definition]) => (
+                      <option value={value} key={value}>
+                        {definition.label}
+                      </option>
+                    ),
+                  )}
+                </select>
               </label>
               <label>
-                Evidencia B
-                <input value={eventB} onChange={(event) => setEventB(event.target.value)} required />
+                Desde (opcional)
+                <input
+                  type="date"
+                  value={bayesDateFrom}
+                  max={bayesDateTo || undefined}
+                  onChange={(event) => setBayesDateFrom(event.target.value)}
+                />
               </label>
               <label>
-                P(A) · Previa
-                <input type="number" step="0.01" min="0" max="1" value={prior} onChange={(event) => setPrior(event.target.value)} required />
-              </label>
-              <label>
-                P(B|A) · Verosimilitud
-                <input type="number" step="0.01" min="0" max="1" value={likelihood} onChange={(event) => setLikelihood(event.target.value)} required />
-              </label>
-              <label>
-                P(B) · Evidencia
-                <input type="number" step="0.01" min="0.01" max="1" value={evidence} onChange={(event) => setEvidence(event.target.value)} required />
+                Hasta (opcional)
+                <input
+                  type="date"
+                  value={bayesDateTo}
+                  min={bayesDateFrom || undefined}
+                  onChange={(event) => setBayesDateTo(event.target.value)}
+                />
               </label>
               <button className="primary-button" type="submit" disabled={loading}>
-                {loading ? 'Calculando…' : 'Calcular y guardar'}
+                {loading ? 'Consultando…' : 'Calcular con datos reales'}
               </button>
             </form>
+            <div className="probability-data-definition">
+              <span>
+                <strong>Evento A · Cliente recurrente:</strong>{' '}
+                {selectedBayesScenario.eventA}
+              </span>
+              <span>
+                <strong>Evidencia B · Compra en el periodo:</strong>{' '}
+                {selectedBayesScenario.eventB}
+              </span>
+              <span>
+                <strong>Universo:</strong> {selectedBayesScenario.universe}
+              </span>
+              <small>
+                Sin fechas se analiza desde el primer día del mes actual hasta
+                hoy, según la zona horaria de la empresa.
+              </small>
+            </div>
           </article>
 
           <article className="probability-result">
             <span className="eyebrow">P(A|B)</span>
             <strong>{percentage(posterior)}</strong>
-            <p>Probabilidad posterior con la evidencia indicada.</p>
+            <p>{bayesInterpretation || selectedBayesScenario.resultDescription}</p>
+            {result && (
+              <>
+                <div
+                  className="bayes-probability-grid"
+                  aria-label="Probabilidades utilizadas"
+                >
+                  <div>
+                    <span>P(A) · Probabilidad previa</span>
+                    <strong>{percentage(probabilityA)}</strong>
+                  </div>
+                  <div>
+                    <span>P(B|A) · Verosimilitud</span>
+                    <strong>{percentage(probabilityBGivenA)}</strong>
+                  </div>
+                  <div>
+                    <span>P(B) · Evidencia</span>
+                    <strong>{percentage(probabilityB)}</strong>
+                  </div>
+                </div>
+                <div
+                  className="bayes-count-grid"
+                  aria-label="Conteos utilizados"
+                >
+                  <span>
+                    <strong>{universeSize ?? '—'}</strong> clientes en el universo
+                  </span>
+                  <span>
+                    <strong>{eventACases ?? '—'}</strong> clientes recurrentes
+                  </span>
+                  <span>
+                    <strong>{eventBCases ?? '—'}</strong> compradores del periodo
+                  </span>
+                  <span>
+                    <strong>{intersectionCases ?? '—'}</strong> recurrentes que
+                    compraron
+                  </span>
+                </div>
+              </>
+            )}
             <div className="result-meter">
               <div style={{ width: `${(posterior || 0) * 100}%` }} />
             </div>

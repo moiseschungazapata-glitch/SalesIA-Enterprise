@@ -1,8 +1,8 @@
 import type {
   AnalysisExecutionRecord,
   AnalysisHistoryResponse,
+  AutomaticBayesRequest,
   AutomaticEventProbabilityRequest,
-  BayesAnalysisRequest,
   RandomVariableAnalysisRequest,
   SalesComparisonRequest,
   StatisticalVariableDefinition,
@@ -48,6 +48,9 @@ export function analyzeRandomVariable(
   )
 }
 
-export function calculateBayes(payload: BayesAnalysisRequest) {
-  return apiPost<AnalysisExecutionRecord>('/probability/bayes', payload)
+export function calculateAutomaticBayes(payload: AutomaticBayesRequest) {
+  return apiPost<AnalysisExecutionRecord>(
+    '/probability/bayes/automatic',
+    payload,
+  )
 }

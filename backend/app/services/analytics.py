@@ -1,10 +1,11 @@
 """Phase 09 statistical services with persistent, company-scoped analyses."""
 
-from datetime import UTC, datetime, time, timedelta
+from datetime import UTC, date, datetime, time, timedelta
 from decimal import Decimal
 from typing import Any
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from sqlalchemy import func, select
+from sqlalchemy import exists, func, select
 from sqlalchemy.orm import Session
 
 from app.core.exceptions import AppError
@@ -17,9 +18,12 @@ from app.models.analytics import (
     StatisticalAnalysis,
     StatisticalResult,
 )
+from app.models.company import Company
+from app.models.customer import Customer
 from app.models.orders import Order
 from app.models.sales import Payment, Sale, SaleDetail
 from app.schemas.statistics import (
+    AutomaticBayesRequest,
     AutomaticEventProbabilityRequest,
     BayesRequest,
     NumericSeriesRequest,
@@ -384,6 +388,244 @@ class AnalyticsService:
         result = self._result(analysis.id, None, "posterior", posterior)
         self._finish(analysis)
         return self._execution(dataset, None, analysis, 0, [result])
+
+    def analyze_automatic_bayes(self, payload: AutomaticBayesRequest) -> dict[str, Any]:
+        timezone = self._company_timezone()
+        start_date, end_date = self._automatic_bayes_period(
+            payload.date_from, payload.date_to, timezone
+        )
+        start_at = datetime.combine(start_date, time.min, tzinfo=timezone).astimezone(UTC)
+        end_at = datetime.combine(
+            end_date + timedelta(days=1), time.min, tzinfo=timezone
+        ).astimezone(UTC)
+
+        prior_purchase = exists().where(
+            Sale.company_id == self.company_id,
+            Sale.customer_id == Customer.id,
+            Sale.status == "confirmed",
+            Sale.payment_status != "refunded",
+            Sale.created_at < start_at,
+        )
+        period_purchase = exists().where(
+            Sale.company_id == self.company_id,
+            Sale.customer_id == Customer.id,
+            Sale.status == "confirmed",
+            Sale.payment_status != "refunded",
+            Sale.created_at >= start_at,
+            Sale.created_at < end_at,
+        )
+        customer_rows = self.session.execute(
+            select(
+                Customer.id,
+                Customer.created_at,
+                prior_purchase.label("event_a"),
+                period_purchase.label("event_b"),
+            )
+            .where(
+                Customer.company_id == self.company_id,
+                Customer.created_at < end_at,
+            )
+            .order_by(Customer.id)
+        ).all()
+        if not customer_rows:
+            raise AppError(
+                "BAYES_NO_CUSTOMERS",
+                "No hay clientes registrados para el periodo seleccionado",
+                status_code=409,
+            )
+
+        prior_customer_ids = {row.id for row in customer_rows if row.event_a}
+        if not prior_customer_ids:
+            raise AppError(
+                "BAYES_NO_PRIOR_CUSTOMERS",
+                "No hay clientes con compras anteriores al periodo seleccionado",
+                status_code=409,
+            )
+
+        period_customer_ids = {row.id for row in customer_rows if row.event_b}
+        if not period_customer_ids:
+            raise AppError(
+                "BAYES_NO_PERIOD_PURCHASES",
+                "No hay clientes con compras en el periodo seleccionado",
+                status_code=409,
+            )
+
+        intersection_ids = prior_customer_ids & period_customer_ids
+        universe_size = len(customer_rows)
+        event_a_cases = len(prior_customer_ids)
+        event_b_cases = len(period_customer_ids)
+        intersection_cases = len(intersection_ids)
+        probability_a = event_probability(event_a_cases, universe_size)
+        probability_b_given_a = event_probability(intersection_cases, event_a_cases)
+        probability_b = event_probability(event_b_cases, universe_size)
+        # For empirical counts, Bayes reduces exactly to |A ∩ B| / |B|.
+        # Deriving it from independently rounded probabilities can push a valid
+        # result slightly above 1 (for example, 2/3 × 1/2 ÷ 1/3).
+        posterior = event_probability(intersection_cases, event_b_cases)
+
+        event_a = "Cliente con compra anterior al periodo"
+        event_b = "Cliente con compra en el periodo"
+        timezone_name = timezone.key
+        filters = {
+            "scenario_type": payload.scenario_type,
+            "date_from": start_date.isoformat(),
+            "date_to": end_date.isoformat(),
+            "timezone": timezone_name,
+            "date_defaults": {
+                "date_from": payload.date_from is None,
+                "date_to": payload.date_to is None,
+            },
+            "universe_definition": (
+                "Clientes de la empresa registrados antes del cierre del periodo"
+            ),
+            "sale_definition": "Ventas confirmadas y no reembolsadas",
+            "universe_size": universe_size,
+            "event_a_cases": event_a_cases,
+            "event_b_cases": event_b_cases,
+            "intersection_cases": intersection_cases,
+        }
+        date_label = datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC")
+        dataset = self._create_dataset(
+            f"Bayes automático - Recompra de clientes - {date_label}",
+            "sales_snapshot",
+            filters,
+        )
+        dataset.period_start = start_date
+        dataset.period_end = end_date
+        membership_variable = DatasetVariable(
+            dataset_id=dataset.id,
+            name="customer_bayes_membership",
+            label="Pertenencia a eventos A y B",
+            variable_type="qualitative",
+            data_type="text",
+            source_field="customers.id + sales.created_at",
+            unit=None,
+        )
+        self.session.add(membership_variable)
+        self.session.flush()
+        self.session.add_all(
+            [
+                Observation(
+                    dataset_id=dataset.id,
+                    variable_id=membership_variable.id,
+                    source_record_id=str(row.id),
+                    ordinal=index,
+                    value_numeric=None,
+                    value_text=(
+                        f"A={int(row.id in prior_customer_ids)};"
+                        f"B={int(row.id in period_customer_ids)}"
+                    ),
+                    observed_at=row.created_at,
+                )
+                for index, row in enumerate(customer_rows, start=1)
+            ]
+        )
+
+        parameters = {
+            **filters,
+            "source": "salesia",
+            "event_a": event_a,
+            "event_b": event_b,
+            "probability_a": str(probability_a),
+            "probability_b_given_a": str(probability_b_given_a),
+            "probability_b": str(probability_b),
+        }
+        analysis = self._create_analysis(dataset.id, "bayes", parameters)
+        self.session.add(
+            BayesAnalysis(
+                analysis_id=analysis.id,
+                event_a=event_a,
+                event_b=event_b,
+                probability_a=probability_a,
+                probability_b_given_a=probability_b_given_a,
+                probability_b=probability_b,
+                posterior=posterior,
+            )
+        )
+        interpretation = (
+            f"De {event_b_cases} clientes que compraron entre {start_date.isoformat()} "
+            f"y {end_date.isoformat()}, {intersection_cases} ya habían comprado antes; "
+            f"la probabilidad de que un comprador del periodo sea recurrente es "
+            f"{(posterior * Decimal('100')).quantize(Decimal('0.01'))}%."
+        )
+        results = [
+            self._result(analysis.id, membership_variable.id, "posterior", posterior),
+            self._result(
+                analysis.id, membership_variable.id, "probability_a", probability_a
+            ),
+            self._result(
+                analysis.id,
+                membership_variable.id,
+                "probability_b_given_a",
+                probability_b_given_a,
+            ),
+            self._result(analysis.id, membership_variable.id, "probability_b", probability_b),
+            self._result(
+                analysis.id, membership_variable.id, "universe_size", universe_size
+            ),
+            self._result(
+                analysis.id, membership_variable.id, "event_a_cases", event_a_cases
+            ),
+            self._result(
+                analysis.id, membership_variable.id, "event_b_cases", event_b_cases
+            ),
+            self._result(
+                analysis.id,
+                membership_variable.id,
+                "intersection_cases",
+                intersection_cases,
+            ),
+            self._result(
+                analysis.id,
+                membership_variable.id,
+                "interpretation",
+                None,
+                text_value=interpretation,
+                details={
+                    "scenario_type": payload.scenario_type,
+                    "date_from": start_date.isoformat(),
+                    "date_to": end_date.isoformat(),
+                    "timezone": timezone_name,
+                },
+            ),
+        ]
+        self._finish(analysis)
+        return self._execution(
+            dataset,
+            membership_variable,
+            analysis,
+            universe_size,
+            results,
+        )
+
+    def _company_timezone(self) -> ZoneInfo:
+        company = self.session.scalar(select(Company).where(Company.id == self.company_id))
+        if company is None:
+            raise AppError("COMPANY_NOT_FOUND", "La empresa no existe", status_code=404)
+        try:
+            return ZoneInfo(company.timezone)
+        except ZoneInfoNotFoundError:
+            return ZoneInfo("America/Lima")
+
+    @staticmethod
+    def _automatic_bayes_period(
+        date_from: date | None, date_to: date | None, timezone: ZoneInfo
+    ) -> tuple[date, date]:
+        end_date = date_to or datetime.now(timezone).date()
+        start_date = date_from or end_date.replace(day=1)
+        if end_date == date.max:
+            raise AppError(
+                "INVALID_BAYES_PERIOD",
+                "La fecha final debe ser anterior al 31/12/9999",
+                status_code=422,
+            )
+        if end_date < start_date:
+            raise AppError(
+                "INVALID_BAYES_PERIOD",
+                "La fecha final no puede ser anterior a la fecha inicial",
+                status_code=422,
+            )
+        return start_date, end_date
 
     def history(self, page: int, page_size: int) -> tuple[list[dict[str, Any]], int]:
         analyses = self.session.execute(

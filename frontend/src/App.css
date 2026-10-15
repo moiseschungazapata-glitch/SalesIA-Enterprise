@@ -2752,6 +2752,45 @@ td strong {
   font-size: 10px;
 }
 
+.bayes-probability-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+  margin-bottom: 12px;
+}
+
+.bayes-probability-grid > div {
+  display: grid;
+  gap: 5px;
+  padding: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.bayes-probability-grid span,
+.bayes-count-grid span {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.bayes-probability-grid strong {
+  color: #ffffff;
+  font-size: 14px;
+}
+
+.bayes-count-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 12px;
+  margin-bottom: 16px;
+}
+
+.bayes-count-grid strong {
+  color: #ffffff;
+}
+
 .probability-form input:focus,
 .random-variable-form textarea:focus {
   outline: none;
@@ -2865,6 +2904,11 @@ td strong {
 
 @media (max-width: 700px) {
   .probability-form {
+    grid-template-columns: 1fr;
+  }
+
+  .bayes-probability-grid,
+  .bayes-count-grid {
     grid-template-columns: 1fr;
   }
 
