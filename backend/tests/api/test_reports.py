@@ -6,11 +6,13 @@ from decimal import Decimal
 from uuid import uuid4
 
 import pytest
+from fastapi import Request
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 
 from app.api.dependencies import Principal, require_roles
+from app.api.routes import reports as reports_routes
 from app.core.exceptions import AppError
 from app.core.security import ADMIN_ROLE, MANAGER_ROLE
 from app.db.base import Base
@@ -222,9 +224,7 @@ def test_report_history_detail_and_csv_export(session: Session) -> None:
     )
     session.commit()
 
-    history, total = reports.history(
-        page=1, page_size=50, report_type="sales", status="completed"
-    )
+    history, total = reports.history(page=1, page_size=50, report_type="sales", status="completed")
     detail = reports.get(generated["id"])
     csv_content, filename = reports.csv_export(generated["id"])
 
@@ -234,6 +234,43 @@ def test_report_history_detail_and_csv_export(session: Session) -> None:
     assert csv_content.startswith("\ufeffVenta,Fecha,Cliente")
     assert "R-000001" in csv_content
     assert filename == f"salesia-sales-{generated['id']}.csv"
+
+
+def test_generate_report_route_audits_serialized_report_id(
+    session: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    company = session.scalars(select(Company)).one()
+    admin = session.scalars(select(User)).one()
+    principal = Principal(
+        id=admin.id,
+        company_id=company.id,
+        name=admin.name,
+        email=admin.email,
+        role="administrator",
+        active=True,
+        created_at=admin.created_at,
+        updated_at=admin.updated_at,
+    )
+    audited: dict[str, object] = {}
+
+    def capture_audit(*_args: object, **kwargs: object) -> None:
+        audited.update(kwargs)
+
+    monkeypatch.setattr(reports_routes, "record_audit", capture_audit)
+    result = reports_routes.generate_report(
+        ReportGenerateRequest(
+            report_type="sales",
+            date_from=date(2026, 10, 1),
+            date_to=date(2026, 10, 2),
+        ),
+        Request(
+            {"type": "http", "method": "POST", "path": "/api/v1/reports/generate", "headers": []}
+        ),
+        principal,
+        session,
+    )
+
+    assert audited["entity_id"] == result.id
 
 
 def test_report_route_permissions_and_openapi_contract() -> None:

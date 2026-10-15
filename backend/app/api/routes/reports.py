@@ -20,9 +20,7 @@ from app.services.security import record_audit
 
 router = APIRouter(prefix="/reports", tags=["reports"])
 
-ReportsUser = Annotated[
-    Principal, Depends(require_roles(ADMIN_ROLE, MANAGER_ROLE, ANALYST_ROLE))
-]
+ReportsUser = Annotated[Principal, Depends(require_roles(ADMIN_ROLE, MANAGER_ROLE, ANALYST_ROLE))]
 DatabaseSession = Annotated[Session, Depends(get_db)]
 
 
@@ -45,7 +43,7 @@ def generate_report(
         user_id=current_user.id,
         action="report.generate",
         entity_type="report",
-        entity_id=report.id,
+        entity_id=report["id"],
         request=request,
         changes={"report_type": payload.report_type},
     )
