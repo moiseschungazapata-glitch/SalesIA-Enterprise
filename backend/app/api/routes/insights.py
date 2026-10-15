@@ -43,18 +43,19 @@ def generate_insights(
     session: DatabaseSession,
 ) -> InsightGenerationResponse:
     result = InsightService(session, current_user.company_id, current_user.id).generate(payload)
+    response = InsightGenerationResponse.model_validate(result)
     record_audit(
         session,
         company_id=current_user.company_id,
         user_id=current_user.id,
         action="insight.generate",
         entity_type="statistical_analysis",
-        entity_id=result.analysis_id,
+        entity_id=response.analysis_id,
         request=request,
-        changes={"generated_count": result.generated_count},
+        changes={"generated_count": response.generated_count},
     )
     session.commit()
-    return InsightGenerationResponse.model_validate(result)
+    return response
 
 
 @router.get("", response_model=InsightListResponse)

@@ -6,16 +6,19 @@ from decimal import Decimal
 from uuid import uuid4
 
 import pytest
+from fastapi import Request
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 
 from app.api.dependencies import Principal, require_roles
+from app.api.routes import insights as insight_routes
 from app.core.exceptions import AppError
 from app.core.security import ADMIN_ROLE, MANAGER_ROLE
 from app.db.base import Base
 from app.main import app
 from app.models import (
+    AuditLog,
     Category,
     Company,
     Customer,
@@ -59,6 +62,7 @@ def session() -> Generator[Session, None, None]:
             StatisticalAnalysis.__table__,
             StatisticalResult.__table__,
             Insight.__table__,
+            AuditLog.__table__,
         ],
     )
     with Session(engine, expire_on_commit=False) as database_session:
@@ -197,6 +201,45 @@ def test_empty_period_creates_numeric_warning(session: Session) -> None:
     assert insight["rule_code"] == "sales.no_activity"
     assert insight["severity"] == "warning"
     assert insight["evidence"]["value"] == 0
+
+
+def test_generate_route_records_audit_from_validated_response(session: Session) -> None:
+    company = session.scalars(select(Company)).one()
+    admin = session.scalars(select(User)).one()
+    current_user = Principal(
+        id=admin.id,
+        company_id=company.id,
+        name=admin.name,
+        email=admin.email,
+        role="administrator",
+        active=True,
+        created_at=admin.created_at,
+        updated_at=admin.updated_at,
+    )
+    http_request = Request(
+        {
+            "type": "http",
+            "method": "POST",
+            "path": "/api/v1/insights/generate",
+            "headers": [],
+            "client": ("127.0.0.1", 50000),
+            "scheme": "http",
+            "server": ("testserver", 80),
+            "query_string": b"",
+        }
+    )
+
+    response = insight_routes.generate_insights(
+        request(date(2026, 10, 1), date(2026, 10, 2)),
+        http_request,
+        current_user,
+        session,
+    )
+
+    assert isinstance(response, InsightGenerationResponse)
+    audit = session.scalars(select(AuditLog).where(AuditLog.action == "insight.generate")).one()
+    assert audit.entity_id == str(response.analysis_id)
+    assert audit.changes == {"generated_count": response.generated_count}
 
 
 def test_insight_route_permissions_and_openapi_contract() -> None:
